@@ -1,0 +1,238 @@
+"""Chunk projection for Knowhere ZIP result packages."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from shared.services.chunks.chunk_connections import (
+    build_resource_target_map,
+    convert_refs_to_embed_connections,
+    merge_connections,
+    normalize_connect_to_targets,
+    parse_relationship_refs,
+)
+
+
+class ZipChunkSchemaBuilder:
+    def calculate_statistics(self, chunks: list[dict[str, Any]]) -> dict[str, Any]:
+        total_chunks = len(chunks)
+        text_chunks = 0
+        image_chunks = 0
+        table_chunks = 0
+
+        page_chunks = 0
+
+        for chunk in chunks:
+            chunk_type = chunk.get("type", "")
+            normalized_type = _normalize_chunk_type(chunk_type)
+            if normalized_type == "image":
+                image_chunks += 1
+            elif normalized_type == "table":
+                table_chunks += 1
+            elif normalized_type == "page":
+                page_chunks += 1
+            else:
+                text_chunks += 1
+
+        return {
+            "total_chunks": total_chunks,
+            "text_chunks": text_chunks,
+            "image_chunks": image_chunks,
+            "table_chunks": table_chunks,
+            "page_chunks": page_chunks,
+            "total_pages": None,
+        }
+
+    def format_chunks(
+        self,
+        chunks: list[dict[str, Any]],
+        image_files_map: dict[str, dict[str, Any]],
+        table_files_map: dict[str, dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        resource_target_map = build_resource_target_map(
+            chunks,
+            image_files_map=image_files_map,
+            table_files_map=table_files_map,
+        )
+
+        formatted: list[dict[str, Any]] = []
+        for chunk in chunks:
+            chunk_id = str(chunk.get("chunk_id") or chunk.get("know_id"))
+            chunk_type_str = chunk.get("type", "")
+            normalized_type = _normalize_chunk_type(chunk_type_str)
+            image_info = image_files_map.get(chunk_id)
+
+            if normalized_type == "image":
+                chunk_type = "image"
+            elif normalized_type == "table":
+                chunk_type = "table"
+            elif normalized_type == "page":
+                chunk_type = "page"
+            else:
+                chunk_type = "text"
+
+            content = chunk.get("text") or chunk.get("content", "")
+            path = chunk.get("path", "")
+            existing_metadata = chunk.get("metadata", {})
+            metadata = _base_chunk_metadata(existing_metadata, chunk, content)
+
+            if chunk_type == "text":
+                metadata.update(
+                    {
+                        "tokens": existing_metadata.get("tokens")
+                        or chunk.get("tokens", 0),
+                        "keywords": existing_metadata.get("keywords")
+                        or chunk.get("keywords", []),
+                        "connect_to": _build_embed_connect_to(
+                            chunk=chunk,
+                            chunk_type_str=chunk_type_str,
+                            content=str(content),
+                            existing_metadata=existing_metadata,
+                            resource_target_map=resource_target_map,
+                        ),
+                    }
+                )
+            elif chunk_type == "image":
+                if image_info:
+                    metadata["file_path"] = image_info["file_path"]
+                metadata["keywords"] = existing_metadata.get("keywords") or chunk.get(
+                    "keywords", []
+                )
+                metadata["tokens"] = []
+            elif chunk_type == "table":
+                metadata["file_path"] = _resolve_table_file_path(
+                    chunk=chunk,
+                    chunk_id=chunk_id,
+                    path=str(path),
+                    existing_metadata=existing_metadata,
+                    table_files_map=table_files_map,
+                )
+                metadata["keywords"] = existing_metadata.get("keywords") or chunk.get(
+                    "keywords", []
+                )
+                metadata["tokens"] = []
+                metadata["connect_to"] = _build_embed_connect_to(
+                    chunk=chunk,
+                    chunk_type_str=chunk_type_str,
+                    content=str(content),
+                    existing_metadata=existing_metadata,
+                    resource_target_map=resource_target_map,
+                )
+            elif chunk_type == "page":
+                metadata["keywords"] = existing_metadata.get("keywords") or []
+                metadata["connect_to"] = existing_metadata.get("connect_to") or []
+                page_assets = _normalize_page_assets(existing_metadata.get("page_assets"))
+                if page_assets:
+                    metadata["page_assets"] = page_assets
+
+            formatted_chunk = {
+                "chunk_id": chunk_id,
+                "type": chunk_type,
+                "content": content,
+                "path": path,
+                "metadata": metadata,
+            }
+
+            formatted.append(formatted_chunk)
+
+        return formatted
+
+
+def _normalize_chunk_type(value: Any) -> str:
+    raw_type = str(value).strip()
+    return raw_type.split("\n", 1)[0].lower()
+
+
+def _base_chunk_metadata(
+    existing_metadata: dict[str, Any],
+    chunk: dict[str, Any],
+    content: Any,
+) -> dict[str, Any]:
+    metadata = {
+        "length": existing_metadata.get("length") or len(content),
+        "summary": existing_metadata.get("summary") or chunk.get("summary", ""),
+        "page_nums": existing_metadata.get("page_nums", []),
+    }
+    return metadata
+
+
+def _build_embed_connect_to(
+    *,
+    chunk: dict[str, Any],
+    chunk_type_str: Any,
+    content: str,
+    existing_metadata: dict[str, Any],
+    resource_target_map: dict[str, str],
+) -> list[Any]:
+    relationship_refs = parse_relationship_refs(
+        chunk.get("type_raw") or chunk_type_str,
+        content,
+    )
+    embed_connections = convert_refs_to_embed_connections(
+        relationship_refs,
+        resource_target_map,
+    )
+    related_connections = normalize_connect_to_targets(
+        existing_metadata.get("connect_to")
+        or chunk.get("connect_to")
+        or chunk.get("connectto"),
+        resource_target_map,
+    )
+    return merge_connections(embed_connections, related_connections)
+
+
+def _resolve_table_file_path(
+    *,
+    chunk: dict[str, Any],
+    chunk_id: str,
+    path: str,
+    existing_metadata: dict[str, Any],
+    table_files_map: dict[str, dict[str, Any]],
+) -> Any:
+    file_path = existing_metadata.get("file_path")
+    if file_path:
+        return file_path
+
+    table_info = table_files_map.get(chunk_id)
+    if table_info:
+        return table_info["file_path"]
+
+    table_name = path.split("/")[-1] if "/" in path else f"table_{chunk_id}.html"
+    return f"tables/{table_name}"
+
+
+def _normalize_page_assets(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    assets: list[dict[str, Any]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        page_num = _positive_int_or_none(item.get("page_num"))
+        artifact_ref = str(item.get("artifact_ref") or "").strip()
+        content_type = str(item.get("content_type") or "").strip()
+        source = str(item.get("source") or "").strip()
+        if page_num is None or not artifact_ref or not content_type or not source:
+            continue
+        asset = {
+            "page_num": page_num,
+            "artifact_ref": artifact_ref,
+            "content_type": content_type,
+            "source": source,
+        }
+        if (asset_url := str(item.get("asset_url") or "").strip()):
+            asset["asset_url"] = asset_url
+        if (width := _positive_int_or_none(item.get("width"))) is not None:
+            asset["width"] = width
+        if (height := _positive_int_or_none(item.get("height"))) is not None:
+            asset["height"] = height
+        assets.append(asset)
+    return assets
+
+
+def _positive_int_or_none(value: Any) -> int | None:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None

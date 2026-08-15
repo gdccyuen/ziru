@@ -1,0 +1,14 @@
+# LLM API configuration file
+# This file contains model settings used for LLM API calls
+
+# History settings
+HISTORY_K	5
+
+# Model parameter settings
+MAX_TOKENS	2000
+TEMPERATURE	0.7
+TOP_P	0.9
+
+# Other settings
+API_TIMEOUT	30
+RETRY_COUNT	3

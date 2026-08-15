@@ -1,0 +1,34 @@
+"""API constants."""
+
+
+class APIConstants:
+    """API-related constants."""
+
+    # Response status codes.
+    SUCCESS_CODE = 200
+    FAIL_CODE = 1
+    AUTH_ERROR_CODE = 401
+
+    # Pagination defaults.
+    DEFAULT_PAGE_SIZE = 20
+    MAX_PAGE_SIZE = 100
+
+    # Timeout defaults.
+    DEFAULT_TIMEOUT = 30
+    LONG_TIMEOUT = 300
+    HTTP_TIMEOUT = 30
+    REQUEST_TIMEOUT = 5
+    AI_QUERY_TIMEOUT = 90
+    LAYOUT_TIMEOUT = 300
+    HEADER_TIMEOUT = 60
+    SCOPE_TIMEOUT = 60
+    CONNECT_TIMEOUT = 60
+    ASK_TIMEOUT = 60
+    RERANK_TIMEOUT = 90
+    DEEPSEEK_TIMEOUT = 300
+    FILE_LOAD_TIMEOUT = 15
+    TASK_TIMEOUT = 400
+    PROMPT_TIMEOUT = 40
+    PROMPT_STATUS_TIMEOUT = 20
+    TASK_WAIT_TIMEOUT = 300
+    S3_FILE_DOWNLOAD_TIMEOUT = 60

@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - staging
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm type-check
+
+      - name: Build
+        env:
+          BETTER_AUTH_SECRET: build-validation-only-auth-secret-32-chars
+          BETTER_AUTH_URL: http://localhost:3000
+          NEXT_PUBLIC_API_URL: http://localhost:5005/api
+          NEXT_PUBLIC_AUTH_BASE_URL: /api/auth
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          BILLING_ENABLED: "false"
+          RESEND_API_KEY: re_build_validation_placeholder
+          SKIP_ENV_VALIDATION: "1"
+        run: pnpm build

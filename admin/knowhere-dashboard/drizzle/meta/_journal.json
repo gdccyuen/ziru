@@ -1,0 +1,76 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1769662575935,
+      "tag": "0000_kind_ghost_rider",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1769747376322,
+      "tag": "0001_sweet_fabian_cortez",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770279625137,
+      "tag": "0002_old_warbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777322413744,
+      "tag": "0003_flaky_radioactive_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782325418322,
+      "tag": "0004_faithful_wither",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782365855560,
+      "tag": "0005_giant_masque",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782436463240,
+      "tag": "0006_colossal_quicksilver",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782446108466,
+      "tag": "0007_add-newsletter-unsubscribe",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784811344172,
+      "tag": "0008_noisy_chimera",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784879812653,
+      "tag": "0009_mushy_ezekiel",
+      "breakpoints": true
+    }
+  ]
+}

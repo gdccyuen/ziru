@@ -1,0 +1,76 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1778087081542,
+      "tag": "0000_perfect_stellaris",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778125625831,
+      "tag": "0001_polite_speedball",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778345024447,
+      "tag": "0002_parsed_result_assets",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778411486957,
+      "tag": "0003_puzzling_tiger_shark",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778416364748,
+      "tag": "0004_ambiguous_shape",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778470974929,
+      "tag": "0005_dark_ultragirl",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778564600000,
+      "tag": "0006_api_owned_demos",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778569500000,
+      "tag": "0007_normalize_legacy_demo_sources",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781257344080,
+      "tag": "0008_chat_message_artifacts",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782472980935,
+      "tag": "0009_true_lila_cheney",
+      "breakpoints": true
+    }
+  ]
+}

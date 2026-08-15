@@ -1,0 +1,58 @@
+# dependencies
+/node_modules
+/.pnpm-store
+
+# testing
+/coverage
+/playwright-report
+/test-results
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# build cache
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# local env files
+.env
+.env.local
+.env*.local
+.env.development
+.env.test
+.env.production
+!.env.example
+/.env.local
+
+# Editor & Tooling
+.claude
+.cursor
+.codex
+.agent
+.agents
+.agent-hooks
+.idea
+.junie
+.trae
+.vercel
+
+.spec/
+CLAUDE.md
+AGENTS.md
+*.backup
+
+.playwright*

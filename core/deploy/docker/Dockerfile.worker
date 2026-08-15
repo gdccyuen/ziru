@@ -1,0 +1,114 @@
+# Worker Dockerfile with a multi-stage build
+# Pin Debian Trixie explicitly; Trixie provides OpenJDK 21 for tabula-py.
+FROM python:3.12-slim-trixie AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN python -m pip install --no-cache-dir uv
+
+# Copy workspace metadata so uv can resolve workspace dependencies
+COPY pyproject.toml uv.lock /app/
+
+# Copy shared package code for editable installation
+COPY packages/shared-python /app/packages/shared-python
+
+# Copy workspace member dependency definitions
+COPY apps/api/pyproject.toml /app/apps/api/pyproject.toml
+COPY apps/worker/pyproject.toml /app/apps/worker/pyproject.toml
+
+# Sync dependencies into the fixed virtualenv path
+WORKDIR /app/apps/worker
+
+RUN \
+    UV_PROJECT_ENVIRONMENT=/app/venv uv sync --locked --no-dev && \
+    find /app/venv -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/venv -type f -name "*.pyc" -delete && \
+    find /app/venv -type f -name "*.pyo" -delete
+
+# Runtime stage
+# Pin Debian Trixie explicitly; Trixie provides OpenJDK 21 for tabula-py.
+FROM python:3.12-slim-trixie
+
+WORKDIR /app
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    libgl1 \
+    libglib2.0-0 \
+    libgomp1 \
+    libreoffice-core \
+    libreoffice-calc \
+    libreoffice-impress \
+    libreoffice-writer \
+    openjdk-21-jre-headless \
+    && rm -rf /var/lib/apt/lists/*
+
+# tabula-py shells out to Java for page-memory table HTML extraction.
+RUN java -version
+
+# Copy the virtualenv from the builder stage
+COPY --from=builder /app/venv /app/venv
+
+# Copy shared package code
+COPY packages/shared-python /app/packages/shared-python
+
+# Copy the worker service code
+COPY apps/worker/worker.py /app/
+COPY apps/worker/pyproject.toml /app/
+COPY apps/worker/app /app/app
+COPY apps/worker/static /app/static
+# Unneeded files stay excluded by the Docker build context
+
+# Build metadata arguments
+ARG ENVIRONMENT=dev
+ARG APP_VERSION=dev
+ARG BUILD_TIME=""
+ARG GIT_COMMIT=""
+
+# Runtime environment
+ENV PATH="/app/venv/bin:$PATH"
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV ENVIRONMENT=${ENVIRONMENT}
+ENV APP_VERSION=${APP_VERSION}
+ENV BUILD_TIME=${BUILD_TIME}
+ENV GIT_COMMIT=${GIT_COMMIT}
+# Model cache directory mounted from shared storage
+ENV HF_HOME=/mnt/models/huggingface
+ENV TRANSFORMERS_CACHE=/mnt/models/huggingface
+
+# Create a non-root runtime user
+RUN useradd --create-home --shell /bin/bash appuser && \
+    chown -R appuser:appuser /app
+
+# Prepare writable directories before dropping privileges
+RUN mkdir -p /tmp/users /tmp/aismart_bid && \
+    chmod -R 777 /tmp/users /tmp/aismart_bid && \
+    echo '#!/bin/sh\n\
+# Worker entrypoint: normalize writable volumes and start the service\n\
+\n\
+# Ensure mounted directories exist\n\
+mkdir -p /tmp/users /tmp/aismart_bid\n\
+\n\
+exec python worker.py' > /entrypoint.sh && chmod +x /entrypoint.sh
+
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
+    CMD python -c "from shared.services.worker_health import assert_worker_healthy; assert_worker_healthy()" || exit 1
+
+# The worker does not expose a public port
+# EXPOSE not needed
+
+# Use the generated entrypoint
+ENTRYPOINT ["/entrypoint.sh"]

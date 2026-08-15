@@ -1,0 +1,99 @@
+# API Dockerfile with a multi-stage build
+# Pin Debian Trixie explicitly so package resolution is deterministic.
+FROM python:3.12-slim-trixie AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN python -m pip install --no-cache-dir uv
+
+# Copy workspace metadata so uv can resolve workspace dependencies
+COPY pyproject.toml uv.lock /app/
+
+# Copy shared package code for editable installation
+COPY packages/shared-python /app/packages/shared-python
+
+# Copy workspace member dependency definitions
+COPY apps/api/pyproject.toml /app/apps/api/pyproject.toml
+COPY apps/worker/pyproject.toml /app/apps/worker/pyproject.toml
+
+# Sync dependencies into the fixed virtualenv path
+WORKDIR /app/apps/api
+
+RUN \
+    UV_PROJECT_ENVIRONMENT=/app/venv uv sync --locked --no-dev
+
+# Runtime stage
+# Pin Debian Trixie explicitly so package resolution is deterministic.
+FROM python:3.12-slim-trixie
+
+WORKDIR /app
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the virtualenv from the builder stage
+COPY --from=builder /app/venv /app/venv
+
+# Copy shared package code
+COPY packages/shared-python /app/packages/shared-python
+
+# Copy the API service code
+COPY apps/api/custom_openapi.py /app/
+COPY apps/api/main.py /app/
+COPY apps/api/alembic.ini /app/
+COPY apps/api/pyproject.toml /app/
+COPY apps/api/app /app/app
+COPY apps/api/alembic /app/alembic
+COPY apps/api/scripts /app/scripts
+# Unneeded files stay excluded by the Docker build context
+
+# Build metadata arguments
+ARG ENVIRONMENT=dev
+ARG APP_VERSION=dev
+ARG BUILD_TIME=""
+ARG GIT_COMMIT=""
+
+# Runtime environment
+ENV PATH="/app/venv/bin:$PATH"
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV ENVIRONMENT=${ENVIRONMENT}
+ENV APP_VERSION=${APP_VERSION}
+ENV BUILD_TIME=${BUILD_TIME}
+ENV GIT_COMMIT=${GIT_COMMIT}
+
+# Create a non-root runtime user
+RUN useradd --create-home --shell /bin/bash appuser && \
+    chown -R appuser:appuser /app
+
+RUN mkdir -p /tmp/users /tmp/aismart_bid && \
+    chmod -R 777 /tmp/users /tmp/aismart_bid && \
+    echo '#!/bin/sh\n\
+# API entrypoint: normalize writable volumes and start the service\n\
+\n\
+# Ensure mounted directories exist\n\
+mkdir -p /tmp/users /tmp/aismart_bid\n\
+\n\
+exec python main.py' > /entrypoint.sh && chmod +x /entrypoint.sh
+
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5005/health || exit 1
+
+# Expose the API port
+EXPOSE 5005
+
+# Use the generated entrypoint
+ENTRYPOINT ["/entrypoint.sh"]

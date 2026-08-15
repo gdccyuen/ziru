@@ -1,0 +1,2184 @@
+import { afterEach, describe, expect, it, vi } from "vitest"
+import type { RetrievalResult } from "@ontos-ai/knowhere-sdk"
+import { Effect } from "effect"
+import { ToolLoopAgent } from "ai"
+import type { HarnessRunResult } from "@/agent-harness"
+
+import {
+  answerQuestionWithRetrieval,
+  generateAgenticOutputManifest,
+  parseChatRequestBody,
+} from "."
+import type { HardenMediaAssetUrlsInput } from "./media-asset-hardening"
+import type { Source } from "@/infrastructure/db/schema"
+import type { ChatArtifactView } from "@/domains/chat/types"
+
+const loggerMock = vi.hoisted(() => ({
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}));
+
+vi.mock("@/lib/logger", () => ({
+  logger: {
+    info: loggerMock.info,
+    warn: loggerMock.warn,
+    error: loggerMock.error,
+  },
+}));
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  loggerMock.info.mockReset();
+  loggerMock.warn.mockReset();
+  loggerMock.error.mockReset();
+  delete process.env.AI_GATEWAY_API_KEY;
+});
+
+describe("answerQuestionWithRetrieval", () => {
+  it("queries the workspace namespace and excludes unchecked ready documents", async () => {
+    const result = makeRetrievalResult();
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [result],
+        evidenceText: "Grounding content from evidence tree",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "What does the document say?",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({ query: "What does the document say?" });
+      return makeHarnessRunResult("The answer is grounded.");
+    });
+    const sources = [
+      makeSource({ knowhereDocumentId: "doc_included" }),
+      makeSource({ id: "source_2", knowhereDocumentId: "doc_excluded" }),
+    ];
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "What does the document say?",
+        namespace: "notebook-workspace",
+        sources,
+        excludedSourceIds: ["source_2"],
+        retrieval,
+        generateAnswer,
+        messages: [],
+      }),
+    );
+
+    expect(retrieval.query).toHaveBeenCalledWith({
+      namespace: "notebook-workspace",
+      query: "What does the document say?",
+      topK: 8,
+      useAgentic: true,
+      rerank: true,
+      internalRecallK: 30,
+      dataType: 1,
+      excludeDocumentIds: ["doc_excluded"],
+    });
+    expect(generateAnswer).toHaveBeenCalledWith({
+      question: "What does the document say?",
+      messages: [],
+      sources,
+      excludedSourceIds: ["source_2"],
+      searchSources: expect.any(Function),
+    });
+    expect(answer).toMatchObject({
+      answer: "The answer is grounded.",
+      citations: [result],
+      artifacts: [],
+    });
+    expect(answer.retrievalTrace).toMatchObject({
+      durationSeconds: expect.any(Number),
+      queries: [
+        {
+          namespace: "notebook-workspace",
+          query: "What does the document say?",
+          referencedChunkCount: 0,
+          resultCount: 1,
+          topScores: [0.9],
+        },
+      ],
+    });
+  });
+
+  it("never renders a literal null/undefined or empty string as the answer", async () => {
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [],
+        evidenceText: "",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "Gordon",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const sources = [makeSource()];
+
+    for (const nullishAnswer of ["null", "undefined", "  null  ", "", "   "]) {
+      const generateAnswer = vi.fn(async () =>
+        makeHarnessRunResult(nullishAnswer),
+      );
+      const answer = await Effect.runPromise(
+        answerQuestionWithRetrieval({
+          question: "Gordon",
+          namespace: "notebook-workspace",
+          sources,
+          excludedSourceIds: [],
+          retrieval,
+          generateAnswer,
+          messages: [],
+        }),
+      );
+      expect(answer.answer).toBe("I couldn't find that in your sources.");
+    }
+  });
+
+  it("keeps a real answer containing the word null", async () => {
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [],
+        evidenceText: "",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "Gordon",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const sources = [makeSource()];
+    const generateAnswer = vi.fn(async () =>
+      makeHarnessRunResult("Gordon is listed as null in the directory."),
+    );
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "Gordon",
+        namespace: "notebook-workspace",
+        sources,
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+      }),
+    );
+    expect(answer.answer).toBe(
+      "Gordon is listed as null in the directory.",
+    );
+  });
+
+  it("does not carry no-evidence metadata from default into a successful legacy namespace result", async () => {
+    const legacyResult = makeRetrievalResult({
+      source: {
+        documentId: "doc_legacy",
+        sourceFileName: "legacy.pdf",
+        sectionPath: "Overview",
+      },
+    });
+    const retrieval = {
+      query: vi
+        .fn()
+        .mockResolvedValueOnce({
+          results: [],
+          evidenceText: null,
+          referencedChunks: [],
+          namespace: "default",
+          query: "legacy document answer",
+          routerUsed: "workflow_single_step",
+          answerText: null,
+          stopReason: "not_found",
+          failureReason: "No relevant evidence found.",
+        })
+        .mockResolvedValueOnce({
+          results: [legacyResult],
+          evidenceText: "Legacy namespace evidence",
+          referencedChunks: [],
+          namespace: "notebook-legacy",
+          query: "legacy document answer",
+          routerUsed: "workflow_single_step",
+          answerText: null,
+          stopReason: "answer_done",
+          failureReason: null,
+        }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      const response = await searchSources({ query: "legacy document answer" });
+      expect(response).toMatchObject({
+        namespace: "default,notebook-legacy",
+        stopReason: "answer_done",
+        failureReason: null,
+        results: [legacyResult],
+        evidenceText: "Legacy namespace evidence",
+      });
+      return makeHarnessRunResult("The legacy answer is grounded.");
+    });
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "What does the legacy document say?",
+        namespace: "notebook-legacy",
+        namespaces: ["default", "notebook-legacy"],
+        sources: [
+          makeSource({
+            title: "legacy.pdf",
+            knowhereDocumentId: "doc_legacy",
+          }),
+        ],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+      }),
+    );
+
+    expect(retrieval.query).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ namespace: "default" }),
+    );
+    expect(retrieval.query).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ namespace: "notebook-legacy" }),
+    );
+    expect(answer).toMatchObject({
+      answer: "The legacy answer is grounded.",
+      citations: [legacyResult],
+      artifacts: [],
+    });
+    expect(answer.retrievalTrace).toMatchObject({
+      durationSeconds: expect.any(Number),
+      queries: [
+        {
+          namespace: "default",
+          query: "legacy document answer",
+          referencedChunkCount: 0,
+          resultCount: 0,
+          topScores: [],
+        },
+        {
+          namespace: "notebook-legacy",
+          query: "legacy document answer",
+          referencedChunkCount: 0,
+          resultCount: 1,
+          topScores: [0.9],
+        },
+      ],
+    });
+  });
+
+  it("does not hide a failed namespace query behind an empty namespace result", async () => {
+    const retrievalError = new Error("Legacy namespace query failed.");
+    const retrieval = {
+      query: vi
+        .fn()
+        .mockResolvedValueOnce({
+          results: [],
+          evidenceText: null,
+          referencedChunks: [],
+          namespace: "default",
+          query: "legacy document answer",
+          routerUsed: "workflow_single_step",
+          answerText: null,
+          stopReason: "not_found",
+          failureReason: "No relevant evidence found.",
+        })
+        .mockRejectedValueOnce(retrievalError),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({ query: "legacy document answer" });
+      return makeHarnessRunResult("This should not be used.");
+    });
+
+    await expect(
+      Effect.runPromise(
+        answerQuestionWithRetrieval({
+          question: "What does the legacy document say?",
+          namespace: "notebook-legacy",
+          namespaces: ["default", "notebook-legacy"],
+          sources: [
+            makeSource({
+              title: "legacy.pdf",
+              knowhereDocumentId: "doc_legacy",
+            }),
+          ],
+          excludedSourceIds: [],
+          retrieval,
+          generateAnswer,
+          messages: [],
+        }),
+      ),
+    ).rejects.toThrow();
+    expect(retrieval.query).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ namespace: "default" }),
+    );
+    expect(retrieval.query).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ namespace: "notebook-legacy" }),
+    );
+  });
+
+  it("logs bounded Knowhere query response chunks", async () => {
+    const result = makeRetrievalResult({
+      chunkType: "image",
+      content: `Identity card front image https://blob.example/id.jpg ${"content ".repeat(
+        80,
+      )}`,
+    });
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [result],
+        evidenceText: `Evidence https://blob.example/evidence.jpg ${"evidence ".repeat(
+          80,
+        )}`,
+        referencedChunks: [
+          {
+            chunkId: "chunk_identity_1",
+            documentId: "doc_identity",
+            chunkType: "image",
+            sectionPath: `Assets / images / identity card front ${"summary ".repeat(
+              80,
+            )}`,
+            filePath: "images/id-front.jpg",
+            jobId: "job_1",
+            assetUrl: "https://blob.example/id.jpg",
+          },
+        ],
+        namespace: "notebook-workspace",
+        query: "冯荣洲 身份证 ID card",
+        routerUsed: "workflow_single_step",
+        answerText: `Matched identity card image ${"answer ".repeat(80)}`,
+        stopReason: "answer_done",
+        failureReason: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({
+        query: "冯荣洲 身份证 ID card",
+        targetContent: "image",
+      });
+      return makeHarnessRunResult("Matched identity card image.");
+    });
+
+    await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "请将 冯荣洲 的身份证图片发给我",
+        namespace: "notebook-workspace",
+        sources: [makeSource({ knowhereDocumentId: "doc_identity" })],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+      }),
+    );
+
+    const meta = getLoggerInfoMeta("chat-agent: knowhere query response");
+    const response = meta.response as KnowhereQueryResponseLogMeta;
+    expect(response).toMatchObject({
+      query: "冯荣洲 身份证 ID card",
+      resultCount: 1,
+      referencedChunkCount: 1,
+      results: [
+        {
+          chunkType: "image",
+        },
+      ],
+      referencedChunks: [
+        {
+          chunkType: "image",
+        },
+      ],
+    });
+    expect(response.answerText.length).toBeLessThanOrEqual(203);
+    expect(response.evidenceText.length).toBeLessThanOrEqual(203);
+    expect(response.results[0]?.content.length).toBeLessThanOrEqual(103);
+    expect(response.referencedChunks[0]?.summary.length).toBeLessThanOrEqual(
+      103,
+    );
+    expect(JSON.stringify(meta)).not.toContain("https://blob.example");
+  });
+
+  it("attaches citation descriptions from generated source labels", async () => {
+    const firstResult = makeRetrievalResult({
+      source: {
+        documentId: "doc_1",
+        sourceFileName: "notes.txt",
+        sectionPath: "Revenue",
+      },
+    });
+    const secondResult = makeRetrievalResult({
+      content: "Gross margin improved.",
+      source: {
+        documentId: "doc_2",
+        sourceFileName: "notes.txt",
+        sectionPath: "Margin",
+      },
+    });
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [firstResult, secondResult],
+        evidenceText: "Revenue grew. Gross margin improved.",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "What improved?",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({ query: "What improved?" });
+      return makeHarnessRunResult(
+        "Revenue improved [Source 1: revenue growth]. Margins expanded [Source 2: margin expansion].",
+      );
+    });
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "What improved?",
+        namespace: "notebook-workspace",
+        sources: [makeSource()],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+      }),
+    );
+
+    expect(answer.citations).toEqual([
+      { ...firstResult, description: "revenue growth" },
+      { ...secondResult, description: "margin expansion" },
+    ]);
+  });
+
+  it("uses Notebook source titles instead of generated Knowhere filenames", async () => {
+    const result = makeRetrievalResult({
+      source: {
+        documentId: "doc_tesla",
+        sourceFileName: "document-CFxAaNTRUliEnWOokpI66xfj7JJkad.pdf",
+        sectionPath: "Root",
+      },
+    });
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [result],
+        evidenceText: "Tesla invested in xAI.",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "Tesla xAI investment",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({ query: "Tesla xAI investment" });
+      return makeHarnessRunResult(
+        "Tesla invested in xAI [Source 1: xAI investment].",
+      );
+    });
+    const sources = [
+      makeSource({
+        title: "TSLA-Q4-2025-Update.pdf",
+        knowhereDocumentId: "doc_tesla",
+      }),
+    ];
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "What does the document say about xAI?",
+        namespace: "notebook-workspace",
+        sources,
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+      }),
+    );
+
+    expect(generateAnswer).toHaveBeenCalledWith({
+      question: "What does the document say about xAI?",
+      messages: [],
+      sources,
+      excludedSourceIds: [],
+      searchSources: expect.any(Function),
+    });
+    const expectedResult = {
+      ...result,
+      source: {
+        ...result.source,
+        sourceFileName: "TSLA-Q4-2025-Update.pdf",
+      },
+    };
+    expect(answer.citations).toEqual([
+      { ...expectedResult, description: "xAI investment" },
+    ]);
+  });
+
+  it("passes retrieved image asset URLs to the answer prompt and citations", async () => {
+    const upstreamAssetUrl =
+      "https://knowhere-storage.example/results/job_1/images/image-9-Night%20Rocket%20Launch.jpg?AWSAccessKeyId=test";
+    const result = makeRetrievalResult({
+      chunkType: "image",
+      assetUrl: upstreamAssetUrl,
+      source: {
+        documentId: "doc_spacex",
+        sourceFileName: "document-generated.pdf",
+        sectionPath: "Assets / images / image-9-Night Rocket Launch.jpg",
+      },
+    });
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [result],
+        evidenceText: "A SpaceX rocket launches at night.",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "SpaceX rocket photos",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({
+        query: "SpaceX rocket photos",
+        targetContent: "image",
+        purpose: "Find visual rocket launch chunks.",
+      });
+      return makeHarnessRunResult(`Use this launch photo. ${upstreamAssetUrl}`);
+    });
+    const loadSourceAssetUrls = vi.fn().mockResolvedValue({
+      "images/image-9-Night Rocket Launch.jpg":
+        "https://blob.example/images/image-9-Night%20Rocket%20Launch.jpg",
+    });
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "Show me the SpaceX rocket photos.",
+        namespace: "notebook-workspace",
+        sources: [
+          makeSource({
+            id: "source_spacex",
+            title: "spacex-s1.pdf",
+            knowhereDocumentId: "doc_spacex",
+          }),
+        ],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        loadSourceAssetUrls,
+        messages: [],
+      }),
+    );
+
+    expect(loadSourceAssetUrls).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "source_spacex" }),
+    );
+    expect(retrieval.query).toHaveBeenCalledWith({
+      namespace: "notebook-workspace",
+      query: "SpaceX rocket photos",
+      topK: 8,
+      useAgentic: true,
+      rerank: true,
+      internalRecallK: 30,
+      dataType: 3,
+    });
+    expect(answer.answer).toBe("Use this launch photo.");
+    expect(answer.answer).not.toContain("knowhere-storage.example");
+    expect(answer.citations).toEqual([
+      {
+        ...result,
+        assetUrl:
+          "https://blob.example/images/image-9-Night%20Rocket%20Launch.jpg",
+        source: {
+          ...result.source,
+          sourceFileName: "spacex-s1.pdf",
+        },
+      },
+    ]);
+  });
+
+  it("maps a page-targeted retrieval query to dataType 7", async () => {
+    const pageResult = makeRetrievalResult({
+      content: "CHEUNG Hon-lam Gordon 2835 2147",
+      chunkType: "page",
+      chunkId: "parser_page_1",
+      source: {
+        documentId: "doc_directory",
+        sourceFileName: "directory.pdf",
+        sectionPath: "Page 3",
+      },
+    });
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [pageResult],
+        evidenceText: "Directory evidence.",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "Gordon phone number",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({
+        query: "Gordon phone number",
+        targetContent: "page",
+      });
+      return makeHarnessRunResult("Gordon can be reached at 2835 2147.");
+    });
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "What is Gordon's phone number?",
+        namespace: "notebook-workspace",
+        sources: [
+          makeSource({
+            id: "source_directory",
+            title: "directory.pdf",
+            knowhereDocumentId: "doc_directory",
+          }),
+        ],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+      }),
+    );
+
+    expect(retrieval.query).toHaveBeenCalledWith({
+      namespace: "notebook-workspace",
+      query: "Gordon phone number",
+      topK: 8,
+      useAgentic: true,
+      rerank: true,
+      internalRecallK: 30,
+      dataType: 7,
+    });
+    expect(answer.answer).toBe("Gordon can be reached at 2835 2147.");
+    expect(answer.citations[0]).toMatchObject({
+      chunkId: "parser_page_1",
+      chunkType: "page",
+    });
+  });
+
+  it("emits retrieval progress events per submitted query", async () => {
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [makeRetrievalResult()],
+        evidenceText: "Grounding content from evidence tree",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "What does the document say?",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({ query: "What does the document say?" });
+      await searchSources({ query: "second focused query" });
+      return makeHarnessRunResult("The answer is grounded.");
+    });
+    const progressEvents: unknown[] = [];
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "What does the document say?",
+        namespace: "notebook-workspace",
+        sources: [makeSource()],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+        onProgress: (event) => progressEvents.push(event),
+      }),
+    );
+
+    expect(progressEvents).toEqual([
+      { type: "phase", phase: "preparing" },
+      {
+        type: "retrieval_start",
+        attempt: 1,
+        query: "What does the document say?",
+        namespace: "notebook-workspace",
+      },
+      { type: "retrieval_done", attempt: 1, resultCount: 1, referencedChunkCount: 0 },
+      {
+        type: "retrieval_start",
+        attempt: 2,
+        query: "second focused query",
+        namespace: "notebook-workspace",
+      },
+      { type: "retrieval_done", attempt: 2, resultCount: 1, referencedChunkCount: 0 },
+      { type: "phase", phase: "answering" },
+    ]);
+    expect(answer.answer).toBe("The answer is grounded.");
+  });
+
+  it("hardens citation and artifact asset URLs before returning the answer", async () => {
+    const rawAssetUrl =
+      "https://knowhere-storage.example/results/job_1/images/id-front.jpg?AWSAccessKeyId=test";
+    const hardenedAssetUrl =
+      "https://blob.example/workspaces/workspace_1/chat-assets/source-source_identity/id-front.jpg";
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [
+          makeRetrievalResult({
+            chunkType: "image",
+            assetUrl: rawAssetUrl,
+            source: {
+              documentId: "doc_identity",
+              sourceFileName: "document-generated.pdf",
+              sectionPath: "images/id-front.jpg",
+            },
+          }),
+        ],
+        evidenceText: "Identity image evidence.",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "identity front image",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({
+        query: "identity front image",
+        targetContent: "image",
+      });
+      return {
+        manifest: {
+          text: `Use this image. ${rawAssetUrl}`,
+          citations: [],
+          artifacts: [
+            {
+              type: "image",
+              ref: "asset:r1:result:1",
+              display: true,
+              reason: "Requested identity image",
+            },
+          ],
+          unresolved: [],
+        },
+        trace: {
+          ...makeHarnessRunResult("").trace,
+          finalized: true,
+          ledger: {
+            retrievalCount: 1,
+            evidenceText: ["Identity image evidence."],
+            stopReasons: [],
+            failureReasons: [],
+            decisionTraces: [],
+            chunks: [
+              {
+                ref: "r1:result:1",
+                kind: "result",
+                content: "",
+                contentPreview: "",
+                chunkType: "image",
+                score: 0.9,
+                assetUrl: rawAssetUrl,
+                assetRef: "asset:r1:result:1",
+                source: {
+                  documentId: "doc_identity",
+                  sourceFileName: "document-generated.pdf",
+                  sectionPath: "images/id-front.jpg",
+                },
+              },
+            ],
+            assets: [
+              {
+                ref: "asset:r1:result:1",
+                chunkRef: "r1:result:1",
+                type: "image",
+                assetUrl: rawAssetUrl,
+                label: "document-generated.pdf / id front / image",
+                source: {
+                  documentId: "doc_identity",
+                  sourceFileName: "document-generated.pdf",
+                  sectionPath: "images/id-front.jpg",
+                },
+              },
+            ],
+          },
+        },
+      } satisfies HarnessRunResult;
+    });
+    const hardenMediaAssetUrls = vi.fn(
+      async ({
+        results,
+        artifacts,
+      }: HardenMediaAssetUrlsInput): Promise<{
+        results: RetrievalResult[]
+        artifacts?: ChatArtifactView[]
+      }> => ({
+        results: results.map((result): RetrievalResult => ({
+          ...result,
+          assetUrl:
+            result.assetUrl === rawAssetUrl ? hardenedAssetUrl : result.assetUrl,
+        })),
+        artifacts: artifacts?.map((artifact): ChatArtifactView => ({
+          ...artifact,
+          assetUrl:
+            artifact.assetUrl === rawAssetUrl
+              ? hardenedAssetUrl
+              : artifact.assetUrl,
+          citation: artifact.citation
+            ? {
+                ...artifact.citation,
+                assetUrl:
+                  artifact.citation.assetUrl === rawAssetUrl
+                    ? hardenedAssetUrl
+                    : artifact.citation.assetUrl,
+              }
+            : undefined,
+        })),
+      }),
+    );
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "Show me the identity image.",
+        namespace: "notebook-workspace",
+        sources: [
+          makeSource({
+            id: "source_identity",
+            title: "identity.pdf",
+            knowhereDocumentId: "doc_identity",
+          }),
+        ],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        hardenMediaAssetUrls,
+        messages: [],
+      }),
+    );
+
+    expect(hardenMediaAssetUrls).toHaveBeenCalledWith({
+      results: [
+        expect.objectContaining({
+          assetUrl: rawAssetUrl,
+          source: expect.objectContaining({
+            sourceFileName: "identity.pdf",
+          }),
+        }),
+      ],
+      artifacts: [
+        expect.objectContaining({
+          assetUrl: rawAssetUrl,
+          citation: expect.objectContaining({ assetUrl: rawAssetUrl }),
+        }),
+      ],
+    });
+    expect(answer.answer).toBe("Use this image.");
+    expect(answer.answer).not.toContain("knowhere-storage.example");
+    expect(answer.citations.map((citation) => citation.assetUrl)).toEqual([
+      hardenedAssetUrl,
+    ]);
+    expect(answer.artifacts?.map((artifact) => artifact.assetUrl)).toEqual([
+      hardenedAssetUrl,
+    ]);
+    expect(answer.artifacts?.[0]?.citation?.assetUrl).toBe(hardenedAssetUrl);
+  });
+
+  it("returns only harness-selected artifacts when retrieval has extra media candidates", async () => {
+    const frontAssetUrl = "https://blob.example/images/id-front.jpg";
+    const backAssetUrl = "https://blob.example/images/id-back.jpg";
+    const extraAssetUrl = "https://blob.example/images/extra.jpg";
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [
+          makeRetrievalResult({
+            chunkType: "image",
+            assetUrl: frontAssetUrl,
+            source: {
+              documentId: "doc_identity",
+              sourceFileName: "document-generated.pdf",
+              sectionPath: "身份证正面",
+            },
+          }),
+          makeRetrievalResult({
+            chunkType: "image",
+            assetUrl: backAssetUrl,
+            source: {
+              documentId: "doc_identity",
+              sourceFileName: "document-generated.pdf",
+              sectionPath: "身份证反面",
+            },
+          }),
+          makeRetrievalResult({
+            chunkType: "image",
+            assetUrl: extraAssetUrl,
+            source: {
+              documentId: "doc_identity",
+              sourceFileName: "document-generated.pdf",
+              sectionPath: "营业执照",
+            },
+          }),
+        ],
+        evidenceText: "Identity image candidates.",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "冯荣洲 身份证 图片",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({
+        query: "冯荣洲 身份证 图片",
+        targetContent: "image",
+      });
+      const harnessResult: HarnessRunResult = {
+        manifest: {
+          text: "已找到相关身份证图片，见下方图片。",
+          citations: [],
+          artifacts: [
+            {
+              type: "image",
+              ref: "asset:r1:result:1",
+              display: true,
+              reason: "身份证正面",
+            },
+            {
+              type: "image",
+              ref: "asset:r1:result:2",
+              display: true,
+              reason: "身份证反面",
+            },
+            {
+              type: "image",
+              ref: "asset:r1:result:3",
+              display: true,
+              reason: "多余候选图片",
+            },
+          ],
+          unresolved: [],
+        },
+        trace: {
+          ledger: {
+            retrievalCount: 1,
+            evidenceText: ["Identity image candidates."],
+            stopReasons: [],
+            failureReasons: [],
+            decisionTraces: [],
+            chunks: [
+              {
+                ref: "r1:result:1",
+                kind: "result",
+                content: "",
+                contentPreview: "",
+                chunkType: "image",
+                score: 0.9,
+                assetUrl: frontAssetUrl,
+                assetRef: "asset:r1:result:1",
+                source: {
+                  documentId: "doc_identity",
+                  sourceFileName: "document-generated.pdf",
+                  sectionPath: "身份证正面",
+                },
+              },
+              {
+                ref: "r1:result:2",
+                kind: "result",
+                content: "",
+                contentPreview: "",
+                chunkType: "image",
+                score: 0.88,
+                assetUrl: backAssetUrl,
+                assetRef: "asset:r1:result:2",
+                source: {
+                  documentId: "doc_identity",
+                  sourceFileName: "document-generated.pdf",
+                  sectionPath: "身份证反面",
+                },
+              },
+              {
+                ref: "r1:result:3",
+                kind: "result",
+                content: "",
+                contentPreview: "",
+                chunkType: "image",
+                score: 0.7,
+                assetUrl: extraAssetUrl,
+                assetRef: "asset:r1:result:3",
+                source: {
+                  documentId: "doc_identity",
+                  sourceFileName: "document-generated.pdf",
+                  sectionPath: "营业执照",
+                },
+              },
+            ],
+            assets: [
+              {
+                ref: "asset:r1:result:1",
+                chunkRef: "r1:result:1",
+                type: "image",
+                assetUrl: frontAssetUrl,
+                label: "document-generated.pdf / 身份证正面 / image",
+                source: {
+                  documentId: "doc_identity",
+                  sourceFileName: "document-generated.pdf",
+                  sectionPath: "身份证正面",
+                },
+              },
+              {
+                ref: "asset:r1:result:2",
+                chunkRef: "r1:result:2",
+                type: "image",
+                assetUrl: backAssetUrl,
+                label: "document-generated.pdf / 身份证反面 / image",
+                source: {
+                  documentId: "doc_identity",
+                  sourceFileName: "document-generated.pdf",
+                  sectionPath: "身份证反面",
+                },
+              },
+              {
+                ref: "asset:r1:result:3",
+                chunkRef: "r1:result:3",
+                type: "image",
+                assetUrl: extraAssetUrl,
+                label: "document-generated.pdf / 营业执照 / image",
+                source: {
+                  documentId: "doc_identity",
+                  sourceFileName: "document-generated.pdf",
+                  sectionPath: "营业执照",
+                },
+              },
+            ],
+          },
+          validationErrors: [],
+          revisionsUsed: 0,
+          intent: {
+            task: "show_media",
+            dependsOnPreviousTurn: false,
+            retrievalNeeded: "yes",
+            targetModalities: ["image"],
+            constraints: { desiredCount: 2, maxCount: 2 },
+            groundingPolicy: "must_use_sources",
+          },
+          contextPolicy: {
+            carryHistory: "none",
+            reason: "The current turn is self-contained.",
+            activePriorTurnIds: [],
+          },
+          finalized: true,
+          priorTurnReads: [],
+          toolCalls: [],
+        },
+      };
+      return harnessResult;
+    });
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "请只返回冯荣洲的 2 张身份证图片",
+        namespace: "notebook-workspace",
+        sources: [
+          makeSource({
+            title: "商务标文件.pdf",
+            knowhereDocumentId: "doc_identity",
+          }),
+        ],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+      }),
+    );
+
+    expect(answer.artifacts?.map((artifact) => artifact.assetUrl)).toEqual([
+      frontAssetUrl,
+      backAssetUrl,
+    ]);
+    expect(answer.artifacts?.map((artifact) => artifact.citation?.source)).toEqual(
+      [
+        {
+          documentId: "doc_identity",
+          sourceFileName: "商务标文件.pdf",
+          sectionPath: "身份证正面",
+        },
+        {
+          documentId: "doc_identity",
+          sourceFileName: "商务标文件.pdf",
+          sectionPath: "身份证反面",
+        },
+      ],
+    );
+    expect(answer.citations.map((citation) => citation.assetUrl)).toEqual([
+      frontAssetUrl,
+      backAssetUrl,
+    ]);
+  });
+
+  it("returns a safe fallback when the harness still has validation errors", async () => {
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [makeRetrievalResult()],
+        evidenceText: "Grounding content",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "What changed?",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({ query: "What changed?" });
+      return {
+        ...makeHarnessRunResult("This invalid answer should not ship."),
+        trace: {
+          ...makeHarnessRunResult("").trace,
+          finalized: false,
+          validationErrors: [
+            "Agent must call finalize to produce the output manifest.",
+          ],
+        },
+      };
+    });
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "What changed?",
+        namespace: "notebook-workspace",
+        sources: [makeSource()],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+      }),
+    );
+
+    expect(answer).toEqual({
+      answer:
+        "I couldn't safely finish that response because the agent output did not pass Notebook's validation checks. Please try again.",
+      citations: [],
+      artifacts: [],
+    });
+  });
+
+  it("keeps image-only harness output instead of treating it as no results", async () => {
+    const assetUrl = "https://blob.example/images/diagram.png";
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [
+          makeRetrievalResult({
+            content: "",
+            chunkType: "image",
+            assetUrl,
+            source: {
+              documentId: "doc_diagram",
+              sourceFileName: "generated.pdf",
+              sectionPath: "Diagram",
+            },
+          }),
+        ],
+        evidenceText: "Diagram candidate.",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "diagram",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({ query: "diagram", targetContent: "image" });
+      return {
+        manifest: {
+          text: "",
+          citations: [],
+          artifacts: [
+            {
+              type: "image",
+              ref: "asset:r1:result:1",
+              display: true,
+              reason: "Requested diagram",
+            },
+          ],
+          unresolved: [],
+        },
+        trace: {
+          ...makeHarnessRunResult("").trace,
+          finalized: true,
+          priorTurnReads: [],
+          toolCalls: [],
+          ledger: {
+            retrievalCount: 1,
+            evidenceText: ["Diagram candidate."],
+            stopReasons: [],
+            failureReasons: [],
+            decisionTraces: [],
+            chunks: [
+              {
+                ref: "r1:result:1",
+                kind: "result",
+                content: "",
+                contentPreview: "",
+                chunkType: "image",
+                score: 0.9,
+                assetUrl,
+                assetRef: "asset:r1:result:1",
+                source: {
+                  documentId: "doc_diagram",
+                  sourceFileName: "generated.pdf",
+                  sectionPath: "Diagram",
+                },
+              },
+            ],
+            assets: [
+              {
+                ref: "asset:r1:result:1",
+                chunkRef: "r1:result:1",
+                type: "image",
+                assetUrl,
+                label: "generated.pdf / Diagram / image",
+                source: {
+                  documentId: "doc_diagram",
+                  sourceFileName: "generated.pdf",
+                  sectionPath: "Diagram",
+                },
+              },
+            ],
+          },
+        },
+      } satisfies HarnessRunResult;
+    });
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "Show me the diagram.",
+        namespace: "notebook-workspace",
+        sources: [
+          makeSource({ title: "diagram.pdf", knowhereDocumentId: "doc_diagram" }),
+        ],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+      }),
+    );
+
+    expect(answer.answer).not.toBe("I couldn't find that in your sources.");
+    expect(answer.artifacts?.map((artifact) => artifact.assetUrl)).toEqual([
+      assetUrl,
+    ]);
+    expect(answer.citations.map((citation) => citation.assetUrl)).toEqual([
+      assetUrl,
+    ]);
+  });
+
+  it("returns source-backed derived table artifacts from the harness manifest", async () => {
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [
+          makeRetrievalResult({
+            content: "Plan A costs $10M and takes 6 months.",
+            source: {
+              documentId: "doc_plan_a",
+              sourceFileName: "plan-a.pdf",
+              sectionPath: "Cost",
+            },
+          }),
+          makeRetrievalResult({
+            content: "Plan B costs $8M and takes 9 months.",
+            source: {
+              documentId: "doc_plan_b",
+              sourceFileName: "plan-b.pdf",
+              sectionPath: "Cost",
+            },
+          }),
+        ],
+        evidenceText: "Plan comparison evidence.",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "compare plan costs timelines",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({ query: "compare plan costs timelines" });
+      return {
+        manifest: {
+          text: "I organized the comparison into a table.",
+          citations: [],
+          artifacts: [
+            {
+              type: "derived_table",
+              ref: "derived:table:plans",
+              title: "Plan comparison",
+              columns: ["Plan", "Cost", "Timeline"],
+              rows: [
+                ["Plan A", "$10M", "6 months"],
+                ["Plan B", "$8M", "9 months"],
+              ],
+              sourceRefs: ["r1:result:1", "r1:result:2"],
+              display: true,
+              reason: "The user asked for a comparison table.",
+            },
+          ],
+          unresolved: [],
+        },
+        trace: {
+          ...makeHarnessRunResult("").trace,
+          finalized: true,
+          ledger: {
+            retrievalCount: 1,
+            evidenceText: ["Plan comparison evidence."],
+            stopReasons: [],
+            failureReasons: [],
+            decisionTraces: [],
+            chunks: [
+              {
+                ref: "r1:result:1",
+                kind: "result",
+                content: "Plan A costs $10M and takes 6 months.",
+                contentPreview: "Plan A costs $10M and takes 6 months.",
+                chunkType: "text",
+                score: 0.9,
+                source: {
+                  documentId: "doc_plan_a",
+                  sourceFileName: "plan-a.pdf",
+                  sectionPath: "Cost",
+                },
+              },
+              {
+                ref: "r1:result:2",
+                kind: "result",
+                content: "Plan B costs $8M and takes 9 months.",
+                contentPreview: "Plan B costs $8M and takes 9 months.",
+                chunkType: "text",
+                score: 0.88,
+                source: {
+                  documentId: "doc_plan_b",
+                  sourceFileName: "plan-b.pdf",
+                  sectionPath: "Cost",
+                },
+              },
+            ],
+            assets: [],
+          },
+        },
+      } satisfies HarnessRunResult;
+    });
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "Compare the plans in a table.",
+        namespace: "notebook-workspace",
+        sources: [
+          makeSource({ title: "Plan A.pdf", knowhereDocumentId: "doc_plan_a" }),
+          makeSource({
+            id: "source_plan_b",
+            title: "Plan B.pdf",
+            knowhereDocumentId: "doc_plan_b",
+          }),
+        ],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+      }),
+    );
+
+    expect(answer.artifacts).toEqual([
+      {
+        type: "derived_table",
+        ref: "derived:table:plans",
+        title: "Plan comparison",
+        columns: ["Plan", "Cost", "Timeline"],
+        rows: [
+          ["Plan A", "$10M", "6 months"],
+          ["Plan B", "$8M", "9 months"],
+        ],
+        sourceRefs: ["r1:result:1", "r1:result:2"],
+        display: true,
+        reason: "The user asked for a comparison table.",
+      },
+    ]);
+    expect(answer.citations.map((citation) => citation.source.sourceFileName)).toEqual(
+      ["Plan A.pdf", "Plan B.pdf"],
+    );
+  });
+
+  it("turns retrieved evidence image filenames into image citations", async () => {
+    const result = makeRetrievalResult({
+      content: "This section contains identity proof attachments.",
+      source: {
+        documentId: "doc_identity",
+        sourceFileName: "document-generated.pdf",
+        sectionPath: "二、法定代表人身份证明",
+      },
+    });
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [result],
+        evidenceText:
+          "[image-6-中华人民共和国居民身份证.jpg]\n[image-7-中国居民身份证.jpg]",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "公民身份证明 图片",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({
+        query: "公民身份证明 图片",
+        targetContent: "image",
+      });
+      return makeHarnessRunResult("这里是相关身份证明图片。");
+    });
+    const loadSourceAssetUrls = vi.fn().mockResolvedValue({
+      "images/image-6-中华人民共和国居民身份证.jpg":
+        "https://blob.example/images/image-6-id-front.jpg",
+      "images/image-7-中国居民身份证.jpg":
+        "https://blob.example/images/image-7-id-back.jpg",
+    });
+    const sources = [
+      makeSource({
+        id: "source_identity",
+        title: "商务标文件.pdf",
+        knowhereDocumentId: "doc_identity",
+      }),
+    ];
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "请发送几张关于公民身份的图片给我",
+        namespace: "notebook-workspace",
+        sources,
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        loadSourceAssetUrls,
+        messages: [],
+      }),
+    );
+
+    expect(generateAnswer).toHaveBeenCalledWith({
+      question: "请发送几张关于公民身份的图片给我",
+      messages: [],
+      sources,
+      excludedSourceIds: [],
+      searchSources: expect.any(Function),
+    });
+    expect(retrieval.query).toHaveBeenCalledWith({
+      namespace: "notebook-workspace",
+      query: "公民身份证明 图片",
+      topK: 8,
+      useAgentic: true,
+      rerank: true,
+      internalRecallK: 30,
+      dataType: 3,
+    });
+    const imageCitations = answer.citations.filter(
+      (citation) => citation.assetUrl,
+    )
+    expect(imageCitations.map((citation) => citation.assetUrl)).toEqual([
+      "https://blob.example/images/image-6-id-front.jpg",
+      "https://blob.example/images/image-7-id-back.jpg",
+    ]);
+    expect(imageCitations.map((citation) => citation.chunkType)).toEqual([
+      "image",
+      "image",
+    ]);
+  });
+
+  it("returns the agent answer without citations when retrieval has no results", async () => {
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [],
+        evidenceText: "",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "Missing fact?",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({ query: "Missing fact?" });
+      return makeHarnessRunResult("I couldn't find that in your sources.");
+    });
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "Missing fact?",
+        namespace: "notebook-workspace",
+        sources: [makeSource()],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+      }),
+    );
+
+    expect(answer).toMatchObject({
+      answer: "I couldn't find that in your sources.",
+      citations: [],
+      artifacts: [],
+    });
+    expect(answer.retrievalTrace).toMatchObject({
+      durationSeconds: expect.any(Number),
+      queries: [
+        {
+          namespace: "notebook-workspace",
+          query: "Missing fact?",
+          referencedChunkCount: 0,
+          resultCount: 0,
+          topScores: [],
+        },
+      ],
+    });
+  });
+
+  it("lets the agent issue contextual retrieval queries while answering the original question", async () => {
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [makeRetrievalResult()],
+        evidenceText: "Energy storage deployments grew significantly.",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "Tesla Q4 2025 Update energy generation and storage deployments",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({
+        query: "Tesla Q4 2025 Update energy generation and storage deployments",
+      });
+      return makeHarnessRunResult("Energy storage grew.");
+    });
+    const messages = [
+      {
+        role: "user" as const,
+        content: "Tell me about the Tesla Q4 2025 Update.",
+      },
+      {
+        role: "assistant" as const,
+        content: "It summarizes Tesla's Q4 2025 financials.",
+      },
+    ];
+
+    await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "What about energy storage in this document?",
+        namespace: "notebook-workspace",
+        sources: [makeSource({ title: "TSLA-Q4-2025-Update.pdf" })],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages,
+      }),
+    );
+
+    expect(retrieval.query).toHaveBeenCalledWith({
+      namespace: "notebook-workspace",
+      query: "Tesla Q4 2025 Update energy generation and storage deployments",
+      topK: 8,
+      useAgentic: true,
+      rerank: true,
+      internalRecallK: 30,
+      dataType: 1,
+    });
+    expect(generateAnswer).toHaveBeenCalledWith({
+      question: "What about energy storage in this document?",
+      messages,
+      sources: [makeSource({ title: "TSLA-Q4-2025-Update.pdf" })],
+      excludedSourceIds: [],
+      searchSources: expect.any(Function),
+    });
+  });
+
+  it("collects a retrieval trace entry per issued query", async () => {
+    const retrieval = {
+      query: vi
+        .fn()
+        .mockImplementation(async ({ query }: { readonly query: string }) => ({
+          results: [],
+          evidenceText: null,
+          referencedChunks: [],
+          namespace: "notebook-workspace",
+          query,
+          routerUsed: "workflow_single_step",
+          answerText: null,
+        })),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({ query: "query variant one" });
+      await searchSources({ query: "query variant two" });
+      return makeHarnessRunResult("Answer.");
+    });
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "Question",
+        namespace: "notebook-workspace",
+        sources: [makeSource()],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+      }),
+    );
+
+    expect(answer.retrievalTrace?.queries).toEqual([
+      {
+        namespace: "notebook-workspace",
+        query: "query variant one",
+        referencedChunkCount: 0,
+        resultCount: 0,
+        topScores: [],
+      },
+      {
+        namespace: "notebook-workspace",
+        query: "query variant two",
+        referencedChunkCount: 0,
+        resultCount: 0,
+        topScores: [],
+      },
+    ]);
+  });
+
+  it("applies retrieval overrides over hardcoded and harness-chosen values", async () => {
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [makeRetrievalResult()],
+        evidenceText: "Evidence.",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "any",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({ query: "query", topK: 12 });
+      return makeHarnessRunResult("Answer.");
+    });
+
+    await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "Question",
+        namespace: "notebook-workspace",
+        sources: [makeSource()],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+        retrievalOverrides: {
+          rerank: false,
+          internalRecallK: 45,
+          topK: 4,
+        },
+      }),
+    );
+
+    expect(retrieval.query).toHaveBeenCalledWith(
+      expect.objectContaining({
+        rerank: false,
+        internalRecallK: 45,
+        topK: 4,
+      }),
+    );
+  });
+
+  it("does not append chat history to Knowhere tool queries", async () => {
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [makeRetrievalResult()],
+        evidenceText: "Energy storage deployments grew.",
+        referencedChunks: [],
+        namespace: "notebook-workspace",
+        query: "Tesla energy storage deployments",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({ query: "Tesla energy storage deployments" });
+      return makeHarnessRunResult("Energy storage grew.");
+    });
+    const messages = [
+      {
+        role: "user" as const,
+        content: "do-not-append-this-history-to-query",
+      },
+      {
+        role: "assistant" as const,
+        content: "This older answer should not be concatenated into retrieval.",
+      },
+    ];
+
+    await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "What about it?",
+        namespace: "notebook-workspace",
+        sources: [makeSource()],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages,
+      }),
+    );
+
+    const queryInput = retrieval.query.mock.calls[0]?.[0];
+    expect(queryInput).toMatchObject({
+      namespace: "notebook-workspace",
+      query: "Tesla energy storage deployments",
+      topK: 8,
+      useAgentic: true,
+      rerank: true,
+      internalRecallK: 30,
+      dataType: 1,
+    });
+    expect(JSON.stringify(queryInput)).not.toContain(
+      "do-not-append-this-history-to-query",
+    );
+  });
+
+  it("uses structured referenced chunks from RetrievalQueryResponse as citations", async () => {
+    const retrieval = {
+      query: vi.fn().mockResolvedValue({
+        results: [],
+        evidenceText: "A launch image was referenced.",
+        referencedChunks: [
+          {
+            chunkId: "chunk_1",
+            documentId: "doc_spacex",
+            chunkType: "image",
+            sectionPath: "Assets / images / launch.jpg",
+            filePath: "images/launch.jpg",
+            jobId: "job_1",
+            assetUrl: "https://blob.example/images/launch.jpg",
+          },
+        ],
+        namespace: "notebook-workspace",
+        query: "SpaceX launch image",
+        routerUsed: "workflow_single_step",
+        answerText: null,
+      }),
+    };
+    const generateAnswer = vi.fn(async ({ searchSources }) => {
+      await searchSources({
+        query: "SpaceX launch image",
+        targetContent: "image",
+      });
+      return makeHarnessRunResult("Here is the launch image.");
+    });
+
+    const answer = await Effect.runPromise(
+      answerQuestionWithRetrieval({
+        question: "Show me the launch image.",
+        namespace: "notebook-workspace",
+        sources: [
+          makeSource({
+            title: "spacex-s1.pdf",
+            knowhereDocumentId: "doc_spacex",
+          }),
+        ],
+        excludedSourceIds: [],
+        retrieval,
+        generateAnswer,
+        messages: [],
+      }),
+    );
+
+    expect(answer.citations).toEqual([
+      {
+        content: "",
+        chunkType: "image",
+        score: null,
+        chunkId: "chunk_1",
+        assetUrl: "https://blob.example/images/launch.jpg",
+        source: {
+          documentId: "doc_spacex",
+          sourceFileName: "spacex-s1.pdf",
+          sectionPath: "Assets / images / launch.jpg",
+        },
+      },
+    ]);
+  });
+});
+
+describe("generateAgenticOutputManifest", () => {
+  it("runs the outer harness workflow around Knowhere retrieval", async () => {
+    process.env.AI_GATEWAY_API_KEY = "test_gateway_key";
+    let capturedGenerateInput:
+      | Parameters<ToolLoopAgent["generate"]>[0]
+      | undefined;
+    vi.spyOn(ToolLoopAgent.prototype, "generate").mockImplementation(
+      async function mockGenerate(
+        this: ToolLoopAgent,
+        input: Parameters<ToolLoopAgent["generate"]>[0],
+      ): ReturnType<ToolLoopAgent["generate"]> {
+        capturedGenerateInput = input;
+        const tools = this.tools as unknown as Record<
+          string,
+          { execute: (input: unknown) => Promise<unknown> }
+        >;
+
+        await tools.declareIntent?.execute({
+          task: "show_media",
+          dependsOnPreviousTurn: false,
+          retrievalNeeded: "yes",
+          targetModalities: ["text", "image"],
+          constraints: { desiredCount: 2, maxCount: 2 },
+          groundingPolicy: "must_use_sources",
+        });
+        await tools.setContextPolicy?.execute({
+          carryHistory: "none",
+          reason: "The current request is self-contained.",
+          activePriorTurnIds: [],
+        });
+        await tools.retrieve?.execute({
+          query: "冯荣洲 身份证 图片",
+          modalities: ["text", "image"],
+          topK: 2,
+          purpose: "Find exactly the requested identity-card images.",
+        });
+        await tools.finalize?.execute({
+          text: "已找到相关身份证图片，见下方图片。",
+          citations: [
+            {
+              ref: "r1:result:1",
+              label: "商务标文件.pdf / 身份证正面",
+              source: {
+                documentId: "doc_identity",
+                sourceFileName: "商务标文件.pdf",
+                sectionPath: "身份证正面",
+              },
+            },
+          ],
+          artifacts: [
+            {
+              type: "image",
+              ref: "asset:r1:result:1",
+              display: true,
+              reason: "身份证正面",
+            },
+          ],
+          unresolved: [],
+        });
+
+        return {
+          text: "This freeform text should be ignored.",
+          steps: [
+            { stepNumber: 1, usage: { inputTokens: 120, outputTokens: 40 } },
+          ],
+          totalUsage: { inputTokens: 120, outputTokens: 40 },
+        } as Awaited<ReturnType<ToolLoopAgent["generate"]>>;
+      },
+    );
+    const searchSources = vi.fn().mockResolvedValue({
+      results: [
+        makeRetrievalResult({
+          chunkType: "image",
+          assetUrl: "https://blob.example/images/id-front.jpg",
+          source: {
+            documentId: "doc_identity",
+            sourceFileName: "document-generated.pdf",
+            sectionPath: "身份证正面",
+          },
+        }),
+      ],
+      evidenceText: "Identity image evidence.",
+      referencedChunks: [],
+      namespace: "notebook-workspace",
+      query: "冯荣洲 身份证 图片",
+      routerUsed: "workflow_single_step",
+      chunkReferences: [],
+      answerText: null,
+      stopReason: "answer_done",
+      failureReason: null,
+    });
+
+    const result = await generateAgenticOutputManifest({
+      question: "请只返回冯荣洲的 2 张身份证图片",
+      messages: [
+        {
+          role: "assistant",
+          content: "上一轮是完全不同的税务问题。",
+          citations: [
+            {
+              chunkType: "text",
+              score: 0.9,
+              source: {
+                documentId: "doc_tax",
+                sourceFileName: "tax.pdf",
+                sectionPath: "deadline",
+              },
+            },
+          ],
+        },
+      ],
+      sources: [
+        makeSource({
+          title: "商务标文件.pdf",
+          knowhereDocumentId: "doc_identity",
+        }),
+      ],
+      excludedSourceIds: [],
+      searchSources,
+    });
+
+    expect(result.manifest.text).toBe("已找到相关身份证图片，见下方图片。");
+    expect(result.trace.intent).toMatchObject({
+      task: "show_media",
+      constraints: { desiredCount: 2, maxCount: 2 },
+    });
+    expect(result.trace.contextPolicy).toMatchObject({
+      carryHistory: "none",
+    });
+    expect(result.trace.validationErrors).toEqual([]);
+    expect(result.trace.llmCallCount).toBe(1);
+    expect(result.trace.inputTokens).toBe(120);
+    expect(result.trace.outputTokens).toBe(40);
+    expect(searchSources).toHaveBeenCalledWith({
+      query: "冯荣洲 身份证 图片",
+      targetContent: "text_image",
+      purpose: "Find exactly the requested identity-card images.",
+      topK: 2,
+      signalPaths: undefined,
+      filterMode: undefined,
+      threshold: undefined,
+    });
+    expect(JSON.stringify(capturedGenerateInput)).toContain("Recent turn index");
+    expect(JSON.stringify(capturedGenerateInput)).toContain("tax.pdf / deadline");
+  });
+
+  it("self-corrects an over-budget manifest via a validation-feedback revision", async () => {
+    process.env.AI_GATEWAY_API_KEY = "test_gateway_key";
+    let generateCallCount = 0;
+    vi.spyOn(ToolLoopAgent.prototype, "generate").mockImplementation(
+      async function mockGenerate(
+        this: ToolLoopAgent,
+      ): ReturnType<ToolLoopAgent["generate"]> {
+        generateCallCount += 1;
+        const tools = this.tools as unknown as Record<
+          string,
+          { execute: (input: unknown) => Promise<unknown> }
+        >;
+
+        if (generateCallCount === 1) {
+          await tools.declareIntent?.execute({
+            task: "show_media",
+            dependsOnPreviousTurn: false,
+            retrievalNeeded: "yes",
+            targetModalities: ["image"],
+            constraints: { desiredCount: 2, maxCount: 2 },
+            groundingPolicy: "must_use_sources",
+          });
+          await tools.setContextPolicy?.execute({
+            carryHistory: "none",
+            reason: "Self-contained request.",
+            activePriorTurnIds: [],
+          });
+          await tools.retrieve?.execute({
+            query: "身份证 图片",
+            modalities: ["image"],
+            topK: 3,
+            purpose: "Find requested identity images.",
+          });
+          await tools.finalize?.execute({
+            text: "见下方图片。",
+            citations: [{ ref: "r1:result:1", label: "id" }],
+            artifacts: [1, 2, 3].map((index) => ({
+              type: "image",
+              ref: `asset:r1:result:${index}`,
+              display: true,
+              reason: "candidate",
+            })),
+            unresolved: [],
+          });
+        } else {
+          await tools.finalize?.execute({
+            text: "见下方图片。",
+            citations: [{ ref: "r1:result:1", label: "id" }],
+            artifacts: [1, 2].map((index) => ({
+              type: "image",
+              ref: `asset:r1:result:${index}`,
+              display: true,
+              reason: "selected",
+            })),
+            unresolved: [],
+          });
+        }
+
+        return {
+          text: "ignored",
+          response: { messages: [] },
+          steps: [
+            { stepNumber: 1, usage: { inputTokens: 100, outputTokens: 30 } },
+          ],
+          totalUsage: { inputTokens: 100, outputTokens: 30 },
+        } as unknown as Awaited<ReturnType<ToolLoopAgent["generate"]>>;
+      },
+    );
+
+    const searchSources = vi.fn().mockResolvedValue({
+      results: [1, 2, 3].map((index) =>
+        makeRetrievalResult({
+          chunkType: "image",
+          assetUrl: `https://blob.example/images/id-${index}.jpg`,
+          source: {
+            documentId: "doc_identity",
+            sourceFileName: "ids.pdf",
+            sectionPath: `身份证 ${index}`,
+          },
+        }),
+      ),
+      evidenceText: "Identity image evidence.",
+      referencedChunks: [],
+      namespace: "notebook-workspace",
+      query: "身份证 图片",
+      routerUsed: "workflow_single_step",
+      answerText: null,
+      stopReason: "answer_done",
+      failureReason: null,
+    });
+
+    const result = await generateAgenticOutputManifest({
+      question: "只要 2 张身份证图片",
+      messages: [],
+      sources: [
+        makeSource({ title: "ids.pdf", knowhereDocumentId: "doc_identity" }),
+      ],
+      excludedSourceIds: [],
+      searchSources,
+    });
+
+    expect(generateCallCount).toBe(2);
+    expect(result.trace.revisionsUsed).toBe(1);
+    expect(result.trace.validationErrors).toEqual([]);
+    expect(result.trace.llmCallCount).toBe(2);
+    expect(result.trace.inputTokens).toBe(200);
+    expect(result.trace.outputTokens).toBe(60);
+    expect(
+      result.manifest.artifacts.filter((artifact) => artifact.display).length,
+    ).toBe(2);
+  });
+});
+
+describe("parseChatRequestBody", () => {
+  it("accepts a trimmed message, optional thread id, and string source exclusions", () => {
+    expect(
+      parseChatRequestBody({
+        message: "  What changed?  ",
+        threadId: "thread_1",
+        excludedSourceIds: ["source_1", 7, "source_2"],
+      }),
+    ).toEqual({
+      ok: true,
+      value: {
+        question: "What changed?",
+        threadId: "thread_1",
+        excludedSourceIds: ["source_1", "source_2"],
+      },
+    });
+  });
+
+  it("rejects empty questions before retrieval or model calls", () => {
+    expect(parseChatRequestBody({ message: "   " })).toEqual({
+      ok: false,
+      message: "Enter a question before sending.",
+      status: 400,
+    });
+  });
+});
+
+function makeRetrievalResult(
+  overrides: Partial<RetrievalResult> = {},
+): RetrievalResult {
+  return {
+    content: "Grounding content",
+    chunkType: "text",
+    score: 0.9,
+    source: {
+      documentId: "doc_included",
+      sourceFileName: "notes.txt",
+      sectionPath: "Intro",
+    },
+    ...overrides,
+  };
+}
+
+function makeSource(overrides: Partial<Source> = {}): Source {
+  return {
+    id: "source_1",
+    workspaceId: "workspace_1",
+    title: "notes.txt",
+    mimeType: "text/plain",
+    sizeBytes: 100,
+    status: "ready",
+    failureReason: null,
+    knowhereJobId: "job_123",
+    knowhereDocumentId: "doc_included",
+    stagedBlobPathname: null,
+    stagedBlobUrl: null,
+    originalBlobPathname: null,
+    originalBlobUrl: null,
+    createdAt: new Date("2026-05-06T00:00:00Z"),
+    updatedAt: new Date("2026-05-06T00:00:00Z"),
+    deletedAt: null,
+    ...overrides,
+  };
+}
+
+function makeHarnessRunResult(text: string): HarnessRunResult {
+  return {
+    manifest: {
+      text,
+      citations: [],
+      artifacts: [],
+      unresolved: [],
+    },
+    trace: {
+      ledger: {
+        retrievalCount: 0,
+        chunks: [],
+        assets: [],
+        evidenceText: [],
+        stopReasons: [],
+        failureReasons: [],
+        decisionTraces: [],
+      },
+      finalized: true,
+      priorTurnReads: [],
+      toolCalls: [],
+      validationErrors: [],
+      revisionsUsed: 0,
+    },
+  };
+}
+
+type KnowhereQueryResponseLogMeta = {
+  readonly query: string
+  readonly resultCount: number
+  readonly referencedChunkCount: number
+  readonly answerText: string
+  readonly evidenceText: string
+  readonly results: readonly {
+    readonly chunkType: string
+    readonly content: string
+  }[]
+  readonly referencedChunks: readonly {
+    readonly chunkType: string
+    readonly summary: string
+  }[]
+}
+
+function getLoggerInfoMeta(message: string): Record<string, unknown> {
+  const calls = loggerMock.info.mock.calls as unknown as readonly (readonly [
+    string,
+    Record<string, unknown> | undefined,
+  ])[]
+  const call = calls.findLast(([currentMessage]) => currentMessage === message)
+  expect(call).toBeDefined()
+  const meta = call?.[1]
+  expect(meta).toBeDefined()
+  return meta ?? {}
+}
