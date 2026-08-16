@@ -28,7 +28,16 @@ copySource() {
   mkdir -p "$targetPath"
 
   if git -C "$sourcePath" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    git -C "$sourcePath" archive --format=tar "$sourceRef" | tar -xf - -C "$targetPath"
+    gitRepoRoot="$(git -C "$sourcePath" rev-parse --show-toplevel)"
+    gitRelPath="$(git -C "$sourcePath" rev-parse --show-prefix)"
+    if [ -n "$gitRelPath" ]; then
+      # The source is a subdirectory of a larger repository (this monorepo):
+      # archive only that subtree and strip the leading path component.
+      git -C "$gitRepoRoot" archive --format=tar "$sourceRef" -- "${gitRelPath%/}" \
+        | tar -xf - --strip-components=1 -C "$targetPath"
+    else
+      git -C "$sourcePath" archive --format=tar "$sourceRef" | tar -xf - -C "$targetPath"
+    fi
     return
   fi
 

@@ -57,7 +57,7 @@ ARG NEXT_PUBLIC_API_URL=http://127.0.0.1:5005/api
 ARG NEXT_PUBLIC_AUTH_BASE_URL=/api/auth
 ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-COPY .build/sources/ziru-dashboard ./
+COPY .build/sources/admin ./
 
 RUN BETTER_AUTH_SECRET=build-validation-only-auth-secret-32-chars \
   BETTER_AUTH_URL=http://localhost:3000 \
