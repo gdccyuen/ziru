@@ -9,7 +9,7 @@ export const appMetadata: Metadata = {
       {
         url: "/images/ziru/logo-icon.png",
         type: "image/png",
-        sizes: "92x84",
+        sizes: "256x256",
       },
     ],
   },

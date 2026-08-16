@@ -78,6 +78,11 @@
 - [x] Upstream workflows disabled: `admin/.github/workflows/deploy.yml.disabled`,
       `deploy/.github/workflows/publish-image.yml.disabled`.
 - [x] Placeholders replaced with `gdccyuen/ziru` (CITATION.cff, issue templates).
+- [x] Logo replaced: `brand/ziru-logo.png` (master) resized into
+      `admin/public/images/ziru/{logo,logo-icon,logo-dark,app-icon}.png` and
+      `webui/public/images/ziru/logo-icon.png`; webui HTML-icon metadata
+      updated. Note: `logo-dark.png` is a copy of the light logo — a true
+      dark variant may be needed for dark UI surfaces.
 
 ### Still deliberately "Knowhere" (reviewed, keep or revisit)
 
