@@ -75,7 +75,7 @@ const faqs: FAQ[] = [
   },
   {
     question: "Can I get a refund?",
-    answer: "Contact team@knowhereto.ai for refund requests within 14 days of purchase.",
+    answer: "Contact team@ziru.app for refund requests within 14 days of purchase.",
   },
   {
     question: "What payment methods are accepted?",
@@ -225,10 +225,10 @@ export function PricingSection() {
                 <p className="text-sm text-pixel-muted font-sans">
                   Need higher limits? Contact{" "}
                   <a
-                    href="mailto:team@knowhereto.ai"
+                    href="mailto:team@ziru.app"
                     className="text-pixel-green hover:underline font-medium"
                   >
-                    team@knowhereto.ai
+                    team@ziru.app
                   </a>{" "}
                   for enterprise pricing with custom limits.
                 </p>
@@ -276,7 +276,7 @@ export function PricingSection() {
                   </p>
 
                   <PixelButton variant="secondary" asChild>
-                    <a href="mailto:team@knowhereto.ai">CONTACT SALES</a>
+                    <a href="mailto:team@ziru.app">CONTACT SALES</a>
                   </PixelButton>
                 </div>
 

@@ -1,4 +1,4 @@
-import type { RetrievalResult } from "@ontos-ai/knowhere-sdk"
+import type { RetrievalResult } from "@/integrations/ziru-sdk-types"
 
 import type { Source } from "@/infrastructure/db/schema"
 import type { ChatCitationView } from "@/domains/chat/types"
@@ -27,14 +27,14 @@ export function toChatCitationViews(
   })
 }
 
-export function useNotebookSourceTitles(
+export function useWebUISourceTitles(
   results: readonly RetrievalResult[],
   sources: readonly Source[],
 ): RetrievalResult[] {
   const sourceTitlesByDocumentId = new Map(
     sources.flatMap((source): readonly [string, string][] =>
-      source.knowhereDocumentId
-        ? [[source.knowhereDocumentId, source.title]]
+      source.ziruDocumentId
+        ? [[source.ziruDocumentId, source.title]]
         : [],
     ),
   )

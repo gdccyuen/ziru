@@ -18,13 +18,13 @@ from pathlib import Path
 import pytest
 
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost/test")
-os.environ.setdefault("TMP_PATH", "/tmp/knowhere-test")
+os.environ.setdefault("TMP_PATH", "/tmp/ziru-test")
 os.environ.setdefault("S3_BUCKET_NAME", "test-uploads")
 os.environ.setdefault("S3_ACCESS_KEY_ID", "test")
 os.environ.setdefault("S3_SECRET_ACCESS_KEY", "test")
 os.environ.setdefault("S3_TEMP_PATH", "/tmp")
 os.environ.setdefault("S3_TYPE", "filesystem")
-os.environ.setdefault("OBJECT_STORAGE_LOCAL_ROOT", "/tmp/knowhere-test-object-storage")
+os.environ.setdefault("OBJECT_STORAGE_LOCAL_ROOT", "/tmp/ziru-test-object-storage")
 
 from app.services.document_parser.providers.mineru.pdf_service import (  # noqa: E402
     _flatten_extracted_zip,

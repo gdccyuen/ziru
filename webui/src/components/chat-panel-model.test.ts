@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { chatPanelModel } from "./chat-panel-model";
 
 describe("chatPanelModel", () => {
-  it("uses Notebook source titles instead of generated Knowhere file names", () => {
+  it("uses WebUI source titles instead of generated Ziru file names", () => {
     const label = chatPanelModel.getCitationLabel(
       {
         chunkType: "text",

@@ -29,11 +29,11 @@ describe("proxy auth cookie prefix", () => {
   it("redirects protected pages when only the production cookie name is present in staging", async () => {
     const { proxy } = await loadProxy("better-auth-staging");
     const response = proxy(
-      createRequest("https://staging.knowhereto.ai/usage", "better-auth.session_token=prod")
+      createRequest("https://staging.ziru.app/usage", "better-auth.session_token=prod")
     );
 
     expect(response.headers.get("location")).toBe(
-      "https://staging.knowhereto.ai/login?callbackURL=%2Fusage"
+      "https://staging.ziru.app/login?callbackURL=%2Fusage"
     );
   });
 
@@ -41,7 +41,7 @@ describe("proxy auth cookie prefix", () => {
     const { proxy } = await loadProxy("better-auth-staging");
     const response = proxy(
       createRequest(
-        "https://staging.knowhereto.ai/usage",
+        "https://staging.ziru.app/usage",
         "__Secure-better-auth-staging.session_token=staging"
       )
     );

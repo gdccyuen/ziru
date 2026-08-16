@@ -28,7 +28,7 @@ vi.mock("@/domains/workspace/database-runtime", () => ({
 /**
  * Tests for the Phase 2+ auth module.
  *
- * The scope is intentionally narrow — we assert the Notebook-owned session
+ * The scope is intentionally narrow — we assert the WebUI-owned session
  * contract:
  *   - no session cookie → null (no DB roundtrip)
  *   - a valid session id → session row → users row → AuthUser
@@ -66,11 +66,11 @@ describe("extractUser", () => {
 })
 
 describe("getCurrentUser", () => {
-  const originalApiKey = process.env.KNOWHERE_API_KEY
+  const originalApiKey = process.env.ZIRU_API_KEY
 
   beforeEach(() => {
     vi.resetModules()
-    delete process.env.KNOWHERE_API_KEY
+    delete process.env.ZIRU_API_KEY
     repositoryMocks.runPromise.mockReset()
     repositoryMocks.findByIdEffect.mockReset()
     repositoryMocks.findUserByIdEffect.mockReset()
@@ -81,8 +81,8 @@ describe("getCurrentUser", () => {
   })
 
   afterEach(() => {
-    if (originalApiKey === undefined) delete process.env.KNOWHERE_API_KEY
-    else process.env.KNOWHERE_API_KEY = originalApiKey
+    if (originalApiKey === undefined) delete process.env.ZIRU_API_KEY
+    else process.env.ZIRU_API_KEY = originalApiKey
   })
 
   async function loadWithCookie(cookieHeader: string) {
@@ -119,14 +119,14 @@ describe("getCurrentUser", () => {
         deletedAt: null,
       }),
     )
-    const { getCurrentUser } = await loadWithCookie("notebook-session=session_1")
+    const { getCurrentUser } = await loadWithCookie("ziru-session=session_1")
     const user = await getCurrentUser()
     expect(user).toEqual({ id: "user_1", email: "ada@example.com", name: "Ada" })
   })
 
   it("returns null when the session row is missing", async () => {
     repositoryMocks.findByIdEffect.mockReturnValue(Effect.succeed(null))
-    const { getCurrentUser } = await loadWithCookie("notebook-session=missing")
+    const { getCurrentUser } = await loadWithCookie("ziru-session=missing")
     expect(await getCurrentUser()).toBeNull()
   })
 
@@ -140,13 +140,13 @@ describe("getCurrentUser", () => {
       }),
     )
     repositoryMocks.findUserByIdEffect.mockReturnValue(Effect.succeed(null))
-    const { getCurrentUser } = await loadWithCookie("notebook-session=session_1")
+    const { getCurrentUser } = await loadWithCookie("ziru-session=session_1")
     expect(await getCurrentUser()).toBeNull()
   })
 
   it("returns null on DB failure without throwing", async () => {
     repositoryMocks.runPromise.mockRejectedValue(new Error("db down"))
-    const { getCurrentUser } = await loadWithCookie("notebook-session=session_1")
+    const { getCurrentUser } = await loadWithCookie("ziru-session=session_1")
     expect(await getCurrentUser()).toBeNull()
   })
 

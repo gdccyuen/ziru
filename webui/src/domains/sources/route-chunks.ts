@@ -21,7 +21,7 @@ type RouteChunksDependencies = Pick<
   | "getCurrentUser"
   | "loadChunkPageForSource"
   | "loadChunksForSource"
-  | "makeKnowhereClient"
+  | "makeZiruClient"
   | "sourceService"
 >
 

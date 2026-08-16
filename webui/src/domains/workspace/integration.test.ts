@@ -18,7 +18,7 @@ import {
  * These run against a real Postgres — skipped entirely unless
  * `TEST_DATABASE_URL` is set. Local dev gets that from the Docker
  * container (`postgres://postgres:postgres@127.0.0.1:55432/
- * knowhere_notebook_e2e`). CI leaves it unset so these tests are
+ * ziru_webui_e2e`). CI leaves it unset so these tests are
  * no-ops there.
  *
  * The file uses `vi.doMock("./db", ...)` indirectly via process.env
@@ -475,8 +475,8 @@ describeIfDb("workspace helpers — integration", () => {
       mimeType: "application/pdf",
       sizeBytes: 2048,
       status: "uploading",
-      knowhereJobId: null,
-      knowhereDocumentId: null,
+      ziruJobId: null,
+      ziruDocumentId: null,
       stagedBlobPathname: "source-uploads/staged/lecture.pdf",
       stagedBlobUrl: "https://blob.example/staged/lecture.pdf",
       originalBlobPathname: "source-uploads/original/lecture.pdf",
@@ -510,7 +510,7 @@ describeIfDb("workspace helpers — integration", () => {
     );
     expect(parsing).toMatchObject({
       status: "parsing",
-      knowhereJobId: "job_123",
+      ziruJobId: "job_123",
       failureReason: null,
     });
 
@@ -521,7 +521,7 @@ describeIfDb("workspace helpers — integration", () => {
     );
     expect(ready).toMatchObject({
       status: "ready",
-      knowhereDocumentId: "doc_123",
+      ziruDocumentId: "doc_123",
       failureReason: null,
     });
 

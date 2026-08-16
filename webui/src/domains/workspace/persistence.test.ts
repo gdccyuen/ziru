@@ -15,7 +15,7 @@ import { chatRepository } from "../chat/repository"
 type Row = {
   id: string
   userId: string
-  knowhereKeyLabel: string | null
+  ziruKeyLabel: string | null
   namespace: string
   createdAt: Date
 }
@@ -87,7 +87,7 @@ function buildDbMock(storage: { row: Row | null }): DbMock {
           storage.row = {
             id: crypto.randomUUID(),
             userId: values.userId,
-            knowhereKeyLabel: values.knowhereKeyLabel ?? null,
+            ziruKeyLabel: values.ziruKeyLabel ?? null,
             namespace: values.namespace,
             createdAt: new Date(),
           }
@@ -131,8 +131,8 @@ describe("workspaceService.ensureWorkspace", () => {
     const existing: Row = {
       id: "ws_1",
       userId: "user_1",
-      knowhereKeyLabel: null,
-      namespace: "notebook-existing",
+      ziruKeyLabel: null,
+      namespace: "webui-existing",
       createdAt: new Date(),
     }
     const storage = { row: existing }

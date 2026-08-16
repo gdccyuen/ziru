@@ -2,7 +2,7 @@ import { Effect } from "effect"
 
 import { chatThreadService } from "@/domains/chat/thread-service"
 import { toChatMessageView, toChatThreadView } from "@/domains/chat/view"
-import { notebookRequestContext } from "@/domains/workspace/request-context"
+import { webuiRequestContext } from "@/domains/workspace/request-context"
 import type { ChatMessageView, ChatThreadView } from "@/domains/chat/types"
 import { routeResult, type RouteResult } from "@/lib/route-result"
 
@@ -56,7 +56,7 @@ type ChatThreadRouteService = {
 
 const listThreadsEffect = Effect.gen(function* () {
   const { workspace } = yield* Effect.tryPromise(() =>
-    notebookRequestContext.getAuthenticated(),
+    webuiRequestContext.getAuthenticated(),
   )
   const threads = yield* Effect.tryPromise(() =>
     chatThreadService.listForWorkspace(workspace.id),
@@ -69,7 +69,7 @@ const listThreadsEffect = Effect.gen(function* () {
 
 const createThreadEffect = Effect.gen(function* () {
   const { workspace } = yield* Effect.tryPromise(() =>
-    notebookRequestContext.getAuthenticated(),
+    webuiRequestContext.getAuthenticated(),
   )
   const thread = yield* Effect.tryPromise(() =>
     chatThreadService.create(workspace.id),
@@ -84,7 +84,7 @@ const createThreadEffect = Effect.gen(function* () {
 const getThreadEffect = (input: ThreadInput) =>
   Effect.gen(function* () {
     const { workspace } = yield* Effect.tryPromise(() =>
-      notebookRequestContext.getAuthenticated(),
+      webuiRequestContext.getAuthenticated(),
     )
     const thread = yield* Effect.tryPromise(() =>
       chatThreadService.findInWorkspace(workspace.id, input.threadId),
@@ -112,7 +112,7 @@ const getThreadEffect = (input: ThreadInput) =>
 const archiveThreadEffect = (input: ArchiveThreadInput) =>
   Effect.gen(function* () {
     const { workspace } = yield* Effect.tryPromise(() =>
-      notebookRequestContext.getAuthenticated(),
+      webuiRequestContext.getAuthenticated(),
     )
     const archived = yield* Effect.tryPromise(() =>
       chatThreadService.softDelete(workspace.id, input.threadId),

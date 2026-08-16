@@ -23,20 +23,20 @@ import { WorkspaceApiKeysDialog } from "@/components/workspace-api-keys-dialog";
 import { WorkspaceMembersDialog } from "@/components/workspace-members-dialog";
 import { workspaceClient } from "@/domains/workspace/client";
 import type {
-  KnowhereKeyLabelView,
+  ZiruKeyLabelView,
   WorkspaceView,
 } from "@/domains/workspace/client";
 
 export type WorkspaceSwitcherProps = {
   readonly activeWorkspace?: WorkspaceView;
-  readonly knowhereKeyLabels?: readonly KnowhereKeyLabelView[];
+  readonly ziruKeyLabels?: readonly ZiruKeyLabelView[];
   readonly userName?: string;
   readonly workspaces?: readonly WorkspaceView[];
 };
 
 export function WorkspaceSwitcher({
   activeWorkspace,
-  knowhereKeyLabels = [],
+  ziruKeyLabels = [],
   userName,
   workspaces = [],
 }: WorkspaceSwitcherProps): ReactElement {
@@ -48,8 +48,8 @@ export function WorkspaceSwitcher({
     null,
   );
   const { data: keyNamespacesByKeyId, isLoading: isLoadingNamespaces } = useSWR(
-    knowhereKeyLabels.length > 0
-      ? ["all-key-namespaces", knowhereKeyLabels.map((k) => k.id).join(",")]
+    ziruKeyLabels.length > 0
+      ? ["all-key-namespaces", ziruKeyLabels.map((k) => k.id).join(",")]
       : null,
     async ([, ids]: readonly [string, string]) => {
       const results = await Promise.all(
@@ -77,7 +77,7 @@ export function WorkspaceSwitcher({
 
   const triggerText = activeWorkspace
     ? `${activeWorkspace.activeKeyLabel ?? "default"} / ${activeWorkspace.namespace}`
-    : knowhereKeyLabels.length === 0
+    : ziruKeyLabels.length === 0
       ? "Add API key"
       : "Pick a workspace"
 
@@ -89,7 +89,7 @@ export function WorkspaceSwitcher({
     setCreatingKeyLabel(keyLabel)
     setCreatingNamespace(namespace)
     try {
-      const key = knowhereKeyLabels.find((k) => k.label === keyLabel)
+      const key = ziruKeyLabels.find((k) => k.label === keyLabel)
       if (!key) return
       await workspaceClient.createWorkspace(key.id, namespace)
       router.refresh()
@@ -119,7 +119,7 @@ export function WorkspaceSwitcher({
           align="start"
           className="max-h-80 w-72 overflow-y-auto"
         >
-          {knowhereKeyLabels.length === 0 ? (
+          {ziruKeyLabels.length === 0 ? (
             <DropdownMenuItem
               disabled
               className="text-xs text-muted-foreground"
@@ -132,7 +132,7 @@ export function WorkspaceSwitcher({
               Loading namespaces…
             </DropdownMenuItem>
           ) : (
-            knowhereKeyLabels.map((key) => {
+            ziruKeyLabels.map((key) => {
               const namespaces = keyNamespacesByKeyId?.[key.id] ?? []
               return (
                 <div key={key.id}>
@@ -215,7 +215,7 @@ export function WorkspaceSwitcher({
         onOpenChange={setIsApiKeysOpen}
         onKeysChanged={() => {
           // Re-fetch SSR state so the dropdown sees the new key and its
-          // namespaces (knowhereKeyLabels changes → namespaces SWR refires).
+          // namespaces (ziruKeyLabels changes → namespaces SWR refires).
           router.refresh();
         }}
         userName={userName}

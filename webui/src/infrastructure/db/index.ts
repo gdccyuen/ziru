@@ -29,7 +29,7 @@ export type Db = NeonHttpDatabase<Schema>
  * Effect service tag for the Drizzle database client.
  * Use `yield* DbClient` in Effect code; provide `dbLayer` at the boundary.
  */
-export class DbClient extends Context.Tag("@knowhere/DbClient")<
+export class DbClient extends Context.Tag("@ziru/DbClient")<
   DbClient,
   Db
 >() {}

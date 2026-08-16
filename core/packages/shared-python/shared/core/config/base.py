@@ -24,7 +24,7 @@ class BaseConfig(BaseSettings):
     LOG_LEVEL: str = Field(default="INFO", description="Log level")
 
     # Application metadata.
-    APP_TITLE: str = Field(default="Knowhere API", description="Application title")
+    APP_TITLE: str = Field(default="Ziru API", description="Application title")
     APP_VERSION: str = Field(
         default_factory=lambda: os.getenv("APP_VERSION", "1.0.0"),
         description="Application version read from the APP_VERSION environment variable",
@@ -39,7 +39,7 @@ class BaseConfig(BaseSettings):
         default="", description="Logfire API token for distributed tracing"
     )
     TELEMETRY_ENABLED: bool = Field(
-        default=True,
+        default=False,
         description="Enable anonymous product telemetry for self-hosted deployments",
     )
     TELEMETRY_POSTHOG_HOST: str = Field(

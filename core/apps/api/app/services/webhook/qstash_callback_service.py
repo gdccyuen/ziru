@@ -128,12 +128,12 @@ def extract_callback_data(body: bytes) -> dict[str, Any]:
 def find_event_id(data: dict[str, Any]) -> str | None:
     source_header = data.get("sourceHeader", {}) or {}
     event_id = normalize_header_value(
-        source_header.get("X-Knowhere-Event-Id")
-        or source_header.get("x-knowhere-event-id")
+        source_header.get("X-Ziru-Event-Id")
+        or source_header.get("x-ziru-event-id")
     )
     if not event_id:
         for key, value in source_header.items():
-            if key.lower() == "x-knowhere-event-id":
+            if key.lower() == "x-ziru-event-id":
                 event_id = normalize_header_value(value)
                 break
     return event_id

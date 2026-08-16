@@ -6,9 +6,9 @@ import useSWRMutation from "swr/mutation"
 
 import { workspaceChatState } from "@/components/workspace-chat-state"
 import {
-  trackNotebookAssistantAnswerCompleted,
-  trackNotebookAssistantAnswerFailed,
-  trackNotebookWorkspaceFirstQuestionAsked,
+  trackWebUIAssistantAnswerCompleted,
+  trackWebUIAssistantAnswerFailed,
+  trackWebUIWorkspaceFirstQuestionAsked,
   type AnalyticsContext,
 } from "@/lib/posthog"
 import { workspaceClient } from "@/domains/workspace/client"
@@ -301,7 +301,7 @@ export function useWorkspaceChatWorkflow({
       })
 
       if (!body.threadId || !Array.isArray(body.messages)) {
-        void trackNotebookAssistantAnswerFailed({
+        void trackWebUIAssistantAnswerFailed({
           context: analyticsContext,
           threadId: chat.threadId,
           latencyMs: Date.now() - sendStart,
@@ -317,12 +317,12 @@ export function useWorkspaceChatWorkflow({
 
       if (!didTrackFirstQuestionRef.current) {
         didTrackFirstQuestionRef.current = true
-        void trackNotebookWorkspaceFirstQuestionAsked({
+        void trackWebUIWorkspaceFirstQuestionAsked({
           context: analyticsContext,
           selectedSourcesCount,
         })
       }
-      void trackNotebookAssistantAnswerCompleted({
+      void trackWebUIAssistantAnswerCompleted({
         context: analyticsContext,
         threadId: body.threadId,
         latencyMs: Date.now() - sendStart,
@@ -357,7 +357,7 @@ export function useWorkspaceChatWorkflow({
         )
       }
     } catch {
-      void trackNotebookAssistantAnswerFailed({
+      void trackWebUIAssistantAnswerFailed({
         context: analyticsContext,
         threadId: chat.threadId,
         latencyMs: Date.now() - sendStart,

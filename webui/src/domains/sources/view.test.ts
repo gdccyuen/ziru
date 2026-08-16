@@ -12,8 +12,8 @@ function makeSource(overrides: Partial<Source> = {}): Source {
     sizeBytes: 1,
     status: "ready",
     failureReason: null,
-    knowhereJobId: "job_1",
-    knowhereDocumentId: "doc_1",
+    ziruJobId: "job_1",
+    ziruDocumentId: "doc_1",
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,
@@ -57,7 +57,7 @@ describe("toSourceView", () => {
       toSourceView(
         makeSource({
           status: "parsing",
-          knowhereDocumentId: null,
+          ziruDocumentId: null,
           failureReason: "internal stack trace",
         }),
       ),
@@ -76,7 +76,7 @@ describe("toSourceView", () => {
       toSourceView(
         makeSource({
           status: "failed",
-          knowhereDocumentId: null,
+          ziruDocumentId: null,
           failureReason:
             "Retry attempt 1 for POST /v1/jobs: Error [RateLimitError]: Too many concurrent requests (2/2 active). Please retry after 30 seconds.\n    at iM.handleError",
         }),

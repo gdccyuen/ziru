@@ -37,7 +37,7 @@ class RedisConfig(BaseModel):
     REDIS_RETRY_DELAY: float = Field(default=1.0, description="Retry delay in seconds")
 
     # Key configuration.
-    REDIS_KEY_PREFIX: str = Field(default="knowhere-api", description="Key prefix")
+    REDIS_KEY_PREFIX: str = Field(default="ziru-api", description="Key prefix")
     REDIS_DEFAULT_TTL: int = Field(default=86400, description="Default TTL in seconds")
 
     # Worker sync pool config (gevent BlockingConnectionPool)

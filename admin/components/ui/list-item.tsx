@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@components/ui/button";
-import type { KnowhereIconName } from "@components/ui/knowhere-icon";
+import type { ZiruIconName } from "@components/ui/ziru-icon";
 import { Tag } from "@components/ui/tag";
 import { cn } from "@lib/utils";
 import { Plus } from "lucide-react";
@@ -38,7 +38,7 @@ export const StepListItem = ({
 );
 
 export type CheckListItemProps = ComponentProps<"div"> & {
-  icon?: KnowhereIconName;
+  icon?: ZiruIconName;
   text: string;
 };
 

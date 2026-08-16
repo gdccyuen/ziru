@@ -14,7 +14,7 @@ knowledge — powered by the Ziru API.
    - Chat (one of):
      - `AI_GATEWAY_API_KEY` — Vercel AI Gateway key (optional `CHAT_MODEL` override, default `google/gemini-3-flash`), or
      - `CHAT_BASE_URL` + `CHAT_API_KEY` + `CHAT_MODEL` — any OpenAI-compatible endpoint (e.g. DeepSeek, local Xinference/vLLM). `CHAT_MODEL` is required in this mode.
-    - `KNOWHERE_API_KEY` — optional dev bootstrap key that enables the deterministic local user (see Authentication below)
+    - `ZIRU_API_KEY` — optional dev bootstrap key that enables the deterministic local user (see Authentication below)
    - `NEXT_PUBLIC_POSTHOG_KEY` — PostHog Project API key for front-end event tracking
    - `NEXT_PUBLIC_POSTHOG_HOST` — PostHog ingestion host (default `https://us.i.posthog.com`)
 
@@ -30,10 +30,10 @@ knowledge — powered by the Ziru API.
 
 The WebUI sends these product analytics events when PostHog is configured:
 
-- `notebook_upload_button_clicked`
-- `notebook_document_upload_completed` (`uploaded_count`, `file_types`, `total_size_bytes`)
-- `notebook_assistant_question_submitted` (`selected_sources_count`, `message_length`)
-- `notebook_dashboard_link_clicked`
+- `ziru_upload_button_clicked`
+- `ziru_document_upload_completed` (`uploaded_count`, `file_types`, `total_size_bytes`)
+- `ziru_assistant_question_submitted` (`selected_sources_count`, `message_length`)
+- `ziru_dashboard_link_clicked`
 
 The WebUI also calls PostHog `identify` for authenticated users and `reset`
 for guest sessions so insights can be grouped by user.
@@ -54,10 +54,10 @@ for guest sessions so insights can be grouped by user.
 
 Create four Trends insights in PostHog:
 
-1. Upload button clicks: count of `notebook_upload_button_clicked`
-2. Uploaded documents: `sum(uploaded_count)` on `notebook_document_upload_completed`
-3. Avg sources per question: `avg(selected_sources_count)` on `notebook_assistant_question_submitted`
-4. Users opening dashboard: `Unique users` on `notebook_dashboard_link_clicked`
+1. Upload button clicks: count of `ziru_upload_button_clicked`
+2. Uploaded documents: `sum(uploaded_count)` on `ziru_document_upload_completed`
+3. Avg sources per question: `avg(selected_sources_count)` on `ziru_assistant_question_submitted`
+4. Users opening dashboard: `Unique users` on `ziru_dashboard_link_clicked`
 
 Pin those four insights to a `WebUI Tracking` dashboard for team reporting.
 
@@ -91,11 +91,11 @@ docker run -d --name ziru-webui -p 3000:3000 \
 
 The image runs the traced standalone server as a non-root user on port 3000.
 Provide the same variables as `.env.local` (via a gitignored `.env.docker`):
-`KNOWHERE_API_KEY`/`KNOWHERE_BASE_URL`, `DATABASE_URL`/`DATABASE_DRIVER`, and
+`ZIRU_API_KEY`/`ZIRU_BASE_URL`, `DATABASE_URL`/`DATABASE_DRIVER`, and
 chat config (`AI_GATEWAY_API_KEY` or `CHAT_BASE_URL`+`CHAT_API_KEY`+`CHAT_MODEL`).
 
 When running against a Ziru stack on the host (Docker Desktop / OrbStack),
-use `host.docker.internal` in `KNOWHERE_BASE_URL` and `DATABASE_URL` so the
+use `host.docker.internal` in `ZIRU_BASE_URL` and `DATABASE_URL` so the
 container can reach the host services.
 
 **Vercel Blob is optional.** The chunk-page cache is backed by Vercel Blob when
@@ -106,7 +106,7 @@ deployments work without a Blob store.
 ## Authentication
 
 The WebUI owns its authentication (ADR 0010): users, provider account links,
-and DB-backed sessions live in the WebUI's Postgres. The `notebook-session`
+and DB-backed sessions live in the WebUI's Postgres. The `ziru-session`
 cookie carries the session id.
 
 - **Create a user** (admin-provisioned, no public signup):
@@ -116,11 +116,11 @@ cookie carries the session id.
   ```
 - **Login** at `/login` (email + password, Argon2id hashing). **Logout** is
   the top-nav sign-out button.
-- **Dev bootstrap:** setting `KNOWHERE_API_KEY` (or providing
-  `config/knowhere-keys.json`) still short-circuits to a deterministic
+- **Dev bootstrap:** setting `ZIRU_API_KEY` (or providing
+  `config/ziru-keys.json`) still short-circuits to a deterministic
   local development user so a fresh deployment works before any user is
   created. This bootstrap is removed once DB-backed keys land.
-- Multi-domain API keys: see `config/knowhere-keys.json` and the
+- Multi-domain API keys: see `config/ziru-keys.json` and the
   Workspace switcher in the sources panel.
 
 ## Project Structure
@@ -144,6 +144,6 @@ source row or a citation reference in chat.
 ## Acknowledgements
 
 Ziru WebUI is part of Ziru, a fork of
-[Knowhere](https://github.com/Ontos-AI/knowhere) by Ontos-AI, distributed
+[Ziru](https://github.com/Ontos-AI/ziru) by Ontos-AI, distributed
 under the Apache License 2.0. See the root [NOTICE](../NOTICE) for the
 upstream attribution notices.

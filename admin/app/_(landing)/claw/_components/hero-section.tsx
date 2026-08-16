@@ -5,10 +5,10 @@ import {
   contextTraits,
   heroCards,
   inputFormats,
-  KNOWHERE_CLAW_PACKAGE_NAME,
-  KNOWHERE_CLAW_PACKAGE_URL,
-  KNOWHERE_CLAWHUB_SKILL_NAME,
-  KNOWHERE_CLAWHUB_SKILL_URL,
+  ZIRU_CLAW_PACKAGE_NAME,
+  ZIRU_CLAW_PACKAGE_URL,
+  ZIRU_CLAWHUB_SKILL_NAME,
+  ZIRU_CLAWHUB_SKILL_URL,
 } from "@/app/_(landing)/claw/_components/plugin-content";
 
 export function HeroSection() {
@@ -24,26 +24,26 @@ export function HeroSection() {
         <div className="mx-auto max-w-5xl text-center">
           <div className="mb-6 flex flex-wrap items-center justify-center gap-2.5 sm:mb-8 sm:gap-3">
             <span className="border-2 border-pixel-fg bg-pixel-green px-3 py-1 font-pixel text-[10px] uppercase tracking-[0.18em] text-pixel-bg">
-              Knowhere API
+              Ziru API
             </span>
             <span className="border-2 border-pixel-fg bg-pixel-bg px-3 py-1 font-pixel text-[10px] uppercase tracking-[0.18em] text-pixel-fg">
               OpenClaw Plugin
             </span>
             <Link
-              href={KNOWHERE_CLAW_PACKAGE_URL}
+              href={ZIRU_CLAW_PACKAGE_URL}
               target="_blank"
               rel="noreferrer"
               className="border-2 border-pixel-border bg-pixel-bg px-3 py-1 font-mono text-xs text-pixel-muted underline decoration-current underline-offset-4 transition-colors hover:text-pixel-fg"
             >
-              {KNOWHERE_CLAW_PACKAGE_NAME}
+              {ZIRU_CLAW_PACKAGE_NAME}
             </Link>
             <Link
-              href={KNOWHERE_CLAWHUB_SKILL_URL}
+              href={ZIRU_CLAWHUB_SKILL_URL}
               target="_blank"
               rel="noreferrer"
               className="border-2 border-pixel-border bg-[#f8f3ea] px-3 py-1 font-mono text-xs text-pixel-fg underline decoration-current underline-offset-4 transition-colors hover:text-pixel-green"
             >
-              ClawHub: {KNOWHERE_CLAWHUB_SKILL_NAME}
+              ClawHub: {ZIRU_CLAWHUB_SKILL_NAME}
             </Link>
           </div>
 
@@ -69,7 +69,7 @@ export function HeroSection() {
           </h2>
 
           <p className="mx-auto mt-5 max-w-3xl text-sm leading-7 text-pixel-muted font-sans sm:mt-6 sm:text-base sm:leading-8 md:text-lg">
-            The plugin uses Knowhere for parsing and job orchestration, stores the returned result
+            The plugin uses Ziru for parsing and job orchestration, stores the returned result
             package inside OpenClaw-managed local storage, and gives agents a browse-first path to
             previews, chunks, hierarchy, and raw files before they answer.
           </p>

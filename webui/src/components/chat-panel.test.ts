@@ -11,12 +11,12 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const analyticsMocks = vi.hoisted(() => ({
-  trackNotebookAssistantQuestionSubmitted: vi.fn(),
+  trackWebUIAssistantQuestionSubmitted: vi.fn(),
 }));
 
 vi.mock("@/lib/posthog", () => ({
-  trackNotebookAssistantQuestionSubmitted:
-    analyticsMocks.trackNotebookAssistantQuestionSubmitted,
+  trackWebUIAssistantQuestionSubmitted:
+    analyticsMocks.trackWebUIAssistantQuestionSubmitted,
 }));
 
 import { workspaceClient } from "@/domains/workspace/client";
@@ -38,7 +38,7 @@ describe("ChatPanel", () => {
       disconnect() {}
     };
     vi.mocked(workspaceClient.createChatDiagram).mockReset();
-    analyticsMocks.trackNotebookAssistantQuestionSubmitted.mockReset();
+    analyticsMocks.trackWebUIAssistantQuestionSubmitted.mockReset();
     mockVisibleVirtualViewport();
   });
 
@@ -233,7 +233,7 @@ describe("ChatPanel", () => {
 
     expect(onSend).not.toHaveBeenCalled();
     expect(
-      analyticsMocks.trackNotebookAssistantQuestionSubmitted,
+      analyticsMocks.trackWebUIAssistantQuestionSubmitted,
     ).not.toHaveBeenCalled();
     expect(workspaceClient.createChatDiagram).toHaveBeenCalledWith({
       answer: "Cloud revenue was 42 and Ads revenue was 28.",
@@ -270,7 +270,7 @@ describe("ChatPanel", () => {
       topK: 8,
     });
     expect(
-      analyticsMocks.trackNotebookAssistantQuestionSubmitted,
+      analyticsMocks.trackWebUIAssistantQuestionSubmitted,
     ).toHaveBeenCalledWith({
       context: {
         workspaceId: "workspace_1",
@@ -284,7 +284,7 @@ describe("ChatPanel", () => {
     });
   });
 
-  it("uses Notebook source titles for generated Knowhere citation filenames", () => {
+  it("uses WebUI source titles for generated Ziru citation filenames", () => {
     const { container } = render(
       React.createElement(C, {
         sourceTitlesByDocumentId: {

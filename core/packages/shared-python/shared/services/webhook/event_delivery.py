@@ -114,7 +114,7 @@ class WebhookEventDelivery:
                 webhook_url=event.target_url,
                 attempt_number=event.attempts + 1,
                 request_payload={"header": headers, "payload": payload},
-                signature=headers["X-Knowhere-Signature"],
+                signature=headers["X-Ziru-Signature"],
                 idempotency_key=str(uuid.uuid4()),
                 response_status_code=result.status_code,
                 error_message=result.error_message,

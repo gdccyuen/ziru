@@ -19,7 +19,7 @@ export function WorkflowSection() {
               One grounded OpenClaw answer out.
             </>
           }
-          description="This is the interaction model the plugin is built for: Knowhere extracts structure, OpenClaw stores the package, and the agent answers only after it has previewed or reopened the right evidence."
+          description="This is the interaction model the plugin is built for: Ziru extracts structure, OpenClaw stores the package, and the agent answers only after it has previewed or reopened the right evidence."
         />
 
         <div className="mt-10 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
@@ -146,7 +146,7 @@ function ChatPanel() {
           OpenClaw
         </span>
         <span className="border border-white/10 bg-white/5 px-2 py-1 font-mono text-[11px] text-[#b8b1a3]">
-          knowhere skill loaded
+          ziru skill loaded
         </span>
       </div>
 

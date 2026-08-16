@@ -16,7 +16,7 @@ describe("validateOutputManifest", () => {
       contextPolicy: unrelatedContextPolicy,
       finalized: false,
       ledger: emptyLedger,
-      surface: "notebook_chat",
+      surface: "ziru_chat",
     })
 
     expect(validation.errors).toContain(
@@ -28,7 +28,7 @@ describe("validateOutputManifest", () => {
     const validation = validateOutputManifest({
       manifest: makeManifest({ text: "Answer." }),
       ledger: emptyLedger,
-      surface: "notebook_chat",
+      surface: "ziru_chat",
     })
 
     expect(validation.errors).toContain(
@@ -73,7 +73,7 @@ describe("validateOutputManifest", () => {
           makeAsset("asset:r1:result:3"),
         ],
       },
-      surface: "notebook_chat",
+      surface: "ziru_chat",
     })
 
     expect(validation.errors).toContain(
@@ -107,7 +107,7 @@ describe("validateOutputManifest", () => {
           },
         ],
       },
-      surface: "notebook_chat",
+      surface: "ziru_chat",
     })
 
     expect(validation.errors).toContain(
@@ -161,7 +161,7 @@ describe("validateOutputManifest", () => {
           },
         ],
       },
-      surface: "notebook_chat",
+      surface: "ziru_chat",
     })
 
     expect(validation.errors).toContain(
@@ -211,7 +211,7 @@ describe("validateOutputManifest", () => {
           },
         ],
       },
-      surface: "notebook_chat",
+      surface: "ziru_chat",
     })
 
     expect(validation.errors).toContain(

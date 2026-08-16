@@ -4,11 +4,11 @@ Redis-related exception definitions
 
 from typing import Optional
 
-from shared.core.exceptions.knowhere_exception import KnowhereException
+from shared.core.exceptions.ziru_exception import ZiruException
 from shared.core.response.ErrorCode import ErrorCode
 
 
-class RedisConnectionError(KnowhereException):
+class RedisConnectionError(ZiruException):
     """Redis connection exception"""
 
     def __init__(
@@ -27,7 +27,7 @@ class RedisConnectionError(KnowhereException):
         )
 
 
-class RedisOperationError(KnowhereException):
+class RedisOperationError(ZiruException):
     """Redis operation exception"""
 
     def __init__(
@@ -51,7 +51,7 @@ class RedisOperationError(KnowhereException):
         )
 
 
-class RedisTimeoutError(KnowhereException):
+class RedisTimeoutError(ZiruException):
     """Redis timeout exception"""
 
     def __init__(
@@ -74,7 +74,7 @@ class RedisTimeoutError(KnowhereException):
         )
 
 
-class RedisConfigurationError(KnowhereException):
+class RedisConfigurationError(ZiruException):
     """Redis configuration exception"""
 
     def __init__(

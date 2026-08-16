@@ -20,7 +20,7 @@ export const ComparisonPanel = ({
   highlights,
   metricLabel,
   metricValue,
-  subjectName = "Knowhere",
+  subjectName = "Ziru",
   ...props
 }: ComparisonPanelProps) => (
   <div

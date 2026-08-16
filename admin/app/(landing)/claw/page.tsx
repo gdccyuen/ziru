@@ -1,7 +1,7 @@
 import { ClawPage } from "@app/(landing)/claw/_components/claw-page";
 
-const KnowhereOpenClawPluginRoute = () => {
+const ZiruOpenClawPluginRoute = () => {
   return <ClawPage />;
 };
 
-export default KnowhereOpenClawPluginRoute;
+export default ZiruOpenClawPluginRoute;

@@ -19,7 +19,7 @@ export function useAppConfigContext(): AppConfigType {
   if (!config) {
     // 如果 Context 未提供，返回默认配置（降级处理）
     return {
-      companyName: "Knowhere AI",
+      companyName: "Ziru AI",
       simpleCompanyName: "",
       icpNumber: "",
       icpUrl: "https://beian.miit.gov.cn/",

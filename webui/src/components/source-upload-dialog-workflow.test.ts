@@ -4,14 +4,14 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  trackNotebookDocumentUploadCompleted: vi.fn(),
-  trackNotebookDocumentUploadFailed: vi.fn(),
+  trackWebUIDocumentUploadCompleted: vi.fn(),
+  trackWebUIDocumentUploadFailed: vi.fn(),
 }));
 
 vi.mock("@/lib/posthog", () => ({
-  trackNotebookDocumentUploadCompleted:
-    mocks.trackNotebookDocumentUploadCompleted,
-  trackNotebookDocumentUploadFailed: mocks.trackNotebookDocumentUploadFailed,
+  trackWebUIDocumentUploadCompleted:
+    mocks.trackWebUIDocumentUploadCompleted,
+  trackWebUIDocumentUploadFailed: mocks.trackWebUIDocumentUploadFailed,
 }));
 
 import type { SourceView } from "@/domains/sources/types";
@@ -64,7 +64,7 @@ describe("useSourceUploadDialogWorkflow", () => {
       expect(onSourceUploaded).toHaveBeenCalledWith(uploadedSource);
     });
     expect(uploadSource).toHaveBeenCalledWith(file, true, undefined);
-    expect(mocks.trackNotebookDocumentUploadCompleted).toHaveBeenCalledWith({
+    expect(mocks.trackWebUIDocumentUploadCompleted).toHaveBeenCalledWith({
       context: undefined,
       uploadedCount: 1,
       fileType: "application/pdf",
@@ -156,7 +156,7 @@ describe("useSourceUploadDialogWorkflow", () => {
     fireEvent.submit(screen.getByTestId("upload-form"));
 
     await waitFor(() => {
-      expect(mocks.trackNotebookDocumentUploadFailed).toHaveBeenCalledWith({
+      expect(mocks.trackWebUIDocumentUploadFailed).toHaveBeenCalledWith({
         context: undefined,
         fileType: "application/x-msdownload",
         fileSizeBytes: 5,

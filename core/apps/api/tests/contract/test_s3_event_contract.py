@@ -24,7 +24,7 @@ def _build_s3_event_payload(job_id: str) -> dict[str, object]:
                 "eventTime": "2026-04-26T00:00:00.000Z",
                 "eventName": "ObjectCreated:Put",
                 "s3": {
-                    "bucket": {"name": "knowhere-test-uploads"},
+                    "bucket": {"name": "ziru-test-uploads"},
                     "object": {"key": f"uploads/{job_id}.pdf", "size": 256},
                 },
             }

@@ -1,10 +1,10 @@
 [project]
-name = "knowhere-api-app"
+name = "ziru-api-app"
 version = "0.1.0"
-description = "Knowhere API service"
+description = "Ziru API service"
 requires-python = ">=3.11"
 dependencies = [
-    "knowhere-shared",
+    "ziru-shared",
     "fastapi==0.135.1",
     "uvicorn==0.34.3",
     "starlette==0.52.1",
@@ -37,7 +37,7 @@ dev = [
 ]
 
 [tool.uv.sources]
-knowhere-shared = { workspace = true }
+ziru-shared = { workspace = true }
 
 [tool.uv]
 package = false

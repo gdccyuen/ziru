@@ -1,4 +1,4 @@
-import { KnowhereBrand } from "@components/brand/knowhere-brand";
+import { ZiruBrand } from "@components/brand/ziru-brand";
 import { cn } from "@lib/utils";
 import type { JSX } from "react";
 
@@ -19,7 +19,7 @@ const LOGIN_BRAND_SIZES_BY_VARIANT = {
 
 export const LoginBrand = ({ className, variant }: LoginBrandProps): JSX.Element => {
   return (
-    <KnowhereBrand
+    <ZiruBrand
       className={cn(LOGIN_BRAND_WIDTH_CLASS_BY_VARIANT[variant], className)}
       priority={variant === "header"}
       sizes={LOGIN_BRAND_SIZES_BY_VARIANT[variant]}

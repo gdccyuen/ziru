@@ -5,11 +5,11 @@ import { proxy } from "./proxy";
 
 describe("proxy", () => {
   const originalDashboardOrigin = process.env.DASHBOARD_ORIGIN;
-  const originalKnowhereApiKey = process.env.KNOWHERE_API_KEY;
+  const originalZiruApiKey = process.env.ZIRU_API_KEY;
 
   beforeEach(() => {
     delete process.env.DASHBOARD_ORIGIN;
-    delete process.env.KNOWHERE_API_KEY;
+    delete process.env.ZIRU_API_KEY;
   });
 
   afterEach(() => {
@@ -18,10 +18,10 @@ describe("proxy", () => {
     } else {
       process.env.DASHBOARD_ORIGIN = originalDashboardOrigin;
     }
-    if (originalKnowhereApiKey === undefined) {
-      delete process.env.KNOWHERE_API_KEY;
+    if (originalZiruApiKey === undefined) {
+      delete process.env.ZIRU_API_KEY;
     } else {
-      process.env.KNOWHERE_API_KEY = originalKnowhereApiKey;
+      process.env.ZIRU_API_KEY = originalZiruApiKey;
     }
   });
 

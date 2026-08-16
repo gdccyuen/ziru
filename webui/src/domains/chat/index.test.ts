@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import type { RetrievalResult } from "@ontos-ai/knowhere-sdk"
+import type { RetrievalResult } from "@/integrations/ziru-sdk-types"
 import { Effect } from "effect"
 import { ToolLoopAgent } from "ai"
 import type { HarnessRunResult } from "@/agent-harness"
@@ -43,7 +43,7 @@ describe("answerQuestionWithRetrieval", () => {
         results: [result],
         evidenceText: "Grounding content from evidence tree",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "What does the document say?",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -54,14 +54,14 @@ describe("answerQuestionWithRetrieval", () => {
       return makeHarnessRunResult("The answer is grounded.");
     });
     const sources = [
-      makeSource({ knowhereDocumentId: "doc_included" }),
-      makeSource({ id: "source_2", knowhereDocumentId: "doc_excluded" }),
+      makeSource({ ziruDocumentId: "doc_included" }),
+      makeSource({ id: "source_2", ziruDocumentId: "doc_excluded" }),
     ];
 
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "What does the document say?",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources,
         excludedSourceIds: ["source_2"],
         retrieval,
@@ -71,7 +71,7 @@ describe("answerQuestionWithRetrieval", () => {
     );
 
     expect(retrieval.query).toHaveBeenCalledWith({
-      namespace: "notebook-workspace",
+      namespace: "webui-workspace",
       query: "What does the document say?",
       topK: 8,
       useAgentic: true,
@@ -96,7 +96,7 @@ describe("answerQuestionWithRetrieval", () => {
       durationSeconds: expect.any(Number),
       queries: [
         {
-          namespace: "notebook-workspace",
+          namespace: "webui-workspace",
           query: "What does the document say?",
           referencedChunkCount: 0,
           resultCount: 1,
@@ -112,7 +112,7 @@ describe("answerQuestionWithRetrieval", () => {
         results: [],
         evidenceText: "",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "Gordon",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -127,7 +127,7 @@ describe("answerQuestionWithRetrieval", () => {
       const answer = await Effect.runPromise(
         answerQuestionWithRetrieval({
           question: "Gordon",
-          namespace: "notebook-workspace",
+          namespace: "webui-workspace",
           sources,
           excludedSourceIds: [],
           retrieval,
@@ -145,7 +145,7 @@ describe("answerQuestionWithRetrieval", () => {
         results: [],
         evidenceText: "",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "Gordon",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -158,7 +158,7 @@ describe("answerQuestionWithRetrieval", () => {
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "Gordon",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources,
         excludedSourceIds: [],
         retrieval,
@@ -197,7 +197,7 @@ describe("answerQuestionWithRetrieval", () => {
           results: [legacyResult],
           evidenceText: "Legacy namespace evidence",
           referencedChunks: [],
-          namespace: "notebook-legacy",
+          namespace: "webui-legacy",
           query: "legacy document answer",
           routerUsed: "workflow_single_step",
           answerText: null,
@@ -208,7 +208,7 @@ describe("answerQuestionWithRetrieval", () => {
     const generateAnswer = vi.fn(async ({ searchSources }) => {
       const response = await searchSources({ query: "legacy document answer" });
       expect(response).toMatchObject({
-        namespace: "default,notebook-legacy",
+        namespace: "default,webui-legacy",
         stopReason: "answer_done",
         failureReason: null,
         results: [legacyResult],
@@ -220,12 +220,12 @@ describe("answerQuestionWithRetrieval", () => {
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "What does the legacy document say?",
-        namespace: "notebook-legacy",
-        namespaces: ["default", "notebook-legacy"],
+        namespace: "webui-legacy",
+        namespaces: ["default", "webui-legacy"],
         sources: [
           makeSource({
             title: "legacy.pdf",
-            knowhereDocumentId: "doc_legacy",
+            ziruDocumentId: "doc_legacy",
           }),
         ],
         excludedSourceIds: [],
@@ -241,7 +241,7 @@ describe("answerQuestionWithRetrieval", () => {
     );
     expect(retrieval.query).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ namespace: "notebook-legacy" }),
+      expect.objectContaining({ namespace: "webui-legacy" }),
     );
     expect(answer).toMatchObject({
       answer: "The legacy answer is grounded.",
@@ -259,7 +259,7 @@ describe("answerQuestionWithRetrieval", () => {
           topScores: [],
         },
         {
-          namespace: "notebook-legacy",
+          namespace: "webui-legacy",
           query: "legacy document answer",
           referencedChunkCount: 0,
           resultCount: 1,
@@ -296,12 +296,12 @@ describe("answerQuestionWithRetrieval", () => {
       Effect.runPromise(
         answerQuestionWithRetrieval({
           question: "What does the legacy document say?",
-          namespace: "notebook-legacy",
-          namespaces: ["default", "notebook-legacy"],
+          namespace: "webui-legacy",
+          namespaces: ["default", "webui-legacy"],
           sources: [
             makeSource({
               title: "legacy.pdf",
-              knowhereDocumentId: "doc_legacy",
+              ziruDocumentId: "doc_legacy",
             }),
           ],
           excludedSourceIds: [],
@@ -317,11 +317,11 @@ describe("answerQuestionWithRetrieval", () => {
     );
     expect(retrieval.query).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ namespace: "notebook-legacy" }),
+      expect.objectContaining({ namespace: "webui-legacy" }),
     );
   });
 
-  it("logs bounded Knowhere query response chunks", async () => {
+  it("logs bounded Ziru query response chunks", async () => {
     const result = makeRetrievalResult({
       chunkType: "image",
       content: `Identity card front image https://blob.example/id.jpg ${"content ".repeat(
@@ -347,7 +347,7 @@ describe("answerQuestionWithRetrieval", () => {
             assetUrl: "https://blob.example/id.jpg",
           },
         ],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "冯荣洲 身份证 ID card",
         routerUsed: "workflow_single_step",
         answerText: `Matched identity card image ${"answer ".repeat(80)}`,
@@ -366,8 +366,8 @@ describe("answerQuestionWithRetrieval", () => {
     await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "请将 冯荣洲 的身份证图片发给我",
-        namespace: "notebook-workspace",
-        sources: [makeSource({ knowhereDocumentId: "doc_identity" })],
+        namespace: "webui-workspace",
+        sources: [makeSource({ ziruDocumentId: "doc_identity" })],
         excludedSourceIds: [],
         retrieval,
         generateAnswer,
@@ -375,8 +375,8 @@ describe("answerQuestionWithRetrieval", () => {
       }),
     );
 
-    const meta = getLoggerInfoMeta("chat-agent: knowhere query response");
-    const response = meta.response as KnowhereQueryResponseLogMeta;
+    const meta = getLoggerInfoMeta("chat-agent: ziru query response");
+    const response = meta.response as ZiruQueryResponseLogMeta;
     expect(response).toMatchObject({
       query: "冯荣洲 身份证 ID card",
       resultCount: 1,
@@ -422,7 +422,7 @@ describe("answerQuestionWithRetrieval", () => {
         results: [firstResult, secondResult],
         evidenceText: "Revenue grew. Gross margin improved.",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "What improved?",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -438,7 +438,7 @@ describe("answerQuestionWithRetrieval", () => {
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "What improved?",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [makeSource()],
         excludedSourceIds: [],
         retrieval,
@@ -453,7 +453,7 @@ describe("answerQuestionWithRetrieval", () => {
     ]);
   });
 
-  it("uses Notebook source titles instead of generated Knowhere filenames", async () => {
+  it("uses WebUI source titles instead of generated Ziru filenames", async () => {
     const result = makeRetrievalResult({
       source: {
         documentId: "doc_tesla",
@@ -466,7 +466,7 @@ describe("answerQuestionWithRetrieval", () => {
         results: [result],
         evidenceText: "Tesla invested in xAI.",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "Tesla xAI investment",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -481,14 +481,14 @@ describe("answerQuestionWithRetrieval", () => {
     const sources = [
       makeSource({
         title: "TSLA-Q4-2025-Update.pdf",
-        knowhereDocumentId: "doc_tesla",
+        ziruDocumentId: "doc_tesla",
       }),
     ];
 
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "What does the document say about xAI?",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources,
         excludedSourceIds: [],
         retrieval,
@@ -518,7 +518,7 @@ describe("answerQuestionWithRetrieval", () => {
 
   it("passes retrieved image asset URLs to the answer prompt and citations", async () => {
     const upstreamAssetUrl =
-      "https://knowhere-storage.example/results/job_1/images/image-9-Night%20Rocket%20Launch.jpg?AWSAccessKeyId=test";
+      "https://ziru-storage.example/results/job_1/images/image-9-Night%20Rocket%20Launch.jpg?AWSAccessKeyId=test";
     const result = makeRetrievalResult({
       chunkType: "image",
       assetUrl: upstreamAssetUrl,
@@ -533,7 +533,7 @@ describe("answerQuestionWithRetrieval", () => {
         results: [result],
         evidenceText: "A SpaceX rocket launches at night.",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "SpaceX rocket photos",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -555,12 +555,12 @@ describe("answerQuestionWithRetrieval", () => {
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "Show me the SpaceX rocket photos.",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [
           makeSource({
             id: "source_spacex",
             title: "spacex-s1.pdf",
-            knowhereDocumentId: "doc_spacex",
+            ziruDocumentId: "doc_spacex",
           }),
         ],
         excludedSourceIds: [],
@@ -575,7 +575,7 @@ describe("answerQuestionWithRetrieval", () => {
       expect.objectContaining({ id: "source_spacex" }),
     );
     expect(retrieval.query).toHaveBeenCalledWith({
-      namespace: "notebook-workspace",
+      namespace: "webui-workspace",
       query: "SpaceX rocket photos",
       topK: 8,
       useAgentic: true,
@@ -584,7 +584,7 @@ describe("answerQuestionWithRetrieval", () => {
       dataType: 3,
     });
     expect(answer.answer).toBe("Use this launch photo.");
-    expect(answer.answer).not.toContain("knowhere-storage.example");
+    expect(answer.answer).not.toContain("ziru-storage.example");
     expect(answer.citations).toEqual([
       {
         ...result,
@@ -614,7 +614,7 @@ describe("answerQuestionWithRetrieval", () => {
         results: [pageResult],
         evidenceText: "Directory evidence.",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "Gordon phone number",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -631,12 +631,12 @@ describe("answerQuestionWithRetrieval", () => {
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "What is Gordon's phone number?",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [
           makeSource({
             id: "source_directory",
             title: "directory.pdf",
-            knowhereDocumentId: "doc_directory",
+            ziruDocumentId: "doc_directory",
           }),
         ],
         excludedSourceIds: [],
@@ -647,7 +647,7 @@ describe("answerQuestionWithRetrieval", () => {
     );
 
     expect(retrieval.query).toHaveBeenCalledWith({
-      namespace: "notebook-workspace",
+      namespace: "webui-workspace",
       query: "Gordon phone number",
       topK: 8,
       useAgentic: true,
@@ -668,7 +668,7 @@ describe("answerQuestionWithRetrieval", () => {
         results: [makeRetrievalResult()],
         evidenceText: "Grounding content from evidence tree",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "What does the document say?",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -683,7 +683,7 @@ describe("answerQuestionWithRetrieval", () => {
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "What does the document say?",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [makeSource()],
         excludedSourceIds: [],
         retrieval,
@@ -699,14 +699,14 @@ describe("answerQuestionWithRetrieval", () => {
         type: "retrieval_start",
         attempt: 1,
         query: "What does the document say?",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
       },
       { type: "retrieval_done", attempt: 1, resultCount: 1, referencedChunkCount: 0 },
       {
         type: "retrieval_start",
         attempt: 2,
         query: "second focused query",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
       },
       { type: "retrieval_done", attempt: 2, resultCount: 1, referencedChunkCount: 0 },
       { type: "phase", phase: "answering" },
@@ -716,7 +716,7 @@ describe("answerQuestionWithRetrieval", () => {
 
   it("hardens citation and artifact asset URLs before returning the answer", async () => {
     const rawAssetUrl =
-      "https://knowhere-storage.example/results/job_1/images/id-front.jpg?AWSAccessKeyId=test";
+      "https://ziru-storage.example/results/job_1/images/id-front.jpg?AWSAccessKeyId=test";
     const hardenedAssetUrl =
       "https://blob.example/workspaces/workspace_1/chat-assets/source-source_identity/id-front.jpg";
     const retrieval = {
@@ -734,7 +734,7 @@ describe("answerQuestionWithRetrieval", () => {
         ],
         evidenceText: "Identity image evidence.",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "identity front image",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -838,12 +838,12 @@ describe("answerQuestionWithRetrieval", () => {
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "Show me the identity image.",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [
           makeSource({
             id: "source_identity",
             title: "identity.pdf",
-            knowhereDocumentId: "doc_identity",
+            ziruDocumentId: "doc_identity",
           }),
         ],
         excludedSourceIds: [],
@@ -871,7 +871,7 @@ describe("answerQuestionWithRetrieval", () => {
       ],
     });
     expect(answer.answer).toBe("Use this image.");
-    expect(answer.answer).not.toContain("knowhere-storage.example");
+    expect(answer.answer).not.toContain("ziru-storage.example");
     expect(answer.citations.map((citation) => citation.assetUrl)).toEqual([
       hardenedAssetUrl,
     ]);
@@ -918,7 +918,7 @@ describe("answerQuestionWithRetrieval", () => {
         ],
         evidenceText: "Identity image candidates.",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "冯荣洲 身份证 图片",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -1074,11 +1074,11 @@ describe("answerQuestionWithRetrieval", () => {
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "请只返回冯荣洲的 2 张身份证图片",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [
           makeSource({
             title: "商务标文件.pdf",
-            knowhereDocumentId: "doc_identity",
+            ziruDocumentId: "doc_identity",
           }),
         ],
         excludedSourceIds: [],
@@ -1118,7 +1118,7 @@ describe("answerQuestionWithRetrieval", () => {
         results: [makeRetrievalResult()],
         evidenceText: "Grounding content",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "What changed?",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -1141,7 +1141,7 @@ describe("answerQuestionWithRetrieval", () => {
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "What changed?",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [makeSource()],
         excludedSourceIds: [],
         retrieval,
@@ -1152,7 +1152,7 @@ describe("answerQuestionWithRetrieval", () => {
 
     expect(answer).toEqual({
       answer:
-        "I couldn't safely finish that response because the agent output did not pass Notebook's validation checks. Please try again.",
+        "I couldn't safely finish that response because the agent output did not pass WebUI's validation checks. Please try again.",
       citations: [],
       artifacts: [],
     });
@@ -1176,7 +1176,7 @@ describe("answerQuestionWithRetrieval", () => {
         ],
         evidenceText: "Diagram candidate.",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "diagram",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -1248,9 +1248,9 @@ describe("answerQuestionWithRetrieval", () => {
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "Show me the diagram.",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [
-          makeSource({ title: "diagram.pdf", knowhereDocumentId: "doc_diagram" }),
+          makeSource({ title: "diagram.pdf", ziruDocumentId: "doc_diagram" }),
         ],
         excludedSourceIds: [],
         retrieval,
@@ -1291,7 +1291,7 @@ describe("answerQuestionWithRetrieval", () => {
         ],
         evidenceText: "Plan comparison evidence.",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "compare plan costs timelines",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -1366,13 +1366,13 @@ describe("answerQuestionWithRetrieval", () => {
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "Compare the plans in a table.",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [
-          makeSource({ title: "Plan A.pdf", knowhereDocumentId: "doc_plan_a" }),
+          makeSource({ title: "Plan A.pdf", ziruDocumentId: "doc_plan_a" }),
           makeSource({
             id: "source_plan_b",
             title: "Plan B.pdf",
-            knowhereDocumentId: "doc_plan_b",
+            ziruDocumentId: "doc_plan_b",
           }),
         ],
         excludedSourceIds: [],
@@ -1417,7 +1417,7 @@ describe("answerQuestionWithRetrieval", () => {
         evidenceText:
           "[image-6-中华人民共和国居民身份证.jpg]\n[image-7-中国居民身份证.jpg]",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "公民身份证明 图片",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -1440,14 +1440,14 @@ describe("answerQuestionWithRetrieval", () => {
       makeSource({
         id: "source_identity",
         title: "商务标文件.pdf",
-        knowhereDocumentId: "doc_identity",
+        ziruDocumentId: "doc_identity",
       }),
     ];
 
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "请发送几张关于公民身份的图片给我",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources,
         excludedSourceIds: [],
         retrieval,
@@ -1465,7 +1465,7 @@ describe("answerQuestionWithRetrieval", () => {
       searchSources: expect.any(Function),
     });
     expect(retrieval.query).toHaveBeenCalledWith({
-      namespace: "notebook-workspace",
+      namespace: "webui-workspace",
       query: "公民身份证明 图片",
       topK: 8,
       useAgentic: true,
@@ -1492,7 +1492,7 @@ describe("answerQuestionWithRetrieval", () => {
         results: [],
         evidenceText: "",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "Missing fact?",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -1506,7 +1506,7 @@ describe("answerQuestionWithRetrieval", () => {
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "Missing fact?",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [makeSource()],
         excludedSourceIds: [],
         retrieval,
@@ -1524,7 +1524,7 @@ describe("answerQuestionWithRetrieval", () => {
       durationSeconds: expect.any(Number),
       queries: [
         {
-          namespace: "notebook-workspace",
+          namespace: "webui-workspace",
           query: "Missing fact?",
           referencedChunkCount: 0,
           resultCount: 0,
@@ -1540,7 +1540,7 @@ describe("answerQuestionWithRetrieval", () => {
         results: [makeRetrievalResult()],
         evidenceText: "Energy storage deployments grew significantly.",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "Tesla Q4 2025 Update energy generation and storage deployments",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -1566,7 +1566,7 @@ describe("answerQuestionWithRetrieval", () => {
     await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "What about energy storage in this document?",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [makeSource({ title: "TSLA-Q4-2025-Update.pdf" })],
         excludedSourceIds: [],
         retrieval,
@@ -1576,7 +1576,7 @@ describe("answerQuestionWithRetrieval", () => {
     );
 
     expect(retrieval.query).toHaveBeenCalledWith({
-      namespace: "notebook-workspace",
+      namespace: "webui-workspace",
       query: "Tesla Q4 2025 Update energy generation and storage deployments",
       topK: 8,
       useAgentic: true,
@@ -1601,7 +1601,7 @@ describe("answerQuestionWithRetrieval", () => {
           results: [],
           evidenceText: null,
           referencedChunks: [],
-          namespace: "notebook-workspace",
+          namespace: "webui-workspace",
           query,
           routerUsed: "workflow_single_step",
           answerText: null,
@@ -1616,7 +1616,7 @@ describe("answerQuestionWithRetrieval", () => {
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "Question",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [makeSource()],
         excludedSourceIds: [],
         retrieval,
@@ -1627,14 +1627,14 @@ describe("answerQuestionWithRetrieval", () => {
 
     expect(answer.retrievalTrace?.queries).toEqual([
       {
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "query variant one",
         referencedChunkCount: 0,
         resultCount: 0,
         topScores: [],
       },
       {
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "query variant two",
         referencedChunkCount: 0,
         resultCount: 0,
@@ -1649,7 +1649,7 @@ describe("answerQuestionWithRetrieval", () => {
         results: [makeRetrievalResult()],
         evidenceText: "Evidence.",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "any",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -1663,7 +1663,7 @@ describe("answerQuestionWithRetrieval", () => {
     await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "Question",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [makeSource()],
         excludedSourceIds: [],
         retrieval,
@@ -1686,13 +1686,13 @@ describe("answerQuestionWithRetrieval", () => {
     );
   });
 
-  it("does not append chat history to Knowhere tool queries", async () => {
+  it("does not append chat history to Ziru tool queries", async () => {
     const retrieval = {
       query: vi.fn().mockResolvedValue({
         results: [makeRetrievalResult()],
         evidenceText: "Energy storage deployments grew.",
         referencedChunks: [],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "Tesla energy storage deployments",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -1716,7 +1716,7 @@ describe("answerQuestionWithRetrieval", () => {
     await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "What about it?",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [makeSource()],
         excludedSourceIds: [],
         retrieval,
@@ -1727,7 +1727,7 @@ describe("answerQuestionWithRetrieval", () => {
 
     const queryInput = retrieval.query.mock.calls[0]?.[0];
     expect(queryInput).toMatchObject({
-      namespace: "notebook-workspace",
+      namespace: "webui-workspace",
       query: "Tesla energy storage deployments",
       topK: 8,
       useAgentic: true,
@@ -1756,7 +1756,7 @@ describe("answerQuestionWithRetrieval", () => {
             assetUrl: "https://blob.example/images/launch.jpg",
           },
         ],
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         query: "SpaceX launch image",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -1773,11 +1773,11 @@ describe("answerQuestionWithRetrieval", () => {
     const answer = await Effect.runPromise(
       answerQuestionWithRetrieval({
         question: "Show me the launch image.",
-        namespace: "notebook-workspace",
+        namespace: "webui-workspace",
         sources: [
           makeSource({
             title: "spacex-s1.pdf",
-            knowhereDocumentId: "doc_spacex",
+            ziruDocumentId: "doc_spacex",
           }),
         ],
         excludedSourceIds: [],
@@ -1805,7 +1805,7 @@ describe("answerQuestionWithRetrieval", () => {
 });
 
 describe("generateAgenticOutputManifest", () => {
-  it("runs the outer harness workflow around Knowhere retrieval", async () => {
+  it("runs the outer harness workflow around Ziru retrieval", async () => {
     process.env.AI_GATEWAY_API_KEY = "test_gateway_key";
     let capturedGenerateInput:
       | Parameters<ToolLoopAgent["generate"]>[0]
@@ -1887,7 +1887,7 @@ describe("generateAgenticOutputManifest", () => {
       ],
       evidenceText: "Identity image evidence.",
       referencedChunks: [],
-      namespace: "notebook-workspace",
+      namespace: "webui-workspace",
       query: "冯荣洲 身份证 图片",
       routerUsed: "workflow_single_step",
       chunkReferences: [],
@@ -1918,7 +1918,7 @@ describe("generateAgenticOutputManifest", () => {
       sources: [
         makeSource({
           title: "商务标文件.pdf",
-          knowhereDocumentId: "doc_identity",
+          ziruDocumentId: "doc_identity",
         }),
       ],
       excludedSourceIds: [],
@@ -2033,7 +2033,7 @@ describe("generateAgenticOutputManifest", () => {
       ),
       evidenceText: "Identity image evidence.",
       referencedChunks: [],
-      namespace: "notebook-workspace",
+      namespace: "webui-workspace",
       query: "身份证 图片",
       routerUsed: "workflow_single_step",
       answerText: null,
@@ -2045,7 +2045,7 @@ describe("generateAgenticOutputManifest", () => {
       question: "只要 2 张身份证图片",
       messages: [],
       sources: [
-        makeSource({ title: "ids.pdf", knowhereDocumentId: "doc_identity" }),
+        makeSource({ title: "ids.pdf", ziruDocumentId: "doc_identity" }),
       ],
       excludedSourceIds: [],
       searchSources,
@@ -2115,8 +2115,8 @@ function makeSource(overrides: Partial<Source> = {}): Source {
     sizeBytes: 100,
     status: "ready",
     failureReason: null,
-    knowhereJobId: "job_123",
-    knowhereDocumentId: "doc_included",
+    ziruJobId: "job_123",
+    ziruDocumentId: "doc_included",
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,
@@ -2155,7 +2155,7 @@ function makeHarnessRunResult(text: string): HarnessRunResult {
   };
 }
 
-type KnowhereQueryResponseLogMeta = {
+type ZiruQueryResponseLogMeta = {
   readonly query: string
   readonly resultCount: number
   readonly referencedChunkCount: number

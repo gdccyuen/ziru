@@ -189,7 +189,7 @@ describe("WorkspaceShellLayout", () => {
       React.createElement(C, {
         activeWorkspace: { id: "workspace_1", namespace: "adobe" },
         workspaces: [{ id: "workspace_1", namespace: "adobe" }],
-        knowhereKeyLabels: [],
+        ziruKeyLabels: [],
         archivingSourceIds: [],
         archivingThreadIds: [],
         chat: {

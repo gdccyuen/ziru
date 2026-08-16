@@ -49,7 +49,7 @@ export const getDefaultConfig = (): AppConfigType => {
     return value && value.trim() !== "" ? value : defaultValue;
   };
 
-  const companyName = getEnv("COMPANY_NAME", "Knowhere AI");
+  const companyName = getEnv("COMPANY_NAME", "Ziru AI");
   const simpleCompanyName = getEnv("SIMPLE_COMPANY_NAME", "");
   const icpNumber = getEnv("ICP_NUMBER", "");
   const icpUrl = getEnv("ICP_URL", "https://beian.miit.gov.cn/");

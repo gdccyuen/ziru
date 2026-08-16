@@ -1,7 +1,7 @@
 import type {
   RetrievalQueryParams,
   RetrievalQueryResponse,
-} from "@ontos-ai/knowhere-sdk"
+} from "@/integrations/ziru-sdk-types"
 
 import type { Source } from "@/infrastructure/db/schema"
 import type { HarnessRunResult } from "@/agent-harness"

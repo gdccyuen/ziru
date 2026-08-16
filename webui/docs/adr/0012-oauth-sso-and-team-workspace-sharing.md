@@ -8,7 +8,7 @@ Accepted (Phase 4 of the auth/workspace overhaul)
 
 ## Context
 
-Phase 2 (ADR 0010) built Notebook-owned identity with password login only.
+Phase 2 (ADR 0010) built WebUI-owned identity with password login only.
 Operators asked for SSO (Google/GitHub) so users don't need admin-provisioned
 passwords, and for team sharing so several users can work in one workspace
 (namespace-scoped document set) instead of every user owning their own copy.
@@ -62,17 +62,17 @@ passwords, and for team sharing so several users can work in one workspace
 10. **Dashboard SSO is a session handoff, not OAuth.** When
     `DASHBOARD_ORIGIN` is set, the login page offers "SSO (Dashboard)".
     The Dashboard's Better Auth session cookie is host-scoped (ports are
-    ignored for cookies), so the browser already sends it to the notebook
+    ignored for cookies), so the browser already sends it to the webui
     on another port; `GET /api/auth/dashboard/start` forwards the full
     cookie jar to the Dashboard's public `users.getCurrentUser` oRPC
     endpoint and logs the user in via find-or-create. Linking is by
-    `(dashboard, providerUserId)`; on an email collision the notebook
+    `(dashboard, providerUserId)`; on an email collision the webui
     adopts an existing user only when that user has no password
     (pristine or OAuth-created) — a password-protected account is refused
     with 409, since silently adopting it would be an account takeover.
     Cross-host deployments work by setting the Dashboard's
     `AUTH_COOKIE_DOMAIN` (Better Auth crossSubDomainCookies) so the same
-    session cookie reaches the notebook on a shared parent domain.
+    session cookie reaches the webui on a shared parent domain.
 11. **Cache Components changes GET-route prerendering.** With
     `cacheComponents: true`, GET route handlers are prerendered at build
     time: the Dashboard start route's early `getDashboardProvider()` 404
@@ -89,7 +89,7 @@ passwords, and for team sharing so several users can work in one workspace
   coexist on `/login` (providers render only when configured).
 - Members can chat and read sources in a shared workspace but cannot invite
   others or remove the owner; there is no leave/transfer-ownership flow yet.
-- A member's `active_knowhere_api_key_id` is irrelevant while they operate
+- A member's `active_ziru_api_key_id` is irrelevant while they operate
   in a shared workspace (owner's key resolves); if the owner deletes their
   key, member access degrades exactly as owner access would.
 - GitHub users with private primary emails get a provider-scoped fallback

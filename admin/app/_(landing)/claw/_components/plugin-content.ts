@@ -27,10 +27,10 @@ export type FinancialRow = {
 
 export const inputFormats = ["PDF", "DOCX", "XLSX", "PPT"] as const;
 
-export const KNOWHERE_CLAW_PACKAGE_NAME = "@ontos-ai/knowhere-claw";
-export const KNOWHERE_CLAW_PACKAGE_URL = "https://www.npmjs.com/package/@ontos-ai/knowhere-claw";
-export const KNOWHERE_CLAWHUB_SKILL_NAME = "Knowhere";
-export const KNOWHERE_CLAWHUB_SKILL_URL = "https://clawhub.ai/ErickThoughts/clawhub-knowhere";
+export const ZIRU_CLAW_PACKAGE_NAME = "@ontos-ai/knowhere-claw";
+export const ZIRU_CLAW_PACKAGE_URL = "https://www.npmjs.com/package/@ontos-ai/knowhere-claw";
+export const ZIRU_CLAWHUB_SKILL_NAME = "Ziru";
+export const ZIRU_CLAWHUB_SKILL_URL = "https://clawhub.ai/ErickThoughts/clawhub-ziru";
 
 export const contextTraits = [
   "Browse-first",
@@ -45,13 +45,13 @@ export const heroCards: readonly HeroCard[] = [
     eyebrow: "Result packages",
     title: "Store once. Reopen anytime.",
     description:
-      "Knowhere parses the document, OpenClaw stores the returned package locally, and agents can reopen the exact manifest, hierarchy, chunks, and raw files later.",
+      "Ziru parses the document, OpenClaw stores the returned package locally, and agents can reopen the exact manifest, hierarchy, chunks, and raw files later.",
   },
   {
     eyebrow: "Tool surface",
     title: "Browse before the answer.",
     description:
-      "The plugin registers `knowhere_*` tools for preview, grep, raw-file reads, cleanup, and explicit ingest flows instead of forcing everything through one opaque call.",
+      "The plugin registers `ziru_*` tools for preview, grep, raw-file reads, cleanup, and explicit ingest flows instead of forcing everything through one opaque call.",
   },
   {
     eyebrow: "Auto-grounding",
@@ -100,7 +100,7 @@ export const chatMessages: readonly ChatMessage[] = [
     from: "agent",
     text: "Open the preview first, grep for the metric, then read the exact result file behind that chunk. The plugin keeps the path surface intact.",
     highlight: "preview → grep → read_result_file",
-    citations: ["knowhere_preview_document", "knowhere_grep", "knowhere_read_result_file"],
+    citations: ["ziru_preview_document", "ziru_grep", "ziru_read_result_file"],
   },
 ] as const;
 
@@ -108,26 +108,26 @@ export const installCards: readonly InstallCard[] = [
   {
     step: "01",
     title: "Install package",
-    description: "Add the packaged runtime so OpenClaw can load the bundled knowhere skill.",
-    command: `openclaw plugins install ${KNOWHERE_CLAW_PACKAGE_NAME}`,
+    description: "Add the packaged runtime so OpenClaw can load the bundled ziru skill.",
+    command: `openclaw plugins install ${ZIRU_CLAW_PACKAGE_NAME}`,
   },
   {
     step: "02",
     title: "Attach API key",
-    description: "Connect this OpenClaw instance to your Knowhere account.",
-    command: 'openclaw config set plugins.entries.knowhere.config.apiKey "sk_..."',
+    description: "Connect this OpenClaw instance to your Ziru account.",
+    command: 'openclaw config set plugins.entries.ziru.config.apiKey "sk_..."',
   },
   {
     step: "03",
     title: "Enable plugin",
     description: "Turn the entry on so agents can load the plugin inside the runtime.",
-    command: "openclaw plugins enable knowhere",
+    command: "openclaw plugins enable ziru",
   },
 ] as const;
 
 export const ctaOutcomes = [
   {
-    title: "knowhere_* tools",
+    title: "ziru_* tools",
     description: "Preview, grep, raw-file reads, ingest, and cleanup become callable in one place.",
   },
   {

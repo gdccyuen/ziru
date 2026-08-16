@@ -20,7 +20,7 @@ const longResearchPrompt = [
   "4. Include source-backed evidence for each conclusion.",
 ].join("\n")
 
-test("fits desktop notebook panels inside a 13-inch viewport", async ({
+test("fits desktop webui panels inside a 13-inch viewport", async ({
   context,
   page,
 }) => {
@@ -63,7 +63,7 @@ test("fits desktop notebook panels inside a 13-inch viewport", async ({
   )
 })
 
-test("uses the tabbed notebook layout below the desktop panel minimum", async ({
+test("uses the tabbed webui layout below the desktop panel minimum", async ({
   context,
   page,
 }) => {
@@ -90,7 +90,7 @@ for (const viewport of composerRegressionViewports) {
     context,
     page,
   }) => {
-    await openAuthenticatedNotebook(context, page, viewport)
+    await openAuthenticatedWebUI(context, page, viewport)
 
     const input = page.getByRole("textbox", { name: "Chat message" })
     const sendButton = page.getByRole("button", { name: "Send message" })
@@ -110,7 +110,7 @@ for (const viewport of composerRegressionViewports) {
     context,
     page,
   }) => {
-    await openAuthenticatedNotebook(context, page, viewport)
+    await openAuthenticatedWebUI(context, page, viewport)
 
     const input = page.getByRole("textbox", { name: "Chat message" })
     await page.getByRole("button", { name: "Create" }).click()
@@ -135,7 +135,7 @@ for (const viewport of composerRegressionViewports) {
   })
 }
 
-async function openAuthenticatedNotebook(
+async function openAuthenticatedWebUI(
   context: BrowserContext,
   page: Page,
   viewport: ComposerViewport,

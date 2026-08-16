@@ -94,8 +94,8 @@ export function WorkspaceMembersDialog({
         <DialogHeader>
           <DialogTitle>Workspace members</DialogTitle>
           <DialogDescription>
-            Invite Notebook users to share this workspace&apos;s sources and
-            chats. Users must already have a Notebook account.
+            Invite WebUI users to share this workspace&apos;s sources and
+            chats. Users must already have a WebUI account.
           </DialogDescription>
         </DialogHeader>
 

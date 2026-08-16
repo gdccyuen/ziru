@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from shared.core.config import settings
 from shared.core.exceptions.domain_exceptions import (
     AuthException,
-    KnowhereException,
+    ZiruException,
     StripeServiceException,
     SystemSettingMissingException,
     ValidationException,
@@ -163,7 +163,7 @@ class StripeWebhookService:
                 f"stripe_subscription_id={stripe_subscription_id}"
             )
             return {"status": "success", "subscription_id": stripe_subscription_id}
-        except KnowhereException:
+        except ZiruException:
             raise
         except Exception as exc:
             logger.error(

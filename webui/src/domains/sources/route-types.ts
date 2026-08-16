@@ -1,5 +1,5 @@
 import type {
-  ChunkKnowhereClient,
+  ChunkZiruClient,
   ChunkPage,
   ChunkPageParams,
 } from "@/domains/chunks"
@@ -14,11 +14,11 @@ import type { Source, Workspace } from "@/infrastructure/db/schema"
 import type { RouteResult } from "@/lib/route-result"
 import type { SourceBlobUploadInput } from "./blob-upload"
 import type { sourceViewOptionsBySourceId } from "./counts"
-import type { UploadKnowhereClient } from "./upload"
+import type { UploadZiruClient } from "./upload"
 
-type SourceRouteKnowhereClient = UploadKnowhereClient &
-  ChunkKnowhereClient & {
-    readonly documents: ChunkKnowhereClient["documents"] & {
+type SourceRouteZiruClient = UploadZiruClient &
+  ChunkZiruClient & {
+    readonly documents: ChunkZiruClient["documents"] & {
       list?(params?: {
         readonly namespace?: string
         readonly page?: number
@@ -156,20 +156,20 @@ type SourceRouteService = {
 }
 
 type SourceWorkflowService = {
-  readonly uploadSourceToKnowhere: (
+  readonly uploadSourceToZiru: (
     workspace: Workspace,
     file: File,
-    knowhere: UploadKnowhereClient,
+    ziru: UploadZiruClient,
   ) => Promise<Source>
-  readonly uploadSourceBlobToKnowhere: (
+  readonly uploadSourceBlobToZiru: (
     workspace: Workspace,
     input: SourceBlobUploadInput,
-    knowhere: UploadKnowhereClient,
+    ziru: UploadZiruClient,
   ) => Promise<Source>
-  readonly retrySourceToKnowhere: (
+  readonly retrySourceToZiru: (
     workspace: Workspace,
     source: Source,
-    knowhere: UploadKnowhereClient,
+    ziru: UploadZiruClient,
   ) => Promise<Source>
   readonly findInWorkspace: (
     workspaceId: string,
@@ -215,15 +215,15 @@ type SourceRouteServiceDependencies = {
   readonly getCurrentUser: () => Promise<AuthUser | null>
   readonly getSourceViewOptionsBySourceId: (
     sources: readonly Source[],
-    client: SourceRouteKnowhereClient,
+    client: SourceRouteZiruClient,
   ) => ReturnType<typeof sourceViewOptionsBySourceId>
   readonly loadChunkPageForSource: typeof loadChunkPageForSource
   readonly loadChunksForSource: typeof loadChunksForSource
-  readonly makeKnowhereClient: (apiKey: string) => SourceRouteKnowhereClient
+  readonly makeZiruClient: (apiKey: string) => SourceRouteZiruClient
   readonly listSourcesForWorkspace: (workspaceId: string) => Promise<Source[]>
   readonly reconcileSourcesForWorkspace: (
     workspace: Workspace,
-    client: SourceRouteKnowhereClient,
+    client: SourceRouteZiruClient,
   ) => Promise<Source[]>
   readonly requireUser: () => Promise<AuthUser>
   readonly sourceService: SourceWorkflowService
@@ -245,7 +245,7 @@ export type {
   RetrySourceBody,
   RetrySourceInput,
   SourceChunksBody,
-  SourceRouteKnowhereClient,
+  SourceRouteZiruClient,
   SourceRouteService,
   SourceRouteServiceDependencies,
   SourceRouteServiceOverrides,

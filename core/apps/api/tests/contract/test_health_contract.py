@@ -14,4 +14,4 @@ async def test_should_report_healthy_when_the_api_bootstraps(
 
         assert response.status_code == 200
         assert response.json()["status"] == "healthy"
-        assert response.json()["service"] == "knowhere-api"
+        assert response.json()["service"] == "ziru-api"

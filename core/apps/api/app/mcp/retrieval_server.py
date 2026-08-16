@@ -16,7 +16,7 @@ from shared.services.retrieval.app_service import run_retrieval_query
 from shared.services.retrieval.settings import DEFAULT_TOP_K
 
 DbFactory = Callable[[], AsyncContextManager[AsyncSession]]
-KNOWHERE_NAMESPACE_HEADER = "x-knowhere-namespace"
+ZIRU_NAMESPACE_HEADER = "x-ziru-namespace"
 
 
 def create_public_mcp_transport_security() -> TransportSecuritySettings:
@@ -47,7 +47,7 @@ def resolve_mcp_namespace(*, ctx: Context | None) -> str:
     except (RuntimeError, ValueError):
         return normalize_retrieval_namespace(None)
     headers = getattr(request, "headers", {}) or {}
-    namespace = get_header(headers, KNOWHERE_NAMESPACE_HEADER)
+    namespace = get_header(headers, ZIRU_NAMESPACE_HEADER)
     return normalize_retrieval_namespace(namespace)
 
 
@@ -83,7 +83,7 @@ def create_retrieval_mcp_server(
     streamable_http_path: str = "/mcp",
 ):
     server = FastMCP(
-        "knowhere-retrieval",
+        "ziru-retrieval",
         instructions=(
             "Use this server to search published documents. "
             "It returns evidence_text (hierarchical evidence tree), "

@@ -1,4 +1,4 @@
-# ADR 0001: Organize Notebook Code By Domain Modules
+# ADR 0001: Organize WebUI Code By Domain Modules
 
 ## Status
 
@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Notebook code started with most behavior in a few large files. That made the
+WebUI code started with most behavior in a few large files. That made the
 Workspace, Source, Parsed Chunk, Chat Thread, and Citation concepts harder to
 find because knowledge was grouped by execution order instead of by the domain
 concept it managed.
@@ -14,7 +14,7 @@ concept it managed.
 ## Decision
 
 Keep domain behavior under `src/domains/<domain>/` and UI orchestration under
-`src/components/` modules named for Notebook concepts from `CONTEXT.md`.
+`src/components/` modules named for WebUI concepts from `CONTEXT.md`.
 
 Route handlers should stay thin HTTP adapters. Domain modules should own the
 workflow and expose small interfaces that callers can test directly.

@@ -2,39 +2,39 @@ import "server-only"
 
 import { readFile, stat } from "node:fs/promises"
 
-export type KnowhereKey = {
+export type ZiruKey = {
   readonly label: string
   readonly apiKey: string
 }
 
-export type MaskedKnowhereKey = {
+export type MaskedZiruKey = {
   readonly label: string
   readonly mask: string
 }
 
 /**
- * Source of Knowhere API keys (server-side only).
+ * Source of Ziru API keys (server-side only).
  *
  * Priority:
- * 1. `config/knowhere-keys.json` (path from `KNOWHERE_KEYS_FILE`, default
- *    `./config/knowhere-keys.json`) — an array of `{ label, apiKey }`.
+ * 1. `config/ziru-keys.json` (path from `ZIRU_KEYS_FILE`, default
+ *    `./config/ziru-keys.json`) — an array of `{ label, apiKey }`.
  *    Re-read when the file mtime changes, so edits take effect without a
  *    restart.
- * 2. Fallback: the `KNOWHERE_API_KEY` env var as a single key labeled
+ * 2. Fallback: the `ZIRU_API_KEY` env var as a single key labeled
  *    `"default"` (bootstrap for fresh deployments before UI-managed DB
  *    keys are added).
  *
  * The edge proxy only checks the session cookie; server code resolves
  * credentials through this module or the DB-backed
- * `knowhere-api-keys-repository`.
+ * `ziru-api-keys-repository`.
  */
-const defaultKeysFilePath = "./config/knowhere-keys.json"
+const defaultKeysFilePath = "./config/ziru-keys.json"
 
-let cachedFileKeys: readonly KnowhereKey[] | null = null
+let cachedFileKeys: readonly ZiruKey[] | null = null
 let cachedFileMtimeMs: number | null = null
 
-async function readKeysFile(): Promise<readonly KnowhereKey[]> {
-  const path = process.env.KNOWHERE_KEYS_FILE?.trim() || defaultKeysFilePath
+async function readKeysFile(): Promise<readonly ZiruKey[]> {
+  const path = process.env.ZIRU_KEYS_FILE?.trim() || defaultKeysFilePath
 
   try {
     const fileStat = await stat(path)
@@ -52,9 +52,9 @@ async function readKeysFile(): Promise<readonly KnowhereKey[]> {
   }
 }
 
-function normalizeFileKeys(value: unknown): readonly KnowhereKey[] {
+function normalizeFileKeys(value: unknown): readonly ZiruKey[] {
   if (!Array.isArray(value)) return []
-  const keys: KnowhereKey[] = []
+  const keys: ZiruKey[] = []
   for (const entry of value) {
     if (typeof entry !== "object" || entry === null) continue
     const candidate = entry as Record<string, unknown>
@@ -67,13 +67,13 @@ function normalizeFileKeys(value: unknown): readonly KnowhereKey[] {
   return keys
 }
 
-function getEnvKey(): KnowhereKey | null {
-  const value = process.env.KNOWHERE_API_KEY?.trim()
+function getEnvKey(): ZiruKey | null {
+  const value = process.env.ZIRU_API_KEY?.trim()
   if (!value || value.length === 0) return null
   return { label: "default", apiKey: value }
 }
 
-export async function listKnowhereKeys(): Promise<readonly KnowhereKey[]> {
+export async function listZiruKeys(): Promise<readonly ZiruKey[]> {
   const fileKeys = await readKeysFile()
   if (fileKeys.length > 0) return fileKeys
 
@@ -81,29 +81,29 @@ export async function listKnowhereKeys(): Promise<readonly KnowhereKey[]> {
   return envKey ? [envKey] : []
 }
 
-export async function listMaskedKnowhereKeys(): Promise<
-  readonly MaskedKnowhereKey[]
+export async function listMaskedZiruKeys(): Promise<
+  readonly MaskedZiruKey[]
 > {
-  const keys = await listKnowhereKeys()
+  const keys = await listZiruKeys()
   return keys.map((key) => ({ label: key.label, mask: maskApiKey(key.apiKey) }))
 }
 
-export async function getKnowhereKeyByLabel(
+export async function getZiruKeyByLabel(
   label: string,
-): Promise<KnowhereKey | null> {
+): Promise<ZiruKey | null> {
   const normalized = label?.trim()
   if (!normalized) return null
-  const keys = await listKnowhereKeys()
+  const keys = await listZiruKeys()
   return keys.find((candidate) => candidate.label === normalized) ?? null
 }
 
-export async function getDefaultKnowhereKeyLabel(): Promise<string> {
-  const keys = await listKnowhereKeys()
+export async function getDefaultZiruKeyLabel(): Promise<string> {
+  const keys = await listZiruKeys()
   return keys[0]?.label ?? "default"
 }
 
-export async function getDefaultKnowhereKey(): Promise<KnowhereKey | null> {
-  const keys = await listKnowhereKeys()
+export async function getDefaultZiruKey(): Promise<ZiruKey | null> {
+  const keys = await listZiruKeys()
   return keys[0] ?? null
 }
 

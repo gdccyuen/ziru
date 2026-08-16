@@ -159,7 +159,7 @@ def test_should_republish_only_orphaned_pending_webhook_events_and_persist_qstas
     class FakeMessageClient:
         def publish(self, **kwargs: Any) -> SimpleNamespace:
             published_calls.append(kwargs)
-            message_id = f"msg_{kwargs['headers']['X-Knowhere-Event-ID']}"
+            message_id = f"msg_{kwargs['headers']['X-Ziru-Event-ID']}"
             published_message_ids.append(message_id)
             return SimpleNamespace(message_id=message_id)
 
@@ -251,7 +251,7 @@ def test_should_republish_only_orphaned_pending_webhook_events_and_persist_qstas
     }
     assert published_message_ids == [f"msg_{orphaned_event_id}"]
     assert published_calls[0]["deduplication_id"] == orphaned_event_id
-    assert published_calls[0]["label"] == "knowhere-webhook"
+    assert published_calls[0]["label"] == "ziru-webhook"
 
     with engine.begin() as connection:
         event_rows = connection.execute(

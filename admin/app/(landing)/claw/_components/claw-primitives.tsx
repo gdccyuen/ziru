@@ -283,12 +283,12 @@ export const NpmLogo = ({ className }: NpmLogoProps) => {
   );
 };
 
-type KnowhereWingProps = {
+type ZiruWingProps = {
   className?: string;
   variant: "primary" | "secondary";
 };
 
-const KnowhereWing = ({ className, variant }: KnowhereWingProps) => {
+const ZiruWing = ({ className, variant }: ZiruWingProps) => {
   return (
     <svg
       aria-hidden="true"
@@ -321,12 +321,12 @@ const KnowhereWing = ({ className, variant }: KnowhereWingProps) => {
   );
 };
 
-type KnowhereWordmarkProps = {
+type ZiruWordmarkProps = {
   className?: string;
   compact?: boolean;
 };
 
-export const KnowhereWordmark = ({ className, compact = false }: KnowhereWordmarkProps) => {
+export const ZiruWordmark = ({ className, compact = false }: ZiruWordmarkProps) => {
   const iconContainerClassName = compact
     ? "h-[20.203px] w-[28px]"
     : "h-[49.73px] w-[68px] min-[640px]:max-[767px]:h-[38.664px] min-[640px]:max-[767px]:w-[48px] min-[768px]:max-[768px]:h-[38.664px] min-[768px]:max-[768px]:w-[48px] min-[769px]:h-[38.664px] min-[769px]:w-[48px]";
@@ -346,8 +346,8 @@ export const KnowhereWordmark = ({ className, compact = false }: KnowhereWordmar
         aria-hidden="true"
         className={cn("relative block shrink-0 opacity-80", iconContainerClassName)}
       >
-        <KnowhereWing className={primaryWingClassName} variant="primary" />
-        <KnowhereWing className={secondaryWingClassName} variant="secondary" />
+        <ZiruWing className={primaryWingClassName} variant="primary" />
+        <ZiruWing className={secondaryWingClassName} variant="secondary" />
       </span>
       <span
         className={cn(
@@ -355,7 +355,7 @@ export const KnowhereWordmark = ({ className, compact = false }: KnowhereWordmar
           textClassName
         )}
       >
-        knowhere
+        ziru
       </span>
     </span>
   );

@@ -15,7 +15,7 @@ vi.mock("@/domains/chat/diagram", async (importOriginal) => {
 })
 
 vi.mock("@/domains/workspace/request-context", () => ({
-  notebookRequestContext: {
+  webuiRequestContext: {
     getAuthenticated: mocks.getAuthenticated,
     getAuthenticatedWithClient: mocks.getAuthenticatedWithClient,
   },
@@ -28,10 +28,10 @@ describe("POST /api/chat/diagram", () => {
     vi.clearAllMocks()
   })
 
-  it("requires authentication without provisioning a Knowhere client", async () => {
+  it("requires authentication without provisioning a Ziru client", async () => {
     mocks.getAuthenticated.mockResolvedValue({
       user: { id: "user_1", name: null, email: null },
-      workspace: { id: "workspace_1", namespace: "notebook-workspace_1" },
+      workspace: { id: "workspace_1", namespace: "webui-workspace_1" },
     })
     mocks.generateChatDiagramSpec.mockResolvedValue({
       type: "none",

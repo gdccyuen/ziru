@@ -25,7 +25,7 @@ import { workspaceClient } from "@/domains/workspace/client";
 import type { SourceView } from "@/domains/sources/types";
 import { MAX_UPLOAD_MB } from "@/domains/sources/validation";
 import {
-  trackNotebookUploadButtonClicked,
+  trackWebUIUploadButtonClicked,
   type AnalyticsContext,
 } from "@/lib/posthog";
 
@@ -43,7 +43,7 @@ export type SourceUploadDialogProps = {
     readonly id: string;
     readonly namespace: string;
   }[];
-  readonly knowhereKeyLabels?: readonly {
+  readonly ziruKeyLabels?: readonly {
     readonly id: string;
     readonly label: string;
   }[];
@@ -71,15 +71,15 @@ export function SourceUploadDialog({
   isBlobConfigured = true,
   activeWorkspace,
   workspaces = [],
-  knowhereKeyLabels = [],
+  ziruKeyLabels = [],
   renderTrigger,
 }: SourceUploadDialogProps): ReactElement {
   const [selectedTargetValue, setSelectedTargetValue] = useState<string | null>(
     null,
   );
   const { data: keyNamespacesByKeyId, isLoading: isLoadingNamespaces } = useSWR(
-    knowhereKeyLabels.length > 0
-      ? ["upload-all-key-namespaces", knowhereKeyLabels.map((k) => k.id).join(",")]
+    ziruKeyLabels.length > 0
+      ? ["upload-all-key-namespaces", ziruKeyLabels.map((k) => k.id).join(",")]
       : null,
     async ([, ids]: readonly [string, string]) => {
       const results = await Promise.all(
@@ -103,7 +103,7 @@ export function SourceUploadDialog({
 
   const uploadTargetOptions = useMemo<readonly UploadTargetOption[]>(
     () =>
-      knowhereKeyLabels.flatMap((key) => {
+      ziruKeyLabels.flatMap((key) => {
         const namespaces = keyNamespacesByKeyId?.[key.id] ?? []
         return namespaces.map((ns) => ({
           keyId: key.id,
@@ -112,7 +112,7 @@ export function SourceUploadDialog({
           workspaceId: workspaceIdByNamespace.get(ns.namespace),
         }))
       }),
-    [keyNamespacesByKeyId, knowhereKeyLabels, workspaceIdByNamespace],
+    [keyNamespacesByKeyId, ziruKeyLabels, workspaceIdByNamespace],
   );
   const defaultTargetValue = useMemo(() => {
     const option = uploadTargetOptions.find(
@@ -166,7 +166,7 @@ export function SourceUploadDialog({
   });
   const fileInputId = useId();
   const handleOpenUploadDialog = (): void => {
-    void trackNotebookUploadButtonClicked({
+    void trackWebUIUploadButtonClicked({
       context: analyticsContext,
       sourceCountSnapshot,
     });
@@ -206,7 +206,7 @@ export function SourceUploadDialog({
         <DialogHeader className="shrink-0 px-6 pt-6">
           <DialogTitle>Add source</DialogTitle>
           <DialogDescription>
-            Add a document to your notebook. Notebook accepts PDF, DOC, DOCX,
+            Add a document to your webui. WebUI accepts PDF, DOC, DOCX,
             TXT, MD, XLS, XLSX, PPTX, images, and more files up to{" "}
             {MAX_UPLOAD_MB} MB.
           </DialogDescription>
@@ -253,7 +253,7 @@ export function SourceUploadDialog({
                       Uploading document…
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Notebook is preparing your document for questions.
+                      WebUI is preparing your document for questions.
                     </p>
                   </div>
                 </div>

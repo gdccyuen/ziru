@@ -2,26 +2,26 @@ import "server-only"
 
 import { Effect } from "effect"
 
-import { ensureApiKeyForWorkspace } from "@/integrations/knowhere-credentials"
+import { ensureApiKeyForWorkspace } from "@/integrations/ziru-credentials"
 import {
   getCurrentUser as getCurrentUserFromAuth,
   requireUser,
   type AuthUser,
 } from "@/infrastructure/auth"
-import { makeKnowhereClient } from "@/integrations/knowhere"
+import { makeZiruClient } from "@/integrations/ziru"
 import { workspaceService } from "@/domains/workspace/service"
 import type { Workspace } from "@/infrastructure/db/schema"
 
-type NotebookClient = ReturnType<typeof makeKnowhereClient>
+type WebUIClient = ReturnType<typeof makeZiruClient>
 
-type AuthenticatedNotebookContext = {
+type AuthenticatedWebUIContext = {
   readonly user: AuthUser
   readonly workspace: Workspace
 }
 
-type AuthenticatedNotebookClientContext = AuthenticatedNotebookContext & {
+type AuthenticatedWebUIClientContext = AuthenticatedWebUIContext & {
   readonly apiKey: string
-  readonly client: NotebookClient
+  readonly client: WebUIClient
 }
 
 // ---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ const getClientForWorkspaceEffect = (workspace: Workspace) =>
     const apiKey = yield* Effect.tryPromise(() =>
       ensureApiKeyForWorkspace(workspace.id),
     )
-    const client = makeKnowhereClient(apiKey)
+    const client = makeZiruClient(apiKey)
 
     return { apiKey, client }
   })
@@ -81,7 +81,7 @@ const getClientForWorkspaceEffect = (workspace: Workspace) =>
 // Async wrappers (backward-compatible)
 // ---------------------------------------------------------------------------
 
-async function getAuthenticated(): Promise<AuthenticatedNotebookContext> {
+async function getAuthenticated(): Promise<AuthenticatedWebUIContext> {
   return Effect.runPromise(getAuthenticatedEffect)
 }
 
@@ -89,21 +89,21 @@ async function getCurrentUser(): Promise<AuthUser | null> {
   return Effect.runPromise(Effect.tryPromise(() => getCurrentUserFromAuth()))
 }
 
-async function getOptionalAuthenticated(): Promise<AuthenticatedNotebookContext | null> {
+async function getOptionalAuthenticated(): Promise<AuthenticatedWebUIContext | null> {
   return Effect.runPromise(getOptionalAuthenticatedEffect)
 }
 
-async function getAuthenticatedWithClient(): Promise<AuthenticatedNotebookClientContext> {
+async function getAuthenticatedWithClient(): Promise<AuthenticatedWebUIClientContext> {
   return Effect.runPromise(getAuthenticatedWithClientEffect)
 }
 
 async function getClientForWorkspace(
   workspace: Workspace,
-): Promise<Pick<AuthenticatedNotebookClientContext, "apiKey" | "client">> {
+): Promise<Pick<AuthenticatedWebUIClientContext, "apiKey" | "client">> {
   return Effect.runPromise(getClientForWorkspaceEffect(workspace))
 }
 
-export const notebookRequestContext = {
+export const webuiRequestContext = {
   getAuthenticated,
   getCurrentUser,
   getOptionalAuthenticated,

@@ -22,7 +22,7 @@ from shared.core.exceptions.domain_exceptions import (
     TimeoutException,
     UnavailableException,
 )
-from shared.core.exceptions.knowhere_exception import KnowhereException
+from shared.core.exceptions.ziru_exception import ZiruException
 from shared.utils.zip_download import download_and_extract_zip
 
 
@@ -226,7 +226,7 @@ def poll_mineru_task(
             ).warning("MinerU polling network request failed")
             time.sleep(polling_interval * 2)
             attempt += 1
-        except KnowhereException:
+        except ZiruException:
             raise
         except Exception as exc:
             polling_logger.bind(

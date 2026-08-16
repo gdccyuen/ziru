@@ -91,7 +91,7 @@ type RemoteDocumentRaw = {
 
 export type RemoteLibraryDocument = RemoteDocument
 
-const remoteSourceIdPrefix = "knowhere-doc"
+const remoteSourceIdPrefix = "ziru-doc"
 const remoteDocumentPageSize = 200
 const emptyRemoteDocumentListResponse: RemoteDocumentListResponse = {
   documents: [],
@@ -147,13 +147,13 @@ export function listRemoteLibrarySourceViews(
   return Effect.gen(function* () {
     const localDocumentIds = new Set(
       input.localSources.flatMap((source): string[] =>
-        source.knowhereDocumentId ? [source.knowhereDocumentId] : [],
+        source.ziruDocumentId ? [source.ziruDocumentId] : [],
       ),
     )
     const remoteDocuments = (yield* listRemoteLibraryDocuments(input)).filter(
       (document) =>
         !localDocumentIds.has(document.documentId) &&
-        !matchesActiveNotebookParsingSource(document, input.localSources),
+        !matchesActiveWebUIParsingSource(document, input.localSources),
     )
 
     return remoteDocuments.map(toRemoteSourceView)
@@ -201,13 +201,13 @@ export function localizeRemoteLibrarySources(
   return Effect.gen(function* () {
     const localDocumentIds = new Set(
       input.localSources.flatMap((source): string[] =>
-        source.knowhereDocumentId ? [source.knowhereDocumentId] : [],
+        source.ziruDocumentId ? [source.ziruDocumentId] : [],
       ),
     )
     const remoteDocuments = (yield* listRemoteLibraryDocuments(input)).filter(
       (document) =>
         !localDocumentIds.has(document.documentId) &&
-        !matchesActiveNotebookParsingSource(document, input.localSources),
+        !matchesActiveWebUIParsingSource(document, input.localSources),
     )
     if (remoteDocuments.length === 0) return input.localSources
 
@@ -319,11 +319,11 @@ function getRemoteSourceStatus(status: string): SourceStatus {
   return "parsing"
 }
 
-function matchesActiveNotebookParsingSource(
+function matchesActiveWebUIParsingSource(
   document: RemoteDocument,
   localSources: readonly Source[],
 ): boolean {
-  if (document.documentMetadata?.createdByClient !== "notebook") return false
+  if (document.documentMetadata?.createdByClient !== "webui") return false
   if (!document.title || !document.mimeType || document.sizeBytes === undefined) {
     return false
   }
@@ -331,8 +331,8 @@ function matchesActiveNotebookParsingSource(
   return localSources.some(
     (source) =>
       source.status === "parsing" &&
-      Boolean(source.knowhereJobId) &&
-      !source.knowhereDocumentId &&
+      Boolean(source.ziruJobId) &&
+      !source.ziruDocumentId &&
       source.title === document.title &&
       source.mimeType === document.mimeType &&
       source.sizeBytes === document.sizeBytes,
@@ -381,7 +381,7 @@ function mergeLocalizedSources(input: {
 }): readonly Source[] {
   const localizedSourceByDocumentId = new Map(
     input.localizedSources.flatMap((source): readonly [string, Source][] => {
-      const documentId = source.knowhereDocumentId
+      const documentId = source.ziruDocumentId
       return documentId ? [[documentId, source]] : []
     }),
   )
@@ -389,7 +389,7 @@ function mergeLocalizedSources(input: {
   const mergedSources: Source[] = []
 
   for (const source of input.localSources) {
-    const documentId = source.knowhereDocumentId
+    const documentId = source.ziruDocumentId
     if (documentId) {
       const localizedSource = localizedSourceByDocumentId.get(documentId)
       mergedSources.push(localizedSource ?? source)
@@ -401,7 +401,7 @@ function mergeLocalizedSources(input: {
   }
 
   for (const source of input.localizedSources) {
-    const documentId = source.knowhereDocumentId
+    const documentId = source.ziruDocumentId
     if (documentId && mergedDocumentIds.has(documentId)) continue
     if (documentId) mergedDocumentIds.add(documentId)
     mergedSources.push(source)

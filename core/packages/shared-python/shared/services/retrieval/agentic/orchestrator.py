@@ -10,7 +10,7 @@ Each navigate_step is a single LLM call that chooses one main action
 (EXPAND/BACK/SEARCH_IMAGES/SEARCH_TABLES/FINISH) plus optional collection
 side effects. FINISH explicitly terminates navigation for that document.
 
-KNOWHERE does not generate final answers. Downstream agents decide whether the
+ZIRU does not generate final answers. Downstream agents decide whether the
 returned evidence is sufficient for their task and may call retrieval again.
 """
 from __future__ import annotations

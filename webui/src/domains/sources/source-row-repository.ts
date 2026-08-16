@@ -26,8 +26,8 @@ type SourceUpdate = Partial<
     | "sizeBytes"
     | "status"
     | "failureReason"
-    | "knowhereJobId"
-    | "knowhereDocumentId"
+    | "ziruJobId"
+    | "ziruDocumentId"
     | "stagedBlobPathname"
     | "stagedBlobUrl"
     | "originalBlobPathname"
@@ -190,8 +190,8 @@ const markParsingEffect: SourceRowRepository["markParsingEffect"] = (
 ) =>
   updateInWorkspaceEffect(workspaceId, sourceId, {
     status: "parsing",
-    knowhereJobId: jobId,
-    knowhereDocumentId: documentId,
+    ziruJobId: jobId,
+    ziruDocumentId: documentId,
     failureReason: null,
   }, requiredStatus)
 
@@ -202,7 +202,7 @@ const markReadyEffect: SourceRowRepository["markReadyEffect"] = (
 ) =>
   updateInWorkspaceEffect(workspaceId, sourceId, {
     status: "ready",
-    knowhereDocumentId: documentId,
+    ziruDocumentId: documentId,
     failureReason: null,
   }, "parsing")
 
@@ -212,7 +212,7 @@ const updateRevisionKeyEffect: SourceRowRepository["updateRevisionKeyEffect"] = 
   revisionKey: string,
 ) =>
   updateInWorkspaceEffect(workspaceId, sourceId, {
-    knowhereJobId: revisionKey,
+    ziruJobId: revisionKey,
   }, "ready")
 
 const markFailedEffect: SourceRowRepository["markFailedEffect"] = (
@@ -342,7 +342,7 @@ async function localizeRemoteDocumentWithDb(
   workspaceId: string,
   input: LocalizeRemoteDocumentInput,
 ): Promise<Source> {
-  const hasActiveLocalParsingJob = sql`${sources.status} = 'parsing' AND ${sources.knowhereJobId} IS NOT NULL`
+  const hasActiveLocalParsingJob = sql`${sources.status} = 'parsing' AND ${sources.ziruJobId} IS NOT NULL`
   const values = {
     workspaceId,
     title: input.title ?? input.documentId,
@@ -350,9 +350,9 @@ async function localizeRemoteDocumentWithDb(
     sizeBytes: input.sizeBytes ?? 0,
     status: input.status,
     failureReason:
-      input.status === "failed" ? "Knowhere document failed." : null,
-    knowhereJobId: input.revisionKey ?? null,
-    knowhereDocumentId: input.documentId,
+      input.status === "failed" ? "Ziru document failed." : null,
+    ziruJobId: input.revisionKey ?? null,
+    ziruDocumentId: input.documentId,
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,
@@ -363,8 +363,8 @@ async function localizeRemoteDocumentWithDb(
     .insert(sources)
     .values(values)
     .onConflictDoUpdate({
-      target: [sources.workspaceId, sources.knowhereDocumentId],
-      targetWhere: sql`knowhere_document_id IS NOT NULL AND deleted_at IS NULL`,
+      target: [sources.workspaceId, sources.ziruDocumentId],
+      targetWhere: sql`ziru_document_id IS NOT NULL AND deleted_at IS NULL`,
       set: {
         title:
           input.title === undefined
@@ -380,7 +380,7 @@ async function localizeRemoteDocumentWithDb(
             : values.sizeBytes,
         status: sql`CASE WHEN ${hasActiveLocalParsingJob} THEN ${sources.status} ELSE ${values.status} END`,
         failureReason: sql`CASE WHEN ${hasActiveLocalParsingJob} THEN ${sources.failureReason} ELSE ${values.failureReason} END`,
-        knowhereJobId: sql`CASE WHEN ${hasActiveLocalParsingJob} THEN ${sources.knowhereJobId} ELSE ${values.knowhereJobId} END`,
+        ziruJobId: sql`CASE WHEN ${hasActiveLocalParsingJob} THEN ${sources.ziruJobId} ELSE ${values.ziruJobId} END`,
         updatedAt: sql`now()`,
       },
     })

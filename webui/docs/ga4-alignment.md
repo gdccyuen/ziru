@@ -1,6 +1,6 @@
-# GA4 Alignment for Notebook Storytelling v2
+# GA4 Alignment for WebUI Storytelling v2
 
-This document maps the Notebook storytelling events to GA4 naming and parameters.
+This document maps the WebUI storytelling events to GA4 naming and parameters.
 
 ## Naming policy
 
@@ -15,23 +15,23 @@ This document maps the Notebook storytelling events to GA4 naming and parameters
 
 ## Event mapping
 
-- `notebook_upload_button_clicked`
+- `ziru_upload_button_clicked`
   - params: `source_count_snapshot`, `surface`
-- `notebook_document_upload_completed`
+- `ziru_document_upload_completed`
   - params: `uploaded_count`, `file_types`, `total_size_bytes`, `source_count_before`, `source_count_after`
-- `notebook_document_upload_failed`
+- `ziru_document_upload_failed`
   - params: `file_type`, `file_size_bytes`, `error_type`, `error_message`
-- `notebook_assistant_question_submitted`
+- `ziru_assistant_question_submitted`
   - params: `thread_id`, `selected_sources_count`, `source_count_snapshot`, `message_length`
-- `notebook_assistant_answer_completed`
+- `ziru_assistant_answer_completed`
   - params: `thread_id`, `latency_ms`
-- `notebook_assistant_answer_failed`
+- `ziru_assistant_answer_failed`
   - params: `thread_id`, `latency_ms`, `error_type`, `error_message`
-- `notebook_dashboard_link_clicked`
+- `ziru_dashboard_link_clicked`
   - params: `from_page`, `target_url`, `has_sources`, `has_chats`
-- `notebook_workspace_first_document_uploaded`
+- `ziru_workspace_first_document_uploaded`
   - params: `surface`
-- `notebook_workspace_first_question_asked`
+- `ziru_workspace_first_question_asked`
   - params: `selected_sources_count`, `surface`
 
 ## GA4 implementation notes

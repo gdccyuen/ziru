@@ -3,7 +3,7 @@
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
-_DEFAULT_FALLBACK_EMAIL_DOMAIN: str = "knowhere.local"
+_DEFAULT_FALLBACK_EMAIL_DOMAIN: str = "ziru.local"
 
 
 def ensure_better_auth_user_table(

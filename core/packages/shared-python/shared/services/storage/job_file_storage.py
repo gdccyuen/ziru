@@ -285,7 +285,7 @@ class JobFileStorage:
                 url=validation.url,
                 pinned_ip=validation.validated_ip,
                 timeout_seconds=300,
-                user_agent="Knowhere-FileDownloader/1.0",
+                user_agent="Ziru-FileDownloader/1.0",
                 temp_dir=effective_temp_dir,
             )
             temp_file_path = download_result.temp_file_path

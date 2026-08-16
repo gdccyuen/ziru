@@ -52,10 +52,10 @@ describe("sourceRowRepository", () => {
     })
 
     expect(getSqlText(conflictSet.status)).toContain("CASE WHEN")
-    expect(getSqlText(conflictSet.status)).toContain("knowhere_job_id")
-    expect(getSqlText(conflictSet.knowhereJobId)).toContain("CASE WHEN")
-    expect(getSqlText(conflictSet.knowhereJobId)).toContain(
-      "knowhere_job_id",
+    expect(getSqlText(conflictSet.status)).toContain("ziru_job_id")
+    expect(getSqlText(conflictSet.ziruJobId)).toContain("CASE WHEN")
+    expect(getSqlText(conflictSet.ziruJobId)).toContain(
+      "ziru_job_id",
     )
     expect(getSqlText(conflictSet.failureReason)).toContain("CASE WHEN")
   })
@@ -91,8 +91,8 @@ async function captureLocalizeConflictSet(input: {
     sizeBytes: 12,
     status: "ready",
     failureReason: null,
-    knowhereJobId: null,
-    knowhereDocumentId: "doc_1",
+    ziruJobId: null,
+    ziruDocumentId: "doc_1",
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,

@@ -1,17 +1,17 @@
 {
-  "name": "@knowhere/web",
+  "name": "@ziru/admin",
   "version": "0.0.1",
   "private": true,
   "license": "Apache-2.0",
   "packageManager": "pnpm@10.30.3",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Ontos-AI/knowhere-dashboard.git"
+    "url": "https://github.com/gdccyuen/ziru.git"
   },
   "bugs": {
-    "url": "https://github.com/Ontos-AI/knowhere-dashboard/issues"
+    "url": "https://github.com/gdccyuen/ziru/issues"
   },
-  "homepage": "https://knowhereto.ai/",
+  "homepage": "https://github.com/gdccyuen/ziru",
   "scripts": {
     "dev": "next dev --turbo",
     "build": "next build",

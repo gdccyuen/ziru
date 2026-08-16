@@ -5,8 +5,8 @@ import { withApiErrorResponse } from "@/lib/api-error-response"
 import { getCurrentUser } from "@/infrastructure/auth"
 import { databaseRuntime } from "@/domains/workspace/database-runtime"
 import { workspaceRepository } from "@/domains/workspace/repository"
-import { knowhereApiKeysRepository } from "@/infrastructure/auth/knowhere-api-keys-repository"
-import { validateKnowhereApiKey } from "@/integrations/knowhere"
+import { ziruApiKeysRepository } from "@/infrastructure/auth/ziru-api-keys-repository"
+import { validateZiruApiKey } from "@/integrations/ziru"
 import { activeWorkspaceCookieName } from "@/domains/workspace/service"
 import { nextRouteResponse } from "@/lib/next-route-response"
 import { routeResult } from "@/lib/route-result"
@@ -24,7 +24,7 @@ export async function GET(): Promise<NextResponse> {
     }
 
     const keys = await databaseRuntime.runPromise(
-      knowhereApiKeysRepository.listByUserEffect(user.id),
+      ziruApiKeysRepository.listByUserEffect(user.id),
     )
     return nextRouteResponse.toNextResponse(
       routeResult.ok({
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
 
       const existing = await databaseRuntime.runPromise(
-        knowhereApiKeysRepository.listByUserEffect(user.id),
+        ziruApiKeysRepository.listByUserEffect(user.id),
       )
       if (existing.some((key) => key.label === label)) {
         return nextRouteResponse.toNextResponse(
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         )
       }
 
-      const isValid = await validateKnowhereApiKey(apiKey)
+      const isValid = await validateZiruApiKey(apiKey)
       if (!isValid) {
         return nextRouteResponse.toNextResponse(
           routeResult.error(422, "Invalid API key. Check it and try again."),
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
 
       const created = await databaseRuntime.runPromise(
-        knowhereApiKeysRepository.createForUserEffect({
+        ziruApiKeysRepository.createForUserEffect({
           userId: user.id,
           label,
           apiKey,
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
       if (homeWorkspace) {
         await databaseRuntime.runPromise(
-          knowhereApiKeysRepository.setActiveEffect(
+          ziruApiKeysRepository.setActiveEffect(
             homeWorkspace.id,
             created.id,
           ),

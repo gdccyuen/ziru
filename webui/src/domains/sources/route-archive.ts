@@ -14,7 +14,7 @@ type RouteArchiveDependencies = Pick<
   | "deleteBlob"
   | "ensureApiKeyForWorkspace"
   | "ensureWorkspace"
-  | "makeKnowhereClient"
+  | "makeZiruClient"
   | "requireUser"
   | "sourceService"
 >
@@ -59,12 +59,12 @@ const archiveSourceEffect = (
       return routeResult.error(404, "Source not found.")
     }
 
-    if (source.knowhereDocumentId) {
+    if (source.ziruDocumentId) {
       const client = yield* Effect.tryPromise(() =>
         getClientForWorkspace(workspace.id, input.cookieHeader, deps),
       )
       yield* Effect.tryPromise(() =>
-        client.documents.archive(source.knowhereDocumentId!),
+        client.documents.archive(source.ziruDocumentId!),
       )
     }
 

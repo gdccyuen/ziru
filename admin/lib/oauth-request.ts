@@ -134,7 +134,7 @@ function validateBase64UrlParam(
 function normalizeOAuthClientName(value: string | null): string {
   const trimmedValue = value?.trim();
   if (!trimmedValue) {
-    return "Knowhere MCP";
+    return "Ziru MCP";
   }
   return trimmedValue.slice(0, CLIENT_NAME_MAX_LENGTH);
 }

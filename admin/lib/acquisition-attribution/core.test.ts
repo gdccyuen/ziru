@@ -79,12 +79,12 @@ describe("acquisition attribution", () => {
 
     const firstCapture = await service.captureAcquisitionSession({
       landingUrl:
-        "https://knowhereto.ai/?utm_source=OpenAI&utm_medium=Paid_Search&utm_campaign=launch&oppref=click_123",
+        "https://ziru.app/?utm_source=OpenAI&utm_medium=Paid_Search&utm_campaign=launch&oppref=click_123",
       referrer: "https://chatgpt.com/search",
     });
     const duplicateCapture = await service.captureAcquisitionSession({
       existingSessionId: "session_first",
-      landingUrl: "https://knowhereto.ai/claw?utm_source=google&utm_campaign=overwrite",
+      landingUrl: "https://ziru.app/claw?utm_source=google&utm_campaign=overwrite",
       referrer: "https://google.com/search",
     });
 
@@ -117,7 +117,7 @@ describe("acquisition attribution", () => {
     });
 
     await service.captureAcquisitionSession({
-      landingUrl: "https://knowhereto.ai/?utm_source=openai",
+      landingUrl: "https://ziru.app/?utm_source=openai",
     });
 
     const firstBind = await service.bindAcquisitionSessionToUser({
@@ -149,17 +149,17 @@ describe("acquisition attribution", () => {
     });
 
     await service.captureAcquisitionSession({
-      landingUrl: "https://knowhereto.ai/?utm_source=reddit",
+      landingUrl: "https://ziru.app/?utm_source=reddit",
     });
 
     const firstPageView = await service.captureMarketingPageView({
       acquisitionSessionId: "session_first",
-      landingUrl: "https://knowhereto.ai/reddit?utm_source=reddit&utm_campaign=launch",
+      landingUrl: "https://ziru.app/reddit?utm_source=reddit&utm_campaign=launch",
       referrer: "https://reddit.com/r/something",
     });
     const secondPageView = await service.captureMarketingPageView({
       acquisitionSessionId: "session_first",
-      landingUrl: "https://knowhereto.ai/reddit?utm_source=reddit&utm_campaign=launch",
+      landingUrl: "https://ziru.app/reddit?utm_source=reddit&utm_campaign=launch",
       referrer: "https://reddit.com/r/something",
     });
 

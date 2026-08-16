@@ -3,15 +3,15 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { decryptSecret, encryptSecret } from "./secret-crypto"
 
 describe("secret-crypto", () => {
-  const originalKey = process.env.KNOWHERE_KEY_ENCRYPTION_KEY
+  const originalKey = process.env.ZIRU_KEY_ENCRYPTION_KEY
 
   beforeEach(() => {
-    process.env.KNOWHERE_KEY_ENCRYPTION_KEY = "test-encryption-key-1234567890"
+    process.env.ZIRU_KEY_ENCRYPTION_KEY = "test-encryption-key-1234567890"
   })
 
   afterEach(() => {
-    if (originalKey === undefined) delete process.env.KNOWHERE_KEY_ENCRYPTION_KEY
-    else process.env.KNOWHERE_KEY_ENCRYPTION_KEY = originalKey
+    if (originalKey === undefined) delete process.env.ZIRU_KEY_ENCRYPTION_KEY
+    else process.env.ZIRU_KEY_ENCRYPTION_KEY = originalKey
   })
 
   it("round-trips a secret through encrypt and decrypt", () => {
@@ -44,16 +44,16 @@ describe("secret-crypto", () => {
   })
 
   it("throws when no encryption key is configured", () => {
-    delete process.env.KNOWHERE_KEY_ENCRYPTION_KEY
+    delete process.env.ZIRU_KEY_ENCRYPTION_KEY
 
-    expect(() => encryptSecret("sk_x")).toThrow(/KNOWHERE_KEY_ENCRYPTION_KEY/)
+    expect(() => encryptSecret("sk_x")).toThrow(/ZIRU_KEY_ENCRYPTION_KEY/)
   })
 
   it("accepts a 32-byte base64 key directly", () => {
     const base64Key = Buffer.from(
       Array.from({ length: 32 }, (_, index) => index),
     ).toString("base64")
-    process.env.KNOWHERE_KEY_ENCRYPTION_KEY = base64Key
+    process.env.ZIRU_KEY_ENCRYPTION_KEY = base64Key
 
     const encrypted = encryptSecret("sk_x")
     expect(decryptSecret(encrypted)).toBe("sk_x")

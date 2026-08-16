@@ -10,8 +10,8 @@ import {
 } from "@app/(landing)/_components/landing-home-data";
 import { trackLandingInteraction } from "@app/(landing)/_components/landing-tracked-link";
 import { StatefulTab } from "@app/(landing)/_components/stateful-tab";
-import { KnowhereBrand } from "@components/brand/knowhere-brand";
-import { KnowhereIcon } from "@components/ui/knowhere-icon";
+import { ZiruBrand } from "@components/brand/ziru-brand";
+import { ZiruIcon } from "@components/ui/ziru-icon";
 import { cn } from "@lib/utils";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import Image from "next/image";
@@ -75,8 +75,8 @@ const benchmarkChartThemes = {
     cursor: "rgba(161, 161, 170, 0.12)",
     grid: "#e4e4e7",
     highText: "#09090b",
-    knowhere: "#9b7af8",
-    knowhereBorder: "#8b5cf6",
+    ziru: "#9b7af8",
+    ziruBorder: "#8b5cf6",
     markitdown: "#2563eb",
     markitdownBorder: "#1d4ed8",
     mineru: "#3f3f3f",
@@ -102,8 +102,8 @@ const benchmarkChartThemes = {
     cursor: "rgba(82, 82, 91, 0.3)",
     grid: "#27272a",
     highText: "#fafafa",
-    knowhere: "#8e6cf3",
-    knowhereBorder: "#a78bfa",
+    ziru: "#8e6cf3",
+    ziruBorder: "#a78bfa",
     markitdown: "#60a5fa",
     markitdownBorder: "#93c5fd",
     mineru: "#a1a1aa",
@@ -129,7 +129,7 @@ type BenchmarkChartColors = (typeof benchmarkChartThemes)[keyof typeof benchmark
 
 type BenchmarkSeries = {
   color: string;
-  id: "raw" | "knowhere" | "markitdown" | "mineru" | "unstructured";
+  id: "raw" | "ziru" | "markitdown" | "mineru" | "unstructured";
   label: string;
   pattern?: boolean;
 };
@@ -145,8 +145,8 @@ type BenchmarkChartLayout = "compact" | "medium" | "wide";
 
 type BenchmarkDatum = {
   compactLabel: string;
-  knowhere: number;
-  knowhereValue: number;
+  ziru: number;
+  ziruValue: number;
   label: string;
   markitdown: number;
   markitdownValue: number;
@@ -207,7 +207,7 @@ const getBenchmarkChartColors = (isDarkTheme: boolean): BenchmarkChartColors =>
 
 const benchmarkSeries: readonly BenchmarkSeries[] = [
   { color: RAW_PATTERN_BASE_COLOR, id: "raw", label: "Agent + Raw Docs", pattern: true },
-  { color: "#9b7af8", id: "knowhere", label: "Agent + Knowhere" },
+  { color: "#9b7af8", id: "ziru", label: "Agent + Ziru" },
   { color: UNSTRUCTURED_LOGO_COLOR, id: "unstructured", label: "Agent + Unstructured" },
   { color: "#3f3f3f", id: "mineru", label: "Agent + MinerU" },
   { color: "#2563eb", id: "markitdown", label: "Agent + Markitdown" },
@@ -218,7 +218,7 @@ const benchmarkMetrics: readonly BenchmarkMetric[] = [
     label: "token used",
     values: {
       raw: 1629.545455,
-      knowhere: 1573.863636,
+      ziru: 1573.863636,
       markitdown: 1502.646491,
       unstructured: 1886.363636,
       mineru: 1670.454545,
@@ -228,7 +228,7 @@ const benchmarkMetrics: readonly BenchmarkMetric[] = [
     label: "time used",
     values: {
       raw: 20.56818182,
-      knowhere: 15.25,
+      ziru: 15.25,
       markitdown: 15.20454545,
       unstructured: 16.61365,
       mineru: 17.47727273,
@@ -238,7 +238,7 @@ const benchmarkMetrics: readonly BenchmarkMetric[] = [
     label: "agent loops",
     values: {
       raw: 2.613636364,
-      knowhere: 2.136363636,
+      ziru: 2.136363636,
       markitdown: 2.181818182,
       unstructured: 2.340909091,
       mineru: 2.204545455,
@@ -248,7 +248,7 @@ const benchmarkMetrics: readonly BenchmarkMetric[] = [
     label: "first-time acc",
     values: {
       raw: 0.5,
-      knowhere: 0.681818182,
+      ziru: 0.681818182,
       markitdown: 0.590909091,
       unstructured: 0.613636364,
       mineru: 0.659090909,
@@ -258,7 +258,7 @@ const benchmarkMetrics: readonly BenchmarkMetric[] = [
     label: "acc with user feedback",
     values: {
       raw: 0.527777778,
-      knowhere: 0.788888889,
+      ziru: 0.788888889,
       markitdown: 0.538961039,
       unstructured: 0.685714286,
       mineru: 0.642857143,
@@ -268,7 +268,7 @@ const benchmarkMetrics: readonly BenchmarkMetric[] = [
     label: "recall",
     values: {
       raw: 0.738636362,
-      knowhere: 0.821969697,
+      ziru: 0.821969697,
       markitdown: 0.761363629,
       unstructured: 0.768939,
       mineru: 0.780303,
@@ -299,8 +299,8 @@ const benchmarkData: readonly BenchmarkDatum[] = benchmarkMetrics.map((metric) =
 
   return {
     compactLabel: metric.label,
-    knowhere: scaleValue(metric.values.knowhere),
-    knowhereValue: metric.values.knowhere,
+    ziru: scaleValue(metric.values.ziru),
+    ziruValue: metric.values.ziru,
     label: metric.label,
     markitdown: scaleValue(metric.values.markitdown),
     markitdownValue: metric.values.markitdown,
@@ -359,7 +359,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isBenchmarkSeriesId = (value: unknown): value is BenchmarkSeriesId =>
   value === "raw" ||
-  value === "knowhere" ||
+  value === "ziru" ||
   value === "markitdown" ||
   value === "mineru" ||
   value === "unstructured";
@@ -368,7 +368,7 @@ const isBenchmarkDatum = (value: unknown): value is BenchmarkDatum =>
   isRecord(value) &&
   typeof value.label === "string" &&
   typeof value.rawValue === "number" &&
-  typeof value.knowhereValue === "number" &&
+  typeof value.ziruValue === "number" &&
   typeof value.markitdownValue === "number" &&
   typeof value.mineruValue === "number" &&
   typeof value.unstructuredValue === "number";
@@ -377,8 +377,8 @@ const getBenchmarkDatumValue = (datum: BenchmarkDatum, seriesId: BenchmarkSeries
   switch (seriesId) {
     case "raw":
       return datum.rawValue;
-    case "knowhere":
-      return datum.knowhereValue;
+    case "ziru":
+      return datum.ziruValue;
     case "markitdown":
       return datum.markitdownValue;
     case "mineru":
@@ -395,8 +395,8 @@ const getBenchmarkSeriesColor = (series: BenchmarkSeries, colors: BenchmarkChart
   switch (series.id) {
     case "raw":
       return colors.rawBase;
-    case "knowhere":
-      return colors.knowhere;
+    case "ziru":
+      return colors.ziru;
     case "markitdown":
       return colors.markitdown;
     case "mineru":
@@ -413,8 +413,8 @@ const getBenchmarkSeriesSwatchBorderColor = (
   switch (series.id) {
     case "raw":
       return colors.rawBorder;
-    case "knowhere":
-      return colors.knowhereBorder;
+    case "ziru":
+      return colors.ziruBorder;
     case "markitdown":
       return colors.markitdownBorder;
     case "mineru":
@@ -452,11 +452,11 @@ const BenchmarkSeriesLabel = ({
   readonly colors: BenchmarkChartColors;
   readonly series: BenchmarkSeries;
 }): JSX.Element => {
-  if (series.id === "knowhere") {
+  if (series.id === "ziru") {
     return (
       <span className="inline-flex min-w-0 items-center gap-1.5 whitespace-nowrap">
         {compact ? null : <span>Agent +</span>}
-        <KnowhereBrand
+        <ZiruBrand
           className={compact ? "w-[68px]" : "w-[78px]"}
           sizes={compact ? "68px" : "78px"}
           tone="auto"
@@ -952,7 +952,7 @@ const BenchmarkChart = ({
               />
               <YAxis
                 axisLine={{ stroke: colors.axis, strokeWidth: 1 }}
-                dataKey="knowhere"
+                dataKey="ziru"
                 domain={[0, 100]}
                 label={{
                   angle: -90,
@@ -1042,15 +1042,15 @@ const BenchmarkChart = ({
 const ComparisonIndicator = ({ label, status }: { label: string; status: ComparisonStatus }) => {
   const map = {
     yes: {
-      icon: <KnowhereIcon className="size-4" name="check-2" />,
+      icon: <ZiruIcon className="size-4" name="check-2" />,
       color: "#00bc7d",
     },
     bad: {
-      icon: <KnowhereIcon className="size-4" name="component" />,
+      icon: <ZiruIcon className="size-4" name="component" />,
       color: "#efb100",
     },
     no: {
-      icon: <KnowhereIcon className="size-4" name="state-x" />,
+      icon: <ZiruIcon className="size-4" name="state-x" />,
       color: "#ff6467",
     },
   } as const;
@@ -1181,7 +1181,7 @@ export const ComparisonShowcase = () => {
                 </div>
               </div>
               <div className="relative flex items-center justify-center border-r border-zinc-100 bg-white px-6 py-6 dark:border-[#27272a] dark:bg-[#111113]">
-                {row.knowhereStripe ? (
+                {row.ziruStripe ? (
                   <div
                     className="absolute inset-0 opacity-25 dark:opacity-[0.06]"
                     style={stripePattern("#f4f4f5", 1, 8)}
@@ -1189,8 +1189,8 @@ export const ComparisonShowcase = () => {
                 ) : null}
                 <div className="relative">
                   <ComparisonIndicator
-                    label={tComparison(`status.${row.knowhere}`)}
-                    status={row.knowhere}
+                    label={tComparison(`status.${row.ziru}`)}
+                    status={row.ziru}
                   />
                 </div>
               </div>

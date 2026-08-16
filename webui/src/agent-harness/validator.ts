@@ -11,7 +11,7 @@ export type ManifestValidationInput = {
   readonly contextPolicy?: ContextPolicy
   readonly finalized?: boolean
   readonly ledger: EvidenceLedgerSnapshot
-  readonly surface: "notebook_chat" | "typing_compose" | "typing_quick_ask"
+  readonly surface: "ziru_chat" | "typing_compose" | "typing_quick_ask"
 }
 
 export type ManifestValidationResult = {

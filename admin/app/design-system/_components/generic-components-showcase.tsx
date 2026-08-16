@@ -10,13 +10,13 @@ import { FeatureBlock } from "@components/ui/feature-block";
 import { HeaderButton } from "@components/ui/header-button";
 import { IconButton } from "@components/ui/icon-button";
 import {
-  KNOWHERE_MESSAGE_ICON_NAMES,
-  KNOWHERE_MODEL_ICON_NAMES,
-  KNOWHERE_PIXEL_ICON_NAMES,
-  KNOWHERE_REGULAR_ICON_NAMES,
-  KNOWHERE_STATE_ICON_NAMES,
-  KnowhereIcon,
-} from "@components/ui/knowhere-icon";
+  ZIRU_MESSAGE_ICON_NAMES,
+  ZIRU_MODEL_ICON_NAMES,
+  ZIRU_PIXEL_ICON_NAMES,
+  ZIRU_REGULAR_ICON_NAMES,
+  ZIRU_STATE_ICON_NAMES,
+  ZiruIcon,
+} from "@components/ui/ziru-icon";
 import {
   CheckListItem,
   ContentListItem,
@@ -38,9 +38,9 @@ import { Fragment } from "react";
 const codeTabs = [
   {
     code: `# pip install knowhere-python-sdk
-import knowhere
+import ziru
 
-client = knowhere.Knowhere(api_key="sk_...")
+client = ziru.Ziru(api_key="sk_...")
 
 result = client.parse(url="https://arxiv.org/pdf/1706.03762.pdf")
 print(result.statistics.total_chunks)
@@ -50,9 +50,9 @@ print(result.full_markdown[:200])`,
   },
   {
     code: `// npm install @ontos-ai/knowhere-sdk
-import Knowhere from "@ontos-ai/knowhere-sdk";
+import Ziru from "@ontos-ai/knowhere-sdk";
 
-const client = new Knowhere({ apiKey: "sk_..." });
+const client = new Ziru({ apiKey: "sk_..." });
 const result = await client.parse({
   url: "https://arxiv.org/pdf/1706.03762.pdf",
 });
@@ -63,8 +63,8 @@ console.log(result.textChunks[0]?.content);`,
     value: "node",
   },
   {
-    code: `curl -X POST https://api.knowhereto.ai/v1/jobs \\
-  --oauth2-bearer "$KNOWHERE_API_KEY" \\
+    code: `curl -X POST https://api.ziru.app/v1/jobs \\
+  --oauth2-bearer "$ZIRU_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"source_type":"url"}'`,
     label: "CURL",
@@ -81,11 +81,11 @@ const tableTips = [
 ] as const;
 
 const iconRows = [
-  { icons: KNOWHERE_REGULAR_ICON_NAMES, label: "regular" },
-  { icons: KNOWHERE_PIXEL_ICON_NAMES, label: "pixel" },
-  { icons: KNOWHERE_MODEL_ICON_NAMES, label: "model" },
-  { icons: KNOWHERE_STATE_ICON_NAMES, label: "state" },
-  { icons: KNOWHERE_MESSAGE_ICON_NAMES, label: "message" },
+  { icons: ZIRU_REGULAR_ICON_NAMES, label: "regular" },
+  { icons: ZIRU_PIXEL_ICON_NAMES, label: "pixel" },
+  { icons: ZIRU_MODEL_ICON_NAMES, label: "model" },
+  { icons: ZIRU_STATE_ICON_NAMES, label: "state" },
+  { icons: ZIRU_MESSAGE_ICON_NAMES, label: "message" },
 ] as const;
 
 const buttonStateMatrix = [
@@ -292,7 +292,7 @@ export const GenericComponentsShowcase = () => {
                         className="flex items-center gap-3 rounded-xl border border-border/70 bg-secondary/30 p-3"
                       >
                         <div className="flex size-10 items-center justify-center rounded-lg bg-background shadow-2xs">
-                          <KnowhereIcon className="size-5 text-foreground" name={iconName} />
+                          <ZiruIcon className="size-5 text-foreground" name={iconName} />
                         </div>
                         <code className="text-xs text-muted-foreground">{iconName}</code>
                       </div>
@@ -472,7 +472,7 @@ export const GenericComponentsShowcase = () => {
               <ComparisonPanel
                 competitorDescription="Unstructured is functional for simple documents, but it struggles with complex table structures and loses semantic detail during parsing."
                 competitorName="Unstructured"
-                heading="Why Knowhere delivers superior document parsing for complex tables"
+                heading="Why Ziru delivers superior document parsing for complex tables"
                 highlights={[
                   "Open-source and community-driven development",
                   "Basic text extraction for simple documents",
@@ -484,7 +484,7 @@ export const GenericComponentsShowcase = () => {
               <ComparisonPanel
                 competitorDescription="Markitdown focuses on Markdown conversion with a lightweight workflow, but it lacks robust handling for complex nested content."
                 competitorName="Markitdown"
-                heading="Why Knowhere is the superior choice for markdown conversion"
+                heading="Why Ziru is the superior choice for markdown conversion"
                 highlights={[
                   "Simple Markdown conversion workflow",
                   "Lightweight and easy to integrate",

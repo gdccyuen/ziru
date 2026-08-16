@@ -25,10 +25,10 @@ import type {
 } from "@/infrastructure/db/schema"
 import { effectOperation } from "@/lib/effect-operation"
 import { logger } from "@/lib/logger"
-import { notebookRequestContext } from "./request-context"
+import { webuiRequestContext } from "./request-context"
 import { workspaceRepository } from "./repository"
 import { databaseRuntime } from "./database-runtime"
-import { knowhereApiKeysRepository } from "@/infrastructure/auth/knowhere-api-keys-repository"
+import { ziruApiKeysRepository } from "@/infrastructure/auth/ziru-api-keys-repository"
 
 type WorkspaceShellInitialState = {
   readonly activeChatThreadId?: string | null
@@ -51,7 +51,7 @@ type WorkspaceShellInitialState = {
     readonly namespace: string
     readonly activeKeyLabel: string | null
   }[]
-  readonly knowhereKeyLabels?: readonly {
+  readonly ziruKeyLabels?: readonly {
     readonly id: string
     readonly label: string
     readonly mask: string
@@ -106,7 +106,7 @@ type WorkspaceShellInitialStateDependencies = {
   readonly listWorkspacesForUser: (
     userId: string,
   ) => Promise<readonly Workspace[]>
-  readonly listMaskedKnowhereKeys: (userId: string) => Promise<
+  readonly listMaskedZiruKeys: (userId: string) => Promise<
     readonly { id: string; label: string; mask: string }[]
   >
   readonly localizeRemoteDocument: typeof sourceWorkflowRuntime.localizeRemoteDocument
@@ -122,14 +122,14 @@ type WorkspaceShellInitialStateDependencies = {
 }
 
 const defaultDependencies: WorkspaceShellInitialStateDependencies = {
-  getClientForWorkspace: notebookRequestContext.getClientForWorkspace,
-  getCurrentUser: notebookRequestContext.getCurrentUser,
-  getOptionalAuthenticated: notebookRequestContext.getOptionalAuthenticated,
+  getClientForWorkspace: webuiRequestContext.getClientForWorkspace,
+  getCurrentUser: webuiRequestContext.getCurrentUser,
+  getOptionalAuthenticated: webuiRequestContext.getOptionalAuthenticated,
   listChatThreads: chatThreadService.listForWorkspace,
   listMessages: chatThreadService.listMessages,
   listSourcesForWorkspace: sourceWorkflowRuntime.listForWorkspace,
   listWorkspacesForUser: listAllForUser,
-  listMaskedKnowhereKeys: listMaskedKnowhereKeysDefault,
+  listMaskedZiruKeys: listMaskedZiruKeysDefault,
   localizeRemoteDocument: sourceWorkflowRuntime.localizeRemoteDocument,
   reconcileSourcesForWorkspace: reconcileDefaultSourcesForWorkspace,
   startBackgroundReconciliation: defaultStartBackgroundReconciliation,
@@ -155,7 +155,7 @@ export const loadWorkspaceShellInitialStateEffect = (
       return {
         sources: [],
         workspaces: [],
-        knowhereKeyLabels: [],
+        ziruKeyLabels: [],
       }
     }
 
@@ -178,15 +178,15 @@ export const loadWorkspaceShellInitialStateEffect = (
     const userKeys = yield* effectOperation.tryPromise(
       {
         context: workspaceInitialStateContext,
-        operation: "listMaskedKnowhereKeys",
+        operation: "listMaskedZiruKeys",
       },
-      () => deps.listMaskedKnowhereKeys(user.id),
+      () => deps.listMaskedZiruKeys(user.id),
     )
     const workspaceView = (row: Workspace) => ({
       id: row.id,
       namespace: row.namespace,
       activeKeyLabel:
-        userKeys.find((key) => key.id === row.activeKnowhereApiKeyId)?.label ??
+        userKeys.find((key) => key.id === row.activeZiruApiKeyId)?.label ??
         null,
     })
 
@@ -201,7 +201,7 @@ export const loadWorkspaceShellInitialStateEffect = (
         },
         workspace: undefined,
         workspaces: workspacesForUser.map(workspaceView),
-        knowhereKeyLabels: userKeys,
+        ziruKeyLabels: userKeys,
         isBlobConfigured: isBlobConfigured(),
         sources: [],
       }
@@ -265,8 +265,8 @@ export const loadWorkspaceShellInitialStateEffect = (
           }),
       }),
     )
-    const sourcesNeedingKnowhereChunkCount =
-      getWorkspaceSourcesNeedingKnowhereChunkCount(localizedSources)
+    const sourcesNeedingZiruChunkCount =
+      getWorkspaceSourcesNeedingZiruChunkCount(localizedSources)
     yield* Effect.sync(() =>
       triggerBackgroundReconciliationForParsingSources({
         workspaceId: workspace.id,
@@ -283,7 +283,7 @@ export const loadWorkspaceShellInitialStateEffect = (
         operation: "sourceViewOptionsBySourceId",
       },
       deps.sourceViewOptionsBySourceId(
-        sourcesNeedingKnowhereChunkCount,
+        sourcesNeedingZiruChunkCount,
         client,
       ),
     )
@@ -296,7 +296,7 @@ export const loadWorkspaceShellInitialStateEffect = (
       },
       workspace: workspaceView(workspace),
       workspaces: workspacesForUser.map(workspaceView),
-      knowhereKeyLabels: userKeys,
+      ziruKeyLabels: userKeys,
       isBlobConfigured: isBlobConfigured(),
       sources: localizedSources.map((source) =>
         toSourceView(source, sourceOptions.get(source.id)),
@@ -332,11 +332,11 @@ function isBlobConfigured(): boolean {
   const token = process.env.BLOB_READ_WRITE_TOKEN?.trim()
   return Boolean(token && token.length > 0)
 }
-function listMaskedKnowhereKeysDefault(
+function listMaskedZiruKeysDefault(
   userId: string,
 ): Promise<readonly { id: string; label: string; mask: string }[]> {
   return databaseRuntime
-    .runPromise(knowhereApiKeysRepository.listByUserEffect(userId))
+    .runPromise(ziruApiKeysRepository.listByUserEffect(userId))
     .then((keys) =>
       keys.map((key) => ({
         id: key.id,
@@ -346,11 +346,11 @@ function listMaskedKnowhereKeysDefault(
     )
 }
 
-function getWorkspaceSourcesNeedingKnowhereChunkCount(
+function getWorkspaceSourcesNeedingZiruChunkCount(
   sources: readonly Source[],
 ): readonly Source[] {
   return sources.filter(
-    (source) => source.status === "ready" && source.knowhereDocumentId,
+    (source) => source.status === "ready" && source.ziruDocumentId,
   )
 }
 
@@ -361,7 +361,7 @@ function triggerBackgroundReconciliationForParsingSources(input: {
   readonly startBackgroundReconciliation: typeof defaultStartBackgroundReconciliation
 }): void {
   const parsingSources = input.sources.filter(
-    (source) => source.status === "parsing" && source.knowhereJobId,
+    (source) => source.status === "parsing" && source.ziruJobId,
   )
   if (parsingSources.length === 0) return
 

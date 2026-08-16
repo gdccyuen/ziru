@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { RetrievalResult } from "@ontos-ai/knowhere-sdk";
+import type { RetrievalResult } from "@/integrations/ziru-sdk-types";
 import { Either } from "effect";
 import type { HarnessRunResult } from "@/agent-harness";
 
@@ -13,7 +13,7 @@ describe("handleChatTurn", () => {
         results: [makeRetrievalResult()],
         evidenceText: "Grounding content",
         referencedChunks: [],
-        namespace: "notebook-namespace",
+        namespace: "webui-namespace",
         query: "What does the document say?",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -25,8 +25,8 @@ describe("handleChatTurn", () => {
       return makeHarnessRunResult("Grounded answer.");
     });
     const sources = [
-      makeSource({ id: "source_included", knowhereDocumentId: "doc_included" }),
-      makeSource({ id: "source_excluded", knowhereDocumentId: "doc_excluded" }),
+      makeSource({ id: "source_included", ziruDocumentId: "doc_included" }),
+      makeSource({ id: "source_excluded", ziruDocumentId: "doc_excluded" }),
     ];
 
     const result = await handleChatTurn({
@@ -54,7 +54,7 @@ describe("handleChatTurn", () => {
       });
     }
     expect(retrieval.query).toHaveBeenCalledWith({
-      namespace: "notebook-namespace",
+      namespace: "webui-namespace",
       query: "What does the document say?",
       topK: 8,
       useAgentic: true,
@@ -90,7 +90,7 @@ describe("handleChatTurn", () => {
 
     const result = await handleChatTurn({
       workspace: makeWorkspace(),
-      sources: [makeSource({ status: "parsing", knowhereDocumentId: null })],
+      sources: [makeSource({ status: "parsing", ziruDocumentId: null })],
       question: "Can I ask yet?",
       excludedSourceIds: [],
       retrieval,
@@ -141,7 +141,7 @@ describe("handleChatTurn", () => {
         results: [makeRetrievalResult()],
         evidenceText: "Grounding content",
         referencedChunks: [],
-        namespace: "notebook-namespace",
+        namespace: "webui-namespace",
         query: "Tesla Q4 2025 Update energy generation and storage deployments",
         routerUsed: "workflow_single_step",
         answerText: null,
@@ -220,7 +220,7 @@ describe("handleChatTurn", () => {
       searchSources: expect.any(Function),
     });
     expect(retrieval.query).toHaveBeenCalledWith({
-      namespace: "notebook-namespace",
+      namespace: "webui-namespace",
       query: "Tesla Q4 2025 Update energy generation and storage deployments",
       topK: 8,
       useAgentic: true,
@@ -259,8 +259,8 @@ function makeWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
     id: "workspace_1",
     userId: "user_1",
-      activeKnowhereApiKeyId: null,
-    namespace: "notebook-namespace",
+      activeZiruApiKeyId: null,
+    namespace: "webui-namespace",
     createdAt: new Date("2026-05-06T00:00:00Z"),
     ...overrides,
   };
@@ -275,8 +275,8 @@ function makeSource(overrides: Partial<Source> = {}): Source {
     sizeBytes: 100,
     status: "ready",
     failureReason: null,
-    knowhereJobId: "job_123",
-    knowhereDocumentId: "doc_included",
+    ziruJobId: "job_123",
+    ziruDocumentId: "doc_included",
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,

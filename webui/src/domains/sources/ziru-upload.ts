@@ -17,12 +17,12 @@ import { getWorkspaceNamespace } from "./namespace"
 import { sourceFailureMessage } from "./failure-message"
 
 /**
- * Upload a browser file to Knowhere for parsing.
+ * Upload a browser file to Ziru for parsing.
  *
  * Uses `Effect.scoped` + `TempFile.withFile` so the temp file is guaranteed
  * to be cleaned up even if the upload fails mid-flight.
  */
-export const uploadSourceToKnowhereEffect = (
+export const uploadSourceToZiruEffect = (
   workspace: Workspace,
   file: File,
   deps: UploadSourceDependencies,
@@ -47,11 +47,11 @@ export const uploadSourceToKnowhereEffect = (
         const { path } = yield* temp.withFile(file)
 
         const job = yield* Effect.tryPromise(() =>
-          deps.knowhere.jobs.create({
+          deps.ziru.jobs.create({
             sourceType: "file",
             fileName: validation.title,
             namespace: getWorkspaceNamespace(workspace),
-            documentMetadata: createNotebookDocumentMetadata({
+            documentMetadata: createWebUIDocumentMetadata({
               title: validation.title,
               mimeType: validation.mimeType,
               sizeBytes: file.size,
@@ -59,7 +59,7 @@ export const uploadSourceToKnowhereEffect = (
           }),
         )
         yield* Effect.tryPromise(() =>
-          deps.knowhere.jobs.upload(job, { file: path }),
+          deps.ziru.jobs.upload(job, { file: path }),
         )
         const documentId = yield* tryGetPlannedDocumentIdEffect(job, deps)
 
@@ -77,7 +77,7 @@ export const uploadSourceToKnowhereEffect = (
         Effect.gen(function* () {
           const message = sourceFailureMessage.fromUnknown(
             err,
-            "Knowhere upload failed.",
+            "Ziru upload failed.",
           )
           yield* Effect.promise(() =>
             deps.repository.markSourceFailed(
@@ -92,7 +92,7 @@ export const uploadSourceToKnowhereEffect = (
     )
   })
 
-export const uploadSourceBlobToKnowhereEffect = (
+export const uploadSourceBlobToZiruEffect = (
   workspace: Workspace,
   input: SourceBlobUploadInput,
   deps: UploadSourceDependencies,
@@ -115,12 +115,12 @@ export const uploadSourceBlobToKnowhereEffect = (
 
     return yield* Effect.gen(function* () {
       const job = yield* Effect.tryPromise(() =>
-        deps.knowhere.jobs.create({
+        deps.ziru.jobs.create({
           sourceType: "url",
           sourceUrl: input.url,
           fileName: validation.title,
           namespace: getWorkspaceNamespace(workspace),
-          documentMetadata: createNotebookDocumentMetadata({
+          documentMetadata: createWebUIDocumentMetadata({
             title: validation.title,
             mimeType: validation.mimeType,
             sizeBytes: input.sizeBytes,
@@ -141,7 +141,7 @@ export const uploadSourceBlobToKnowhereEffect = (
         Effect.gen(function* () {
           const message = sourceFailureMessage.fromUnknown(
             err,
-            "Knowhere upload failed.",
+            "Ziru upload failed.",
           )
           const failedSource = yield* Effect.promise(() =>
             deps.repository.markSourceFailed(
@@ -156,21 +156,21 @@ export const uploadSourceBlobToKnowhereEffect = (
     )
   })
 
-export async function uploadSourceToKnowhere(
+export async function uploadSourceToZiru(
   workspace: Workspace,
   file: File,
   deps: UploadSourceDependencies,
 ): Promise<Source> {
-  return Effect.runPromise(uploadSourceToKnowhereEffect(workspace, file, deps))
+  return Effect.runPromise(uploadSourceToZiruEffect(workspace, file, deps))
 }
 
-export async function uploadSourceBlobToKnowhere(
+export async function uploadSourceBlobToZiru(
   workspace: Workspace,
   input: SourceBlobUploadInput,
   deps: UploadSourceDependencies,
 ): Promise<Source> {
   return Effect.runPromise(
-    uploadSourceBlobToKnowhereEffect(workspace, input, deps),
+    uploadSourceBlobToZiruEffect(workspace, input, deps),
   )
 }
 
@@ -185,7 +185,7 @@ const tryGetPlannedDocumentIdEffect = (
 
   return Effect.gen(function* () {
     const currentJob = yield* Effect.tryPromise(() =>
-      deps.knowhere.jobs.get(job.jobId),
+      deps.ziru.jobs.get(job.jobId),
     )
     return getDocumentId(currentJob)
   }).pipe(Effect.catchAll(() => Effect.succeed(null)))
@@ -213,13 +213,13 @@ const markSourceParsingEffect = (input: {
         ),
   )
 
-function createNotebookDocumentMetadata(input: {
+function createWebUIDocumentMetadata(input: {
   readonly title: string
   readonly mimeType: string
   readonly sizeBytes: number
 }): Readonly<Record<string, unknown>> {
   return {
-    createdByClient: "notebook",
+    createdByClient: "webui",
     sourceFileName: input.title,
     title: input.title,
     mimeType: input.mimeType,

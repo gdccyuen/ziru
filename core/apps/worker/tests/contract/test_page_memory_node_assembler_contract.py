@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost/test")
-os.environ.setdefault("TMP_PATH", "/tmp/knowhere-test")
+os.environ.setdefault("TMP_PATH", "/tmp/ziru-test")
 os.environ.setdefault("S3_BUCKET_NAME", "test-uploads")
 os.environ.setdefault("S3_ACCESS_KEY_ID", "test")
 os.environ.setdefault("S3_SECRET_ACCESS_KEY", "test")
@@ -309,7 +309,7 @@ def test_build_node_rows_attaches_page_citation_assets_for_rendered_pages(tmp_pa
             "content_type": "image/png",
             "width": 2,
             "height": 3,
-            "source": "knowhere-rendered-page-citation-source",
+            "source": "ziru-rendered-page-citation-source",
         }
     ]
     assert (tmp_path / "page_citation_assets" / "page-231.png").is_file()

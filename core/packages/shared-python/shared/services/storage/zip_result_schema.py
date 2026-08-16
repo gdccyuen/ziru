@@ -1,4 +1,4 @@
-"""Schema projection facade for Knowhere ZIP result packages."""
+"""Schema projection facade for Ziru ZIP result packages."""
 
 from __future__ import annotations
 

@@ -9,7 +9,7 @@ from celery import Task
 from loguru import logger
 
 from shared.core.exceptions.domain_exceptions import UnknownException
-from shared.core.exceptions.knowhere_exception import KnowhereException
+from shared.core.exceptions.ziru_exception import ZiruException
 from shared.core.logging import LogEvent
 
 
@@ -27,18 +27,18 @@ class DocumentIngestionBaseTask(Task):
         """Task failure callback — finalize failure directly to the database."""
         job_id = self._extract_job_id(args, kwargs)
 
-        # Normalize to KnowhereException
-        knowhere_exc = (
+        # Normalize to ZiruException
+        ziru_exc = (
             exc
-            if isinstance(exc, KnowhereException)
+            if isinstance(exc, ZiruException)
             else UnknownException(original_exception=exc)
         )
 
         # Use exc.logging() for canonical exception logging
-        knowhere_exc.logging(job_id=job_id)
+        ziru_exc.logging(job_id=job_id)
 
         # Get error info from to_client
-        client_response = knowhere_exc.to_client(job_id or "Null")
+        client_response = ziru_exc.to_client(job_id or "Null")
         error_info = client_response["error"]
 
         # Finalize failure directly to the database.

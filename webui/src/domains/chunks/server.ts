@@ -8,12 +8,12 @@ import { Effect } from "effect"
 import type {
   DocumentChunk,
   DocumentChunkListResponse,
-} from "@ontos-ai/knowhere-sdk"
+} from "@/integrations/ziru-sdk-types"
 
 import {
   resolveChunkConnectionTargets,
   toParsedChunkView,
-  type ChunkKnowhereClient,
+  type ChunkZiruClient,
   type ChunkPage,
   type ChunkPageParams,
   type LoadChunksOptions,
@@ -68,7 +68,7 @@ type ServerLoadChunksOptions = LoadChunksOptions & {
 
 type WarmChunkPageCacheInput = {
   readonly source: Source
-  readonly client: ChunkKnowhereClient
+  readonly client: ChunkZiruClient
   readonly params: ChunkPageParams
   readonly revisionKey: string
   readonly workspaceId: string
@@ -107,7 +107,7 @@ const defaultBlobStore: ChunkPageBlobStore = {
  * The chunk-page cache is a best-effort optimization backed by Vercel Blob.
  * Local/self-hosted dev (and any deploy without `BLOB_READ_WRITE_TOKEN`) has
  * no Blob store, so `@vercel/blob` calls throw "No token found". Treat a
- * missing token as "cache unavailable" and fetch from Knowhere directly
+ * missing token as "cache unavailable" and fetch from Ziru directly
  * instead of crashing the chunks route. An explicitly injected `cacheStore`
  * (tests / custom stores) bypasses this gate.
  */
@@ -129,11 +129,11 @@ const defaultScheduleWarm: ChunkPageWarmScheduler = (
 
 export const loadChunksForSource = (
   source: Source,
-  client: ChunkKnowhereClient,
+  client: ChunkZiruClient,
   options: ServerLoadChunksOptions = {},
 ) =>
   Effect.gen(function* () {
-    if (source.status !== "ready" || !source.knowhereDocumentId) return []
+    if (source.status !== "ready" || !source.ziruDocumentId) return []
 
     const chunks: ParsedChunkView[] = []
     let page = 1
@@ -160,13 +160,13 @@ export const loadChunksForSource = (
 
 export const loadChunkPageForSource = (
   source: Source,
-  client: ChunkKnowhereClient,
+  client: ChunkZiruClient,
   params: ChunkPageParams,
   options: ServerLoadChunksOptions = {},
 ) =>
   Effect.gen(function* () {
     const emptyPage = createEmptyChunkPage(params)
-    if (source.status !== "ready" || !source.knowhereDocumentId) {
+    if (source.status !== "ready" || !source.ziruDocumentId) {
       return emptyPage
     }
 
@@ -177,7 +177,7 @@ export const loadChunkPageForSource = (
       options.cacheStore !== undefined || isBlobCacheConfigured()
     const includeAssetUrls = mode === visibleChunkPageMode
     const revisionProbeResponse = yield* Effect.promise(() =>
-      client.documents.listChunks(source.knowhereDocumentId!, {
+      client.documents.listChunks(source.ziruDocumentId!, {
         page: params.page,
         pageSize: params.pageSize,
         includeAssetUrls: false,
@@ -190,7 +190,7 @@ export const loadChunkPageForSource = (
         ? yield* Effect.promise(() =>
             readCachedChunkPage({
               cacheStore,
-              documentId: source.knowhereDocumentId!,
+              documentId: source.ziruDocumentId!,
               mode,
               params,
               revisionKey: probeRevisionKey,
@@ -200,7 +200,7 @@ export const loadChunkPageForSource = (
             Effect.catchAll((error) =>
               Effect.sync(() => {
                 logger.warn("chunks: cached chunk page read failed", {
-                  documentId: source.knowhereDocumentId,
+                  documentId: source.ziruDocumentId,
                   page: params.page,
                   pageSize: params.pageSize,
                   revisionKey: probeRevisionKey,
@@ -216,7 +216,7 @@ export const loadChunkPageForSource = (
 
     const response = includeAssetUrls
       ? yield* Effect.promise(() =>
-          client.documents.listChunks(source.knowhereDocumentId!, {
+          client.documents.listChunks(source.ziruDocumentId!, {
             page: params.page,
             pageSize: params.pageSize,
             includeAssetUrls,
@@ -225,7 +225,7 @@ export const loadChunkPageForSource = (
       : revisionProbeResponse
     if (includeAssetUrls) {
       yield* Effect.tryPromise(() =>
-        enrichChunksWithAssetUrls(source.knowhereDocumentId!, response, {
+        enrichChunksWithAssetUrls(source.ziruDocumentId!, response, {
           fetchAsset: options.fetchAsset ?? defaultFetchAsset,
         }),
       ).pipe(
@@ -263,7 +263,7 @@ export const loadChunkPageForSource = (
         scheduleStructurePageCacheWrite({
           cacheStore,
           chunkPage,
-          documentId: source.knowhereDocumentId,
+          documentId: source.ziruDocumentId,
           mode,
           params,
           revisionKey,
@@ -280,7 +280,7 @@ export async function warmChunkPageCache(
   input: WarmChunkPageCacheInput,
 ): Promise<void> {
   const response = await input.client.documents.listChunks(
-    input.source.knowhereDocumentId!,
+    input.source.ziruDocumentId!,
     {
       page: input.params.page,
       pageSize: input.params.pageSize,
@@ -351,7 +351,7 @@ export async function warmChunkPageCache(
   await writeCachedChunkPage({
     cacheStore: input.cacheStore,
     chunkPage,
-    documentId: input.source.knowhereDocumentId!,
+    documentId: input.source.ziruDocumentId!,
     mode: visibleChunkPageMode,
     params: input.params,
     revisionKey: input.revisionKey,
@@ -366,7 +366,7 @@ function scheduleChunkPageWarm(input: WarmChunkPageCacheInput): void {
     } catch (error) {
       logger.warn("chunks: chunk page cache warm failed", {
         sourceId: input.source.id,
-        documentId: input.source.knowhereDocumentId,
+        documentId: input.source.ziruDocumentId,
         page: input.params.page,
         pageSize: input.params.pageSize,
         revisionKey: input.revisionKey,
@@ -455,7 +455,7 @@ function createChunkPageFromResponse(input: {
     toParsedChunkView(
       chunk,
       input.source.title,
-      input.source.knowhereDocumentId ?? undefined,
+      input.source.ziruDocumentId ?? undefined,
       input.options,
     ),
   )
@@ -772,8 +772,8 @@ function getRevisionKey(
 
 function getFallbackRevisionKey(source: Source): string | null {
   return (
-    getNonEmptyString(source.knowhereJobId) ??
-    getNonEmptyString(source.knowhereDocumentId)
+    getNonEmptyString(source.ziruJobId) ??
+    getNonEmptyString(source.ziruDocumentId)
   )
 }
 
@@ -782,12 +782,12 @@ function scheduleRevisionKeyUpdate(
   revisionKey: string,
   onRevisionKey: ((revisionKey: string) => Promise<void>) | undefined,
 ): void {
-  if (!onRevisionKey || source.knowhereJobId === revisionKey) return
+  if (!onRevisionKey || source.ziruJobId === revisionKey) return
 
   void onRevisionKey(revisionKey).catch((error: unknown) => {
     logger.warn("chunks: source revision key update failed", {
       sourceId: source.id,
-      documentId: source.knowhereDocumentId,
+      documentId: source.ziruDocumentId,
       revisionKey,
       error: getErrorMessage(error),
     })

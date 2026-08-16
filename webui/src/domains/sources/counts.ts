@@ -1,26 +1,26 @@
 import "server-only"
 
 import { Effect, Either } from "effect"
-import type Knowhere from "@ontos-ai/knowhere-sdk"
+import type { ZiruClient } from "@/integrations/ziru-sdk-types"
 
 import type { Source } from "@/infrastructure/db/schema"
 
 export const countChunksBySourceId = (
   sources: readonly Source[],
-  client: Knowhere,
+  client: ZiruClient,
 ) =>
   Effect.gen(function* () {
     const readySources = sources.filter(
       (source) =>
         source.status === "ready" &&
-        source.knowhereDocumentId,
+        source.ziruDocumentId,
     )
     if (readySources.length === 0) return new Map<string, number>()
 
     const entries = yield* Effect.all(
       readySources.map((source) =>
         Effect.gen(function* () {
-          const documentId = source.knowhereDocumentId
+          const documentId = source.ziruDocumentId
           if (!documentId) return [source.id, undefined] as const
 
           const result = yield* Effect.either(
@@ -53,7 +53,7 @@ export const countChunksBySourceId = (
 
 export const sourceViewOptionsBySourceId = (
   sources: readonly Source[],
-  client: Knowhere,
+  client: ZiruClient,
 ) =>
   Effect.gen(function* () {
     const counts = yield* countChunksBySourceId(sources, client)

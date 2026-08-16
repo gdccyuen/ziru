@@ -1,14 +1,14 @@
 import type { ProductAdvantage } from "@/app/_(landing)/_types/comparison";
 
 /**
- * Knowhere product data (our product)
+ * Ziru product data (our product)
  */
-const knowhereProduct: ProductAdvantage = {
-  id: "knowhere",
-  name: "Knowhere",
-  tabLabel: "Knowhere",
+const ziruProduct: ProductAdvantage = {
+  id: "ziru",
+  name: "Ziru",
+  tabLabel: "Ziru",
   description:
-    "Knowhere is a professional document parsing engine that delivers exceptional accuracy and performance. Built specifically for RAG applications, it preserves document structure and handles complex tables with ease.",
+    "Ziru is a professional document parsing engine that delivers exceptional accuracy and performance. Built specifically for RAG applications, it preserves document structure and handles complex tables with ease.",
   advantages: [
     "99.8% parsing accuracy with advanced table structure recognition",
     "3x faster processing speed (187ms vs competitors' 350ms+ average)",
@@ -17,7 +17,7 @@ const knowhereProduct: ProductAdvantage = {
     "Optimized for RAG applications with structured output",
   ],
   metrics: [],
-  resultImage: "/comparison/tables/knowhere.html",
+  resultImage: "/comparison/tables/ziru.html",
   isOurProduct: true,
 };
 
@@ -56,10 +56,10 @@ export const competitorProducts: ProductAdvantage[] = [
 ];
 
 /**
- * All products including Knowhere (used in modal and comparison route page)
- * Knowhere is placed first as our product
+ * All products including Ziru (used in modal and comparison route page)
+ * Ziru is placed first as our product
  */
-export const allProducts: ProductAdvantage[] = [knowhereProduct, ...competitorProducts];
+export const allProducts: ProductAdvantage[] = [ziruProduct, ...competitorProducts];
 
 /**
  * @deprecated Use competitorProducts or allProducts instead

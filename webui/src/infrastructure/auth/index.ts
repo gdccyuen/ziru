@@ -11,14 +11,14 @@ import { usersRepository } from "./users-repository"
 import { formatUnknownForLog } from "@/lib/format-log-value"
 
 export { sessionCookieName } from "./session"
-export { notebookSessionCookieName } from "./session-cookie-constants"
+export { ziruSessionCookieName } from "./session-cookie-constants"
 
 /**
- * Auth helpers for Knowhere Notebook (Phase 2+: Notebook-owned auth).
+ * Auth helpers for Ziru WebUI (Phase 2+: WebUI-owned auth).
  *
  * Design:
- *   - Identity is Notebook-owned: a DB-backed session row keyed by the
- *     `notebook-session` cookie, joined to the `users` table.
+ *   - Identity is WebUI-owned: a DB-backed session row keyed by the
+ *     `ziru-session` cookie, joined to the `users` table.
  *   - `user === null` means "unauthenticated".
  */
 
@@ -68,7 +68,7 @@ function parseSessionIdFromCookieHeader(cookieHeader: string): string | null {
 
 export const Auth = Context.GenericTag<{
   readonly getCurrentUser: () => Effect.Effect<AuthUser | null>
-}>("@knowhere/Auth")
+}>("@ziru/Auth")
 
 export const authLayer = Layer.effect(
   Auth,
@@ -109,7 +109,7 @@ export const getCurrentUserEffect: Effect.Effect<AuthUser | null, never> =
 
 /**
  * Page / server-action guard. Redirects to the local login page with a
- * `callbackURL` pointing back at the Notebook public URL when the caller
+ * `callbackURL` pointing back at the WebUI public URL when the caller
  * is unauthenticated.
  *
  * Throws a Next.js redirect; callers never see the anonymous branch.

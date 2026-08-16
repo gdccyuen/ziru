@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@components/ui/dropdown-menu";
-import { KnowhereIcon } from "@components/ui/knowhere-icon";
+import { ZiruIcon } from "@components/ui/ziru-icon";
 import type { AuthUser } from "@hooks/use-auth";
 import { useCredits } from "@hooks/use-credits";
 import { trackBuyCreditsClicked } from "@lib/posthog";
@@ -64,7 +64,7 @@ const ThemeButton = () => {
       onClick={() => setTheme(isDark ? "light" : "dark")}
       aria-label="Toggle theme"
     >
-      <KnowhereIcon name={isDark ? "theme-light" : "theme-dark"} className="h-[18px] w-[18px]" />
+      <ZiruIcon name={isDark ? "theme-light" : "theme-dark"} className="h-[18px] w-[18px]" />
     </button>
   );
 };
@@ -236,7 +236,7 @@ export const DashboardShell = ({
                 >
                   <span>{localeLabels[locale as keyof typeof localeLabels] || "English"}</span>
                   <Image
-                    src="/icons/knowhere/chevron-down.svg"
+                    src="/icons/ziru/chevron-down.svg"
                     alt=""
                     aria-hidden
                     width={20}

@@ -6,7 +6,7 @@ import type { Source, Workspace } from "@/infrastructure/db/schema"
 import { getWorkspaceNamespace } from "./namespace"
 import type {
   UploadJobResult,
-  UploadKnowhereClient,
+  UploadZiruClient,
 } from "./source-upload-contracts"
 import { sourceFailureMessage } from "./failure-message"
 
@@ -27,11 +27,11 @@ type RetrySourceRepository = {
 }
 
 type RetrySourceDependencies = {
-  readonly knowhere: UploadKnowhereClient
+  readonly ziru: UploadZiruClient
   readonly repository: RetrySourceRepository
 }
 
-export const retrySourceToKnowhereEffect = (
+export const retrySourceToZiruEffect = (
   workspace: Workspace,
   source: Source,
   deps: RetrySourceDependencies,
@@ -55,12 +55,12 @@ export const retrySourceToKnowhereEffect = (
 
     return yield* Effect.gen(function* () {
       const job = yield* Effect.tryPromise(() =>
-        deps.knowhere.jobs.create({
+        deps.ziru.jobs.create({
           sourceType: "url",
           sourceUrl: originalBlobUrl,
           fileName: source.title,
           namespace: getWorkspaceNamespace(workspace),
-          documentMetadata: createNotebookDocumentMetadata({
+          documentMetadata: createWebUIDocumentMetadata({
             title: source.title,
             mimeType: source.mimeType,
             sizeBytes: source.sizeBytes,
@@ -90,7 +90,7 @@ export const retrySourceToKnowhereEffect = (
         Effect.gen(function* () {
           const message = sourceFailureMessage.fromUnknown(
             err,
-            "Knowhere upload failed.",
+            "Ziru upload failed.",
           )
           const failedSource = yield* Effect.promise(() =>
             deps.repository.markSourceFailed(
@@ -117,19 +117,19 @@ const tryGetPlannedDocumentIdEffect = (
 
   return Effect.gen(function* () {
     const currentJob = yield* Effect.tryPromise(() =>
-      deps.knowhere.jobs.get(job.jobId),
+      deps.ziru.jobs.get(job.jobId),
     )
     return getDocumentId(currentJob)
   }).pipe(Effect.catchAll(() => Effect.succeed(null)))
 }
 
-function createNotebookDocumentMetadata(input: {
+function createWebUIDocumentMetadata(input: {
   readonly title: string
   readonly mimeType: string
   readonly sizeBytes: number
 }): Readonly<Record<string, unknown>> {
   return {
-    createdByClient: "notebook",
+    createdByClient: "webui",
     sourceFileName: input.title,
     title: input.title,
     mimeType: input.mimeType,

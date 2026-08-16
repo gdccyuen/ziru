@@ -2,7 +2,7 @@
 set -euo pipefail
 
 composeFile="${COMPOSE_FILE:-compose.yaml}"
-projectName="${COMPOSE_PROJECT_NAME:-knowhere-self-hosted-smoke}"
+projectName="${COMPOSE_PROJECT_NAME:-ziru-self-hosted-smoke}"
 
 export DASHBOARD_HOST_PORT="${DASHBOARD_HOST_PORT:-13000}"
 export API_HOST_PORT="${API_HOST_PORT:-15005}"

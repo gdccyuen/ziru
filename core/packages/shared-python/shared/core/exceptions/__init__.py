@@ -14,7 +14,7 @@ from shared.core.exceptions.domain_exceptions import (
     UnknownException,
     ValidationException,
 )
-from shared.core.exceptions.knowhere_exception import KnowhereException
+from shared.core.exceptions.ziru_exception import ZiruException
 from shared.core.exceptions.retryable_exceptions import RETRYABLE_EXCEPTIONS
 from shared.core.exceptions.webhook_exceptions import (
     WebhookConfigException,
@@ -24,7 +24,7 @@ from shared.core.exceptions.webhook_exceptions import (
 
 __all__ = [
     # Base (do not raise directly)
-    "KnowhereException",
+    "ZiruException",
     # Client Errors (4xx)
     "ValidationException",
     "AuthException",

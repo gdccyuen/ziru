@@ -21,12 +21,12 @@ describe("formatUnknownForLog", () => {
     try {
       await Effect.runPromise(
         Effect.tryPromise(() =>
-          Promise.reject(new Error("Knowhere document list timed out")),
+          Promise.reject(new Error("Ziru document list timed out")),
         ),
       )
     } catch (error) {
       expect(formatUnknownForLog(error)).toContain(
-        "Knowhere document list timed out",
+        "Ziru document list timed out",
       )
     }
   })

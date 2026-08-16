@@ -470,7 +470,7 @@ async def test_should_return_a_checkout_url_when_buying_a_credit_package(
             assert user_id == "local-dev-user"
             assert price_id == "price_contract_package"
             assert quantity == 2
-            assert email == "local-dev-user@knowhere.local"
+            assert email == "local-dev-user@ziru.local"
             assert success_url.endswith("type=credits_package")
             assert cancel_url.endswith("canceled=true")
             return "https://checkout.stripe.test/session/contract-package"

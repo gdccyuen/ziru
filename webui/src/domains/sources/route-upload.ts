@@ -6,7 +6,7 @@ import { startBackgroundReconciliation } from "./background-reconcile"
 import { validateSourceBlobUploadInput } from "./blob-upload"
 import type {
   JsonRouteResult,
-  SourceRouteKnowhereClient,
+  SourceRouteZiruClient,
   SourceRouteServiceDependencies,
   SourceUploadRequest,
   UploadSourceBody,
@@ -21,7 +21,7 @@ type RouteUploadDependencies = Pick<
   | "ensureWorkspace"
   | "findWorkspaceByIdAndUserId"
   | "getCurrentUser"
-  | "makeKnowhereClient"
+  | "makeZiruClient"
   | "sourceService"
 >
 
@@ -77,9 +77,9 @@ const uploadSourceEffect = (
     const apiKey = yield* Effect.tryPromise(() =>
       deps.ensureApiKeyForWorkspace(workspace.id),
     )
-    const client = deps.makeKnowhereClient(apiKey)
+    const client = deps.makeZiruClient(apiKey)
 
-    const source = yield* uploadToKnowhereEffect(
+    const source = yield* uploadToZiruEffect(
       workspace,
       input.upload,
       client,
@@ -101,18 +101,18 @@ const uploadSourceEffect = (
     return routeResult.ok({ source: toSourceView(source) }, 201)
   })
 
-const uploadToKnowhereEffect = (
+const uploadToZiruEffect = (
   workspace: Workspace,
   upload: Exclude<SourceUploadRequest, { readonly type: "error" }>,
-  client: SourceRouteKnowhereClient,
+  client: SourceRouteZiruClient,
   deps: RouteUploadDependencies,
 ) =>
   upload.type === "file"
     ? Effect.tryPromise(() =>
-        deps.sourceService.uploadSourceToKnowhere(workspace, upload.file, client),
+        deps.sourceService.uploadSourceToZiru(workspace, upload.file, client),
       )
     : Effect.tryPromise(() =>
-        deps.sourceService.uploadSourceBlobToKnowhere(
+        deps.sourceService.uploadSourceBlobToZiru(
           workspace,
           upload.input,
           client,

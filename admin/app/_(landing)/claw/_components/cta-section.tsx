@@ -11,7 +11,7 @@ export function CTASection() {
               Call to action
             </p>
             <h2 className="mt-4 font-sans text-[clamp(2.4rem,6vw,4.75rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-pixel-fg">
-              Bring Knowhere into OpenClaw.
+              Bring Ziru into OpenClaw.
             </h2>
             <p className="mt-5 max-w-2xl font-sans text-base leading-8 text-pixel-muted md:text-lg">
               Install the plugin, point it at your API key, and give OpenClaw a browse-first way to

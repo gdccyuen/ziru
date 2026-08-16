@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import type { RetrievalQueryResponse } from "@ontos-ai/knowhere-sdk"
+import type { RetrievalQueryResponse } from "@/integrations/ziru-sdk-types"
 
 import {
   buildHarnessMessages,
@@ -17,16 +17,16 @@ import type {
 } from "./types"
 
 describe("agent harness runtime", () => {
-  it("keeps KNOWHERE as an evidence provider instead of exposing internal navigation", () => {
+  it("keeps ZIRU as an evidence provider instead of exposing internal navigation", () => {
     const prompt = buildHarnessSystemPrompt(makeTurnInput())
 
-    expect(prompt).toContain("KNOWHERE is only an evidence provider")
+    expect(prompt).toContain("ZIRU is only an evidence provider")
     expect(prompt).toContain("Do not infer or control its internal navigation")
     expect(prompt).not.toContain("LegalAction")
     expect(prompt).not.toContain("navigation action")
   })
 
-  it("passes only outer retrieval parameters to KNOWHERE after intent and context policy are declared", async () => {
+  it("passes only outer retrieval parameters to ZIRU after intent and context policy are declared", async () => {
     const query = vi.fn<RetrievalCapability["query"]>().mockResolvedValue(
       makeRetrievalResponse(),
     )
@@ -315,7 +315,7 @@ function executeTool(tool: unknown, input: unknown): Promise<unknown> {
 
 function makeTurnInput(overrides: Partial<AgentTurnInput> = {}): AgentTurnInput {
   return {
-    surface: "notebook_chat",
+    surface: "ziru_chat",
     userText: "Show me two Q4 chart images.",
     recentTurns: [],
     outputCapabilities: {
@@ -329,7 +329,7 @@ function makeTurnInput(overrides: Partial<AgentTurnInput> = {}): AgentTurnInput 
 
 function makeRetrievalResponse(): RetrievalQueryResponse {
   return {
-    namespace: "notebook",
+    namespace: "webui",
     query: "q4 chart",
     routerUsed: "workflow_single_step",
     answerText: null,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create local S3-compatible buckets required by Knowhere."""
+"""Create local S3-compatible buckets required by Ziru."""
 
 from __future__ import annotations
 

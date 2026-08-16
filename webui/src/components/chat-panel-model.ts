@@ -64,7 +64,7 @@ function normalizeCitationLabelPart(
   if (trimmed.length === 0) return undefined;
   if (trimmed === sourceName) return undefined;
   if (trimmed === "Root") return undefined;
-  if (isGeneratedKnowhereFileName(trimmed)) return undefined;
+  if (isGeneratedZiruFileName(trimmed)) return undefined;
 
   const normalized = trimmed
     .replace(/^Default_Root\//, "")
@@ -75,6 +75,6 @@ function normalizeCitationLabelPart(
   return normalized.length > 0 ? normalized : undefined;
 }
 
-function isGeneratedKnowhereFileName(value: string): boolean {
+function isGeneratedZiruFileName(value: string): boolean {
   return /^document-[A-Za-z0-9_-]{16,}\.[A-Za-z0-9]+$/u.test(value);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import type { JobResult } from "@ontos-ai/knowhere-sdk"
+import type { JobResult } from "@/integrations/ziru-sdk-types"
 
 import {
   completeResultZipMultipartUpload,
@@ -129,7 +129,7 @@ describe("result ZIP multipart mirroring", () => {
     const client = {
       jobs: {
         get: vi.fn(async () => ({
-          resultUrl: "https://knowhere.example/result.zip",
+          resultUrl: "https://ziru.example/result.zip",
         })),
       },
     }
@@ -197,21 +197,21 @@ describe("result ZIP multipart mirroring", () => {
       partCount: 3,
     })
     expect(fetchResult).toHaveBeenCalledWith(
-      "https://knowhere.example/result.zip",
+      "https://ziru.example/result.zip",
       expect.objectContaining({
         method: "HEAD",
         signal: expect.any(AbortSignal),
       }),
     )
     expect(fetchResult).toHaveBeenCalledWith(
-      "https://knowhere.example/result.zip",
+      "https://ziru.example/result.zip",
       expect.objectContaining({
         headers: { Range: `bytes=0-${partSizeBytes - 1}` },
         signal: expect.any(AbortSignal),
       }),
     )
     expect(fetchResult).toHaveBeenCalledWith(
-      "https://knowhere.example/result.zip",
+      "https://ziru.example/result.zip",
       expect.objectContaining({
         headers: {
           Range: `bytes=${partSizeBytes}-${partSizeBytes * 2 - 1}`,
@@ -220,7 +220,7 @@ describe("result ZIP multipart mirroring", () => {
       }),
     )
     expect(fetchResult).toHaveBeenCalledWith(
-      "https://knowhere.example/result.zip",
+      "https://ziru.example/result.zip",
       expect.objectContaining({
         headers: {
           Range: `bytes=${partSizeBytes * 2}-${partSizeBytes * 2 + 2}`,
@@ -261,7 +261,7 @@ describe("result ZIP multipart mirroring", () => {
     const client = {
       jobs: {
         get: vi.fn(async () => ({
-          resultUrl: "https://knowhere.example/result.zip",
+          resultUrl: "https://ziru.example/result.zip",
         })),
       },
     }
@@ -284,14 +284,14 @@ describe("result ZIP multipart mirroring", () => {
     })
 
     expect(fetchResult).toHaveBeenCalledWith(
-      "https://knowhere.example/result.zip",
+      "https://ziru.example/result.zip",
       expect.objectContaining({
         method: "HEAD",
         signal: expect.any(AbortSignal),
       }),
     )
     expect(fetchResult).toHaveBeenCalledWith(
-      "https://knowhere.example/result.zip",
+      "https://ziru.example/result.zip",
       expect.objectContaining({
         headers: { Range: "bytes=0-0" },
         signal: expect.any(AbortSignal),
@@ -618,7 +618,7 @@ function makeJobResult(): JobResult {
     jobId: "job_1",
     status: "done",
     sourceType: "file",
-    namespace: "notebook-workspace_1",
+    namespace: "webui-workspace_1",
     documentId: "doc_1",
     createdAt: new Date("2026-05-06T00:00:00Z"),
     isDone: true,

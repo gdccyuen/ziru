@@ -6,7 +6,7 @@ import type { Db } from "@/infrastructure/db"
 type WorkspaceRow = {
   id: string
   userId: string
-  knowhereKeyLabel: string | null
+  ziruKeyLabel: string | null
   namespace: string
   createdAt: Date
 }
@@ -54,7 +54,7 @@ function buildWorkspaceDbMock(storage: {
           storage.row = {
             id: crypto.randomUUID(),
             userId: values.userId,
-            knowhereKeyLabel: values.knowhereKeyLabel ?? null,
+            ziruKeyLabel: values.ziruKeyLabel ?? null,
             namespace: values.namespace,
             createdAt: new Date(),
           }

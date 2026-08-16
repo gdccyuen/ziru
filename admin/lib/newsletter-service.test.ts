@@ -54,9 +54,9 @@ vi.mock("@lib/env", () => ({
     DATABASE_URL: "postgres://dashboard.example/dashboard",
     NEWSLETTER_DATABASE_URL: "postgres://newsletter.example/newsletter",
     UNSAFE_DB_SSL_ENABLED: "false",
-    NEXT_PUBLIC_APP_URL: "https://knowhereto.ai",
+    NEXT_PUBLIC_APP_URL: "https://ziru.app",
     RESEND_API_KEY: undefined,
-    RESEND_FROM: "Knowhere <team@knowhereto.ai>",
+    RESEND_FROM: "Ziru <team@ziru.app>",
     NODE_ENV: "development",
   },
 }));

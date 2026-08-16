@@ -6,14 +6,14 @@ from pathlib import Path
 
 
 _REQUIRED_IMPORT_ENVIRONMENT: dict[str, str] = {
-    "DATABASE_URL": "postgresql+asyncpg://user:pass@127.0.0.1:15432/knowhere_test",
+    "DATABASE_URL": "postgresql+asyncpg://user:pass@127.0.0.1:15432/ziru_test",
     "DS_KEY": "test-deepseek-key",
     "DS_URL": "https://example.com/v1",
-    "S3_BUCKET_NAME": "knowhere-test-bucket",
+    "S3_BUCKET_NAME": "ziru-test-bucket",
     "S3_ACCESS_KEY_ID": "test-access-key",
     "S3_SECRET_ACCESS_KEY": "test-secret-key",
-    "S3_TEMP_PATH": "/tmp/knowhere-api-tests",
-    "TMP_PATH": "/tmp/knowhere-api-tests",
+    "S3_TEMP_PATH": "/tmp/ziru-api-tests",
+    "TMP_PATH": "/tmp/ziru-api-tests",
 }
 
 

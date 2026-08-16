@@ -37,8 +37,8 @@ from typing import Generator
 from loguru import logger
 
 # Key prefix for periodic task locks.
-# SyncRedisService._build_key() already prepends "knowhere-api:" so the final
-# Redis key will be "knowhere-api:periodic-lock:{safe_task_name}".
+# SyncRedisService._build_key() already prepends "ziru-api:" so the final
+# Redis key will be "ziru-api:periodic-lock:{safe_task_name}".
 _KEY_PREFIX = "periodic-lock:"
 
 # Subtract this from the period to give the next firing a grace window even

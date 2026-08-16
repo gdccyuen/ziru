@@ -35,7 +35,7 @@ describe("ChatMessageList", () => {
     fireEvent.click(trigger);
   }
 
-  it("renders assistant citations using Notebook source labels", () => {
+  it("renders assistant citations using WebUI source labels", () => {
     render(
       React.createElement(ChatMessageList, {
         messages: [
@@ -91,7 +91,7 @@ describe("ChatMessageList", () => {
               queries: [
                 {
                   query: "deadline monday",
-                  namespace: "notebook-workspace",
+                  namespace: "webui-workspace",
                   resultCount: 3,
                   referencedChunkCount: 1,
                   topScores: [0.91, 0.8],
@@ -124,7 +124,7 @@ describe("ChatMessageList", () => {
               queries: [
                 {
                   query: "deadline monday",
-                  namespace: "notebook-workspace",
+                  namespace: "webui-workspace",
                   resultCount: 0,
                   referencedChunkCount: 0,
                   topScores: [],

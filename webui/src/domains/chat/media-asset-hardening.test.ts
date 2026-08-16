@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import type { RetrievalResult } from "@ontos-ai/knowhere-sdk"
+import type { RetrievalResult } from "@/integrations/ziru-sdk-types"
 
 import type { Source } from "@/infrastructure/db/schema"
 import {
@@ -20,13 +20,13 @@ vi.mock("@/lib/logger", () => ({
 
 afterEach(() => {
   vi.clearAllMocks()
-  delete process.env.KNOWHERE_BASE_URL
+  delete process.env.ZIRU_BASE_URL
 })
 
 describe("hardenChatMediaAssetUrls", () => {
-  it("copies upstream absolute asset URLs into Notebook chat assets", async () => {
+  it("copies upstream absolute asset URLs into WebUI chat assets", async () => {
     const rawAssetUrl =
-      "https://knowhere-storage.example/results/job_1/images/image-6-%E6%83%85%E6%84%9F%E5%88%86%E7%B1%BB%E6%A8%A1%E5%9E%8B.jpg?AWSAccessKeyId=test&Signature=secret"
+      "https://ziru-storage.example/results/job_1/images/image-6-%E6%83%85%E6%84%9F%E5%88%86%E7%B1%BB%E6%A8%A1%E5%9E%8B.jpg?AWSAccessKeyId=test&Signature=secret"
     const blobStore = makeBlobStore(
       "https://blob.example/workspaces/workspace_1/chat-assets/source-source_1/image-6.jpg",
     )
@@ -37,7 +37,7 @@ describe("hardenChatMediaAssetUrls", () => {
       sources: [
         makeSource({
           id: "source_1",
-          knowhereDocumentId: "doc_model",
+          ziruDocumentId: "doc_model",
         }),
       ],
       results: [
@@ -75,7 +75,7 @@ describe("hardenChatMediaAssetUrls", () => {
 
   it("uses an existing parsed asset URL before fetching the upstream URL", async () => {
     const rawAssetUrl =
-      "https://knowhere-storage.example/results/job_1/images/id-front.jpg?AWSAccessKeyId=test"
+      "https://ziru-storage.example/results/job_1/images/id-front.jpg?AWSAccessKeyId=test"
     const parsedAssetUrl =
       "https://blob.example/workspaces/workspace_1/sources/source_identity/parsed-result/images/id-front.jpg"
     const blobStore = makeBlobStore("https://blob.example/should-not-upload.jpg")
@@ -89,7 +89,7 @@ describe("hardenChatMediaAssetUrls", () => {
       sources: [
         makeSource({
           id: "source_identity",
-          knowhereDocumentId: "doc_identity",
+          ziruDocumentId: "doc_identity",
         }),
       ],
       results: [
@@ -118,7 +118,7 @@ describe("hardenChatMediaAssetUrls", () => {
 
   it("falls back to the raw URL when hardening fails", async () => {
     const rawAssetUrl =
-      "https://knowhere-storage.example/results/job_1/tables/table-1.html?AWSAccessKeyId=test"
+      "https://ziru-storage.example/results/job_1/tables/table-1.html?AWSAccessKeyId=test"
     const blobStore = makeBlobStore("https://blob.example/should-not-exist.html")
     const fetchAsset: FetchChatMediaAsset = vi
       .fn()
@@ -143,7 +143,7 @@ describe("hardenChatMediaAssetUrls", () => {
       "chat-agent: media asset hardening failed; keeping raw URL",
       expect.objectContaining({
         assetUrl:
-          "https://knowhere-storage.example/results/job_1/tables/table-1.html",
+          "https://ziru-storage.example/results/job_1/tables/table-1.html",
         error: "expired URL",
       }),
     )
@@ -151,7 +151,7 @@ describe("hardenChatMediaAssetUrls", () => {
 
   it("rewrites artifact asset URLs and nested citation asset URLs", async () => {
     const rawAssetUrl =
-      "https://knowhere-storage.example/results/job_1/images/front.jpg?AWSAccessKeyId=test"
+      "https://ziru-storage.example/results/job_1/images/front.jpg?AWSAccessKeyId=test"
     const blobAssetUrl =
       "https://blob.example/workspaces/workspace_1/chat-assets/source-source_identity/front.jpg"
     const blobStore = makeBlobStore(blobAssetUrl)
@@ -162,7 +162,7 @@ describe("hardenChatMediaAssetUrls", () => {
       sources: [
         makeSource({
           id: "source_identity",
-          knowhereDocumentId: "doc_identity",
+          ziruDocumentId: "doc_identity",
         }),
       ],
       results: [],
@@ -240,8 +240,8 @@ function makeSource(overrides: Partial<Source> = {}): Source {
     sizeBytes: 100,
     status: "ready",
     failureReason: null,
-    knowhereJobId: "job_123",
-    knowhereDocumentId: "doc_1",
+    ziruJobId: "job_123",
+    ziruDocumentId: "doc_1",
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,

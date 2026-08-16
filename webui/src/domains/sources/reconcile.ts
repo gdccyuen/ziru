@@ -2,12 +2,14 @@ import "server-only"
 
 import { Effect, pipe } from "effect"
 import { del } from "@vercel/blob"
-import type Knowhere from "@ontos-ai/knowhere-sdk"
-import type { JobResult } from "@ontos-ai/knowhere-sdk"
+import type {
+  JobResult,
+  ZiruClient,
+} from "@/integrations/ziru-sdk-types"
 
 import type { Source } from "@/infrastructure/db/schema"
 import { logger } from "@/lib/logger"
-import { applyKnowhereJobToSource } from "./lifecycle"
+import { applyZiruJobToSource } from "./lifecycle"
 import { sourceWorkflowRuntime } from "./workflow-runtime"
 
 type SourceReconcileDependencies = {
@@ -27,14 +29,14 @@ export const reconcileSourcesForWorkspaceEffect = Effect.fn(
 )(
   function* (
     workspace: { readonly id: string },
-    client: Knowhere,
+    client: ZiruClient,
     deps: SourceReconcileDependencies = {},
   ) {
     const rows = yield* Effect.tryPromise(() =>
       sourceWorkflowRuntime.listForWorkspace(workspace.id),
     )
     const parsing = rows.filter(
-      (row) => row.status === "parsing" && row.knowhereJobId,
+      (row) => row.status === "parsing" && row.ziruJobId,
     )
     if (parsing.length === 0) return rows
 
@@ -49,13 +51,13 @@ export const reconcileSourcesForWorkspaceEffect = Effect.fn(
       Effect.forEach(
         (source) =>
           Effect.gen(function* () {
-            const jobId = source.knowhereJobId!
-            logger.info("reconcile: checking Knowhere job status", {
+            const jobId = source.ziruJobId!
+            logger.info("reconcile: checking Ziru job status", {
               sourceId: source.id,
               jobId,
             })
             const job = yield* Effect.tryPromise(() => client.jobs.get(jobId))
-            logger.info("reconcile: Knowhere job status", {
+            logger.info("reconcile: Ziru job status", {
               sourceId: source.id,
               jobId,
               jobStatus: job.status,
@@ -70,7 +72,7 @@ export const reconcileSourcesForWorkspaceEffect = Effect.fn(
             Effect.catchAllCause((cause) => {
               logger.error("reconcile: failed to process source", {
                 sourceId: source.id,
-                jobId: source.knowhereJobId,
+                jobId: source.ziruJobId,
                 error: String(cause),
               })
               return Effect.void
@@ -92,7 +94,7 @@ export const reconcileSourcesForWorkspaceEffect = Effect.fn(
 
 export async function reconcileSourcesForWorkspace(
   workspace: { readonly id: string },
-  client: Knowhere,
+  client: ZiruClient,
   deps: SourceReconcileDependencies = {},
 ): Promise<Source[]> {
   return Effect.runPromise(
@@ -108,10 +110,10 @@ async function updateSourceFromJob(
   workspaceId: string,
   source: Source,
   job: JobResult,
-  client: Knowhere,
+  client: ZiruClient,
   deps: SourceReconcileDependencies,
 ): Promise<void> {
-  await applyKnowhereJobToSource({
+  await applyZiruJobToSource({
     workspaceId,
     source,
     job,

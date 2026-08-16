@@ -1,7 +1,7 @@
 import "server-only"
 
 import { del } from "@vercel/blob"
-import type { JobResult } from "@ontos-ai/knowhere-sdk"
+import type { JobResult } from "@/integrations/ziru-sdk-types"
 
 import type { Source } from "@/infrastructure/db/schema"
 import { logger } from "@/lib/logger"
@@ -88,12 +88,12 @@ export async function pollSourceReconciliation({
     return { kind: "resolved", status: source.status }
   }
 
-  const jobId = source.knowhereJobId
+  const jobId = source.ziruJobId
   if (!jobId) {
     await failSourceAndCleanup({
       workspaceId,
       source,
-      reason: "Parsing source is missing a Knowhere job id.",
+      reason: "Parsing source is missing a Ziru job id.",
       repository,
       blobStore,
     })
@@ -124,7 +124,7 @@ export async function pollSourceReconciliation({
     await failSourceAndCleanup({
       workspaceId,
       source,
-      reason: "Parsing finished but Knowhere did not publish a document id.",
+      reason: "Parsing finished but Ziru did not publish a document id.",
       repository,
       blobStore,
     })

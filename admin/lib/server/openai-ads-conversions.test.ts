@@ -4,18 +4,18 @@ type OpenAIAdsConversionsModule = typeof import("@/server/openai-ads-conversions
 
 const REQUIRED_ENV = {
   BETTER_AUTH_SECRET: "test-auth-secret-with-at-least-32-chars",
-  BETTER_AUTH_URL: "https://knowhereto.ai",
+  BETTER_AUTH_URL: "https://ziru.app",
   DATABASE_URL: "postgres://user:pass@example.com:5432/dashboard",
-  NEXT_PUBLIC_API_URL: "https://api.knowhereto.ai/api",
+  NEXT_PUBLIC_API_URL: "https://api.ziru.app/api",
   NEXT_PUBLIC_AUTH_BASE_URL: "/api/auth",
-  NEXT_PUBLIC_APP_URL: "https://knowhereto.ai",
+  NEXT_PUBLIC_APP_URL: "https://ziru.app",
 } as const;
 
 const conversionEvent = {
   data: { type: "customer_action" as const },
   eventId: "registration:user_123",
   eventName: "registration_completed" as const,
-  sourceUrl: "https://knowhereto.ai/dashboard",
+  sourceUrl: "https://ziru.app/dashboard",
   timestamp: "2026-07-24T00:00:00.000Z",
 };
 
@@ -69,7 +69,7 @@ describe("openai ads conversions api sender", () => {
             action_source: "web",
             data: { type: "customer_action" },
             id: "registration:user_123",
-            source_url: "https://knowhereto.ai/dashboard",
+            source_url: "https://ziru.app/dashboard",
             timestamp_ms: 1784851200000,
             type: "registration_completed",
           },

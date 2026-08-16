@@ -4,8 +4,8 @@ import {
   generateChatDiagramSpec,
   parseChatDiagramRequestBody,
 } from "@/domains/chat/diagram"
-import { notebookRequestContext } from "@/domains/workspace/request-context"
-import { isAuthError } from "@/integrations/knowhere-credentials"
+import { webuiRequestContext } from "@/domains/workspace/request-context"
+import { isAuthError } from "@/integrations/ziru-credentials"
 import { summarizeUnknownError } from "@/lib/format-log-value"
 import { logger } from "@/lib/logger"
 import { nextRouteResponse } from "@/lib/next-route-response"
@@ -22,7 +22,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   try {
-    await notebookRequestContext.getAuthenticated()
+    await webuiRequestContext.getAuthenticated()
     const diagram = await generateChatDiagramSpec({
       answer: body.value.answer,
     })

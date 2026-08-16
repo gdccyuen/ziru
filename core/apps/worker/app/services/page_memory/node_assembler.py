@@ -43,7 +43,7 @@ from shared.services.ai.summary.engine import summarize, transcribe
 SAME_AS_PREFIX = "SAME-AS"
 
 _NODE_SUMMARY_MAX_PAGES_DEFAULT = 5
-_PAGE_CITATION_ASSET_SOURCE = "knowhere-rendered-page-citation-source"
+_PAGE_CITATION_ASSET_SOURCE = "ziru-rendered-page-citation-source"
 _PAGE_CITATION_ASSET_CONTENT_TYPE = "image/png"
 
 

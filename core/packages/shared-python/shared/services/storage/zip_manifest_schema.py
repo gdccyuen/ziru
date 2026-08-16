@@ -1,4 +1,4 @@
-"""Manifest projection for Knowhere ZIP result packages."""
+"""Manifest projection for Ziru ZIP result packages."""
 
 from __future__ import annotations
 

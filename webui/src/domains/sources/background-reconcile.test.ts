@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
   loggerInfo: vi.fn(),
   loggerWarn: vi.fn(),
   trigger: vi.fn(),
-  makeKnowhereClient: vi.fn(),
+  makeZiruClient: vi.fn(),
   pollSourceReconciliation: vi.fn(),
   markSourceReadyAfterReconciliation: vi.fn(),
 }))
@@ -24,8 +24,8 @@ vi.mock("@/lib/logger", () => ({
   },
 }))
 
-vi.mock("@/integrations/knowhere", () => ({
-  makeKnowhereClient: mocks.makeKnowhereClient,
+vi.mock("@/integrations/ziru", () => ({
+  makeZiruClient: mocks.makeZiruClient,
 }))
 
 vi.mock("./source-reconcile-workflow", () => ({
@@ -38,7 +38,7 @@ describe("startBackgroundReconciliation", () => {
     vi.clearAllMocks()
     vi.useRealTimers()
     delete process.env.QSTASH_TOKEN
-    delete process.env.NOTEBOOK_PUBLIC_URL
+    delete process.env.WEBUI_PUBLIC_URL
     vi.resetModules()
   })
 
@@ -47,7 +47,7 @@ describe("startBackgroundReconciliation", () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date("2026-06-30T00:00:00.000Z"))
     process.env.QSTASH_TOKEN = "qstash_token"
-    process.env.NOTEBOOK_PUBLIC_URL = "https://notebook.example"
+    process.env.WEBUI_PUBLIC_URL = "https://webui.example"
     mocks.trigger.mockResolvedValue({})
 
     const { startBackgroundReconciliation } = await import(
@@ -57,21 +57,21 @@ describe("startBackgroundReconciliation", () => {
     await startBackgroundReconciliation(
       "workspace_1",
       "source_1",
-      "knowhere_key",
+      "ziru_key",
     )
     await startBackgroundReconciliation(
       "workspace_1",
       "source_1",
-      "knowhere_key",
+      "ziru_key",
     )
 
     expect(mocks.trigger).toHaveBeenCalledTimes(1)
     expect(mocks.trigger).toHaveBeenLastCalledWith({
-      url: "https://notebook.example/api/sources/reconcile",
+      url: "https://webui.example/api/sources/reconcile",
       body: {
         workspaceId: "workspace_1",
         sourceId: "source_1",
-        apiKey: "knowhere_key",
+        apiKey: "ziru_key",
       },
       workflowRunId: `source_1-${Math.floor(
         new Date("2026-06-30T00:00:00.000Z").getTime() / triggerCooldownMs,
@@ -83,16 +83,16 @@ describe("startBackgroundReconciliation", () => {
     await startBackgroundReconciliation(
       "workspace_1",
       "source_1",
-      "knowhere_key",
+      "ziru_key",
     )
 
     expect(mocks.trigger).toHaveBeenCalledTimes(2)
     expect(mocks.trigger).toHaveBeenLastCalledWith({
-      url: "https://notebook.example/api/sources/reconcile",
+      url: "https://webui.example/api/sources/reconcile",
       body: {
         workspaceId: "workspace_1",
         sourceId: "source_1",
-        apiKey: "knowhere_key",
+        apiKey: "ziru_key",
       },
       workflowRunId: `source_1-${Math.floor(
         new Date("2026-06-30T00:05:01.000Z").getTime() / triggerCooldownMs,
@@ -103,7 +103,7 @@ describe("startBackgroundReconciliation", () => {
 
   it("polls locally and marks the source ready when QStash is not configured", async () => {
     vi.useFakeTimers()
-    mocks.makeKnowhereClient.mockReturnValue({ client: "client_1" })
+    mocks.makeZiruClient.mockReturnValue({ client: "client_1" })
     mocks.pollSourceReconciliation.mockResolvedValueOnce({
       kind: "waiting",
       jobId: "job_1",
@@ -125,13 +125,13 @@ describe("startBackgroundReconciliation", () => {
     await startBackgroundReconciliation(
       "workspace_1",
       "source_1",
-      "knowhere_key",
+      "ziru_key",
     )
 
     // First attempt runs immediately (waiting), then the poll loop waits
     // before the next attempt.
     expect(mocks.pollSourceReconciliation).toHaveBeenCalledTimes(1)
-    expect(mocks.makeKnowhereClient).toHaveBeenCalledWith("knowhere_key")
+    expect(mocks.makeZiruClient).toHaveBeenCalledWith("ziru_key")
     expect(mocks.trigger).not.toHaveBeenCalled()
 
     await vi.advanceTimersByTimeAsync(3_000)
@@ -146,7 +146,7 @@ describe("startBackgroundReconciliation", () => {
 
   it("does not start a duplicate local poller for the same source", async () => {
     vi.useFakeTimers()
-    mocks.makeKnowhereClient.mockReturnValue({ client: "client_1" })
+    mocks.makeZiruClient.mockReturnValue({ client: "client_1" })
     mocks.pollSourceReconciliation.mockResolvedValue({
       kind: "waiting",
       jobId: "job_1",
@@ -160,12 +160,12 @@ describe("startBackgroundReconciliation", () => {
     await startBackgroundReconciliation(
       "workspace_1",
       "source_1",
-      "knowhere_key",
+      "ziru_key",
     )
     await startBackgroundReconciliation(
       "workspace_1",
       "source_1",
-      "knowhere_key",
+      "ziru_key",
     )
 
     expect(mocks.pollSourceReconciliation).toHaveBeenCalledTimes(1)

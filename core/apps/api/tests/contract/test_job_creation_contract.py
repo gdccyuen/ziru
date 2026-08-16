@@ -882,7 +882,7 @@ async def test_should_create_a_waiting_file_job_for_a_url_source_and_enqueue_the
     payload: dict[str, str] = {
         "namespace": "contract-jobs",
         "source_type": "url",
-        "source_url": "https://example.com/contracts/knowhere-upload",
+        "source_url": "https://example.com/contracts/ziru-upload",
         "data_id": "contract-job-url-upload",
     }
     requested_urls: list[str] = []
@@ -991,7 +991,7 @@ async def test_should_create_a_waiting_file_job_for_a_url_source_and_enqueue_the
         assert persisted_document_id.startswith("doc_")
         assert job_metadata["namespace"] == payload["namespace"]
         assert job_metadata["source_type"] == "url"
-        assert job_metadata["source_file_name"] == "knowhere-upload.pdf"
+        assert job_metadata["source_file_name"] == "ziru-upload.pdf"
         assert job_metadata["source_url"] == payload["source_url"]
         assert job_metadata["data_id"] == payload["data_id"]
         assert original_request["source_type"] == payload["source_type"]
@@ -1009,7 +1009,7 @@ async def test_should_create_a_waiting_file_job_for_a_url_source_and_enqueue_the
         assert cached_metadata["document_id"] == persisted_document_id
         assert cached_metadata["namespace"] == payload["namespace"]
         assert cached_metadata["source_type"] == "url"
-        assert cached_metadata["source_file_name"] == "knowhere-upload.pdf"
+        assert cached_metadata["source_file_name"] == "ziru-upload.pdf"
         assert cached_metadata["source_url"] == payload["source_url"]
         assert cached_job_info["job_id"] == job_id
         assert cached_job_info["user_id"] == "local-dev-user"
@@ -1214,7 +1214,7 @@ async def test_should_reject_a_url_source_when_file_type_detection_redirects_to_
     payload: dict[str, str] = {
         "namespace": "contract-jobs",
         "source_type": "url",
-        "source_url": "https://example.com/contracts/knowhere-upload",
+        "source_url": "https://example.com/contracts/ziru-upload",
         "data_id": "contract-job-url-private-redirect",
     }
     requested_urls: list[str] = []

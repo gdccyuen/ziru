@@ -1,4 +1,4 @@
-import { KnowhereBrand } from "@components/brand/knowhere-brand";
+import { ZiruBrand } from "@components/brand/ziru-brand";
 import { cn } from "@lib/utils";
 import type { JSX } from "react";
 
@@ -32,7 +32,7 @@ export const LandingBrand = ({
   const resolvedSize: ResolvedLandingBrandSize = compact ? "compact" : size;
 
   return (
-    <KnowhereBrand
+    <ZiruBrand
       className={cn(BRAND_WIDTH_CLASS_BY_SIZE[resolvedSize], className)}
       priority={size === "header" || size === "nav"}
       sizes={BRAND_SIZES_BY_SIZE[resolvedSize]}

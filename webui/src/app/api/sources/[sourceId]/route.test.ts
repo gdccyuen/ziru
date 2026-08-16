@@ -10,9 +10,9 @@ const mocks = vi.hoisted(() => {
     ensureWorkspace: vi.fn(),
     findSourceInWorkspace: vi.fn(),
     getCurrentUser: vi.fn(),
-    makeKnowhereClient: vi.fn(),
+    makeZiruClient: vi.fn(),
     requireUser: vi.fn(),
-    retrySourceToKnowhere: vi.fn(),
+    retrySourceToZiru: vi.fn(),
     softDeleteSource: vi.fn(),
     startBackgroundReconciliation: vi.fn(),
   };
@@ -26,7 +26,7 @@ vi.mock("@vercel/blob", () => ({
   del: mocks.deleteBlob,
 }));
 
-vi.mock("@/integrations/knowhere-credentials", () => ({
+vi.mock("@/integrations/ziru-credentials", () => ({
   ensureApiKeyForWorkspace: mocks.ensureApiKeyForWorkspace,
 }));
 
@@ -35,8 +35,8 @@ vi.mock("@/infrastructure/auth", () => ({
   requireUser: mocks.requireUser,
 }));
 
-vi.mock("@/integrations/knowhere", () => ({
-  makeKnowhereClient: mocks.makeKnowhereClient,
+vi.mock("@/integrations/ziru", () => ({
+  makeZiruClient: mocks.makeZiruClient,
 }));
 
 vi.mock("@/domains/sources/background-reconcile", () => ({
@@ -46,7 +46,7 @@ vi.mock("@/domains/sources/background-reconcile", () => ({
 vi.mock("@/domains/sources/service", () => ({
   sourceService: {
     findInWorkspace: mocks.findSourceInWorkspace,
-    retrySourceToKnowhere: mocks.retrySourceToKnowhere,
+    retrySourceToZiru: mocks.retrySourceToZiru,
     softDelete: mocks.softDeleteSource,
   },
 }));
@@ -64,16 +64,16 @@ describe("PATCH /api/sources/[sourceId]", () => {
     vi.clearAllMocks();
   });
 
-  it("archives the Knowhere document before soft deleting the source", async () => {
+  it("archives the Ziru document before soft deleting the source", async () => {
     mocks.requireUser.mockResolvedValue({ id: "user_1" });
     mocks.ensureWorkspace.mockResolvedValue({ id: "workspace_1" });
     mocks.findSourceInWorkspace.mockResolvedValue({
       id: "source_1",
-      knowhereDocumentId: "doc_123",
+      ziruDocumentId: "doc_123",
       originalBlobPathname: "source-uploads/upload_1/document.pdf",
     });
     mocks.ensureApiKeyForWorkspace.mockResolvedValue("jwt_123");
-    mocks.makeKnowhereClient.mockReturnValue({
+    mocks.makeZiruClient.mockReturnValue({
       documents: { archive: mocks.archive },
     });
     mocks.archive.mockResolvedValue(undefined);
@@ -94,7 +94,7 @@ describe("PATCH /api/sources/[sourceId]", () => {
     expect(mocks.ensureApiKeyForWorkspace).toHaveBeenCalledWith(
       "workspace_1",
     );
-    expect(mocks.makeKnowhereClient).toHaveBeenCalledWith("jwt_123");
+    expect(mocks.makeZiruClient).toHaveBeenCalledWith("jwt_123");
     expect(mocks.archive).toHaveBeenCalledWith("doc_123");
     expect(mocks.softDeleteSource).toHaveBeenCalledWith(
       "workspace_1",
@@ -112,7 +112,7 @@ describe("PATCH /api/sources/[sourceId]", () => {
 
     const response = await PATCH(
       new NextRequest(
-        "http://localhost:3001/api/sources/knowhere-doc:default:doc_remote",
+        "http://localhost:3001/api/sources/ziru-doc:default:doc_remote",
         {
           method: "PATCH",
           body: JSON.stringify({ archived: true }),
@@ -120,7 +120,7 @@ describe("PATCH /api/sources/[sourceId]", () => {
       ),
       {
         params: Promise.resolve({
-          sourceId: "knowhere-doc:default:doc_remote",
+          sourceId: "ziru-doc:default:doc_remote",
         }),
       },
     );
@@ -131,7 +131,7 @@ describe("PATCH /api/sources/[sourceId]", () => {
     expect(response.status).toBe(404);
     expect(mocks.findSourceInWorkspace).toHaveBeenCalledWith(
       "workspace_1",
-      "knowhere-doc:default:doc_remote",
+      "ziru-doc:default:doc_remote",
     );
     expect(mocks.archive).not.toHaveBeenCalled();
     expect(mocks.softDeleteSource).not.toHaveBeenCalled();
@@ -143,7 +143,7 @@ describe("PATCH /api/sources/[sourceId]", () => {
     mocks.ensureWorkspace.mockResolvedValue({ id: "workspace_1" });
     mocks.findSourceInWorkspace.mockResolvedValue({
       id: "source_1",
-      knowhereDocumentId: null,
+      ziruDocumentId: null,
       originalBlobPathname: "source-uploads/upload_1/document.pdf",
     });
     mocks.softDeleteSource.mockResolvedValue(true);
@@ -181,9 +181,9 @@ describe("PATCH /api/sources/[sourceId]", () => {
       mimeType: "application/pdf",
       sizeBytes: 5,
       status: "failed",
-      failureReason: "Knowhere upload failed.",
-      knowhereJobId: null,
-      knowhereDocumentId: null,
+      failureReason: "Ziru upload failed.",
+      ziruJobId: null,
+      ziruDocumentId: null,
       stagedBlobPathname: null,
       stagedBlobUrl: null,
       originalBlobPathname: "source-uploads/upload_1/document.pdf",
@@ -194,7 +194,7 @@ describe("PATCH /api/sources/[sourceId]", () => {
       deletedAt: null,
     });
     mocks.ensureApiKeyForWorkspace.mockResolvedValue("jwt_123");
-    const knowhereClient = {
+    const ziruClient = {
       jobs: {
         create: vi.fn(),
         get: vi.fn(),
@@ -204,8 +204,8 @@ describe("PATCH /api/sources/[sourceId]", () => {
         archive: mocks.archive,
       },
     };
-    mocks.makeKnowhereClient.mockReturnValue(knowhereClient);
-    mocks.retrySourceToKnowhere.mockResolvedValue({
+    mocks.makeZiruClient.mockReturnValue(ziruClient);
+    mocks.retrySourceToZiru.mockResolvedValue({
       id: "source_1",
       workspaceId: "workspace_1",
       title: "lecture.pdf",
@@ -213,8 +213,8 @@ describe("PATCH /api/sources/[sourceId]", () => {
       sizeBytes: 5,
       status: "parsing",
       failureReason: null,
-      knowhereJobId: "job_retry",
-      knowhereDocumentId: null,
+      ziruJobId: "job_retry",
+      ziruDocumentId: null,
       stagedBlobPathname: null,
       stagedBlobUrl: null,
       originalBlobPathname: "source-uploads/upload_1/document.pdf",
@@ -250,10 +250,10 @@ describe("PATCH /api/sources/[sourceId]", () => {
       },
     });
     expect(response.status).toBe(200);
-    expect(mocks.retrySourceToKnowhere).toHaveBeenCalledWith(
+    expect(mocks.retrySourceToZiru).toHaveBeenCalledWith(
       { id: "workspace_1" },
       expect.objectContaining({ id: "source_1", status: "failed" }),
-      knowhereClient,
+      ziruClient,
     );
     expect(mocks.startBackgroundReconciliation).toHaveBeenCalledWith(
       "workspace_1",
@@ -286,6 +286,6 @@ describe("PATCH /api/sources/[sourceId]", () => {
     });
     expect(response.status).toBe(409);
     expect(mocks.ensureApiKeyForWorkspace).not.toHaveBeenCalled();
-    expect(mocks.retrySourceToKnowhere).not.toHaveBeenCalled();
+    expect(mocks.retrySourceToZiru).not.toHaveBeenCalled();
   });
 });

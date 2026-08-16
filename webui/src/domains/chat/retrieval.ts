@@ -1,4 +1,4 @@
-import type { RetrievalQueryParams } from "@ontos-ai/knowhere-sdk"
+import type { RetrievalQueryParams } from "@/integrations/ziru-sdk-types"
 
 import type { Source } from "@/infrastructure/db/schema"
 
@@ -27,7 +27,7 @@ export function excludeDocuments(
   const excluded = new Set(excludedSourceIds)
   const documentIds = sources
     .filter((source) => excluded.has(source.id))
-    .map((source) => source.knowhereDocumentId)
+    .map((source) => source.ziruDocumentId)
     .filter((documentId): documentId is string => Boolean(documentId))
 
   return documentIds.length > 0 ? { excludeDocumentIds: documentIds } : {}

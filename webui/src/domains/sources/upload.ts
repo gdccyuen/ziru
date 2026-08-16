@@ -1,13 +1,13 @@
 import "server-only"
 
 export {
-  uploadSourceBlobToKnowhere,
-  uploadSourceBlobToKnowhereEffect,
-  uploadSourceToKnowhere,
-  uploadSourceToKnowhereEffect,
-} from "./knowhere-upload"
+  uploadSourceBlobToZiru,
+  uploadSourceBlobToZiruEffect,
+  uploadSourceToZiru,
+  uploadSourceToZiruEffect,
+} from "./ziru-upload"
 export type {
-  UploadKnowhereClient,
+  UploadZiruClient,
   UploadSourceDependencies,
   UploadSourceRepository,
 } from "./source-upload-contracts"

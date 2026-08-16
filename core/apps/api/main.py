@@ -90,7 +90,7 @@ async def lifespan(app: FastAPI):
 
     telemetry_runtime = await start_self_hosted_telemetry(
         settings,
-        service_name="knowhere-api",
+        service_name="ziru-api",
         api_healthy=True,
         postgres_healthy=True,
         redis_healthy=True,
@@ -182,7 +182,7 @@ def create_app() -> FastAPI:
     # Setup structured logging BEFORE creating FastAPI app
     # This ensures all logs (including lifespan) use structured format
     # Note: We pass app=None initially, then instrument FastAPI after app creation
-    setup_logging(service_name="knowhere-api")
+    setup_logging(service_name="ziru-api")
 
     app = FastAPI(
         title=settings.APP_TITLE,
@@ -222,7 +222,7 @@ def create_app() -> FastAPI:
     async def health_check():
         """Simple health check endpoint, supports GET and HEAD methods"""
         version = os.getenv("APP_VERSION", settings.APP_VERSION)
-        return {"status": "healthy", "service": "knowhere-api", "version": version}
+        return {"status": "healthy", "service": "ziru-api", "version": version}
 
     # Register other API routes
     app.include_router(api_router)

@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.core.exceptions.domain_exceptions import (
     APIKeyOperationException,
-    KnowhereException,
+    ZiruException,
     NotFoundException,
     ValidationException,
 )
@@ -171,7 +171,7 @@ class APIKeyManagementService:
             if api_key and str(api_key.user_id) == user_id:
                 return api_key
             return None
-        except KnowhereException:
+        except ZiruException:
             raise
         except Exception as exc:
             logger.error(f"Failed to get API key: {exc}")
@@ -206,7 +206,7 @@ class APIKeyManagementService:
                 f"API key status toggled successfully: {api_key_id}, new_status={api_key.is_active}"
             )
             return True
-        except KnowhereException:
+        except ZiruException:
             raise
         except Exception as exc:
             logger.error(f"Failed to toggle API key status: {exc}")

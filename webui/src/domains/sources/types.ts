@@ -23,11 +23,11 @@ export type SourceView = {
   readonly status: SourceStatus
   /** Brief user-visible parse failure reason. Present only for failed rows. */
   readonly failureMessage?: string
-  /** Knowhere document ID once parsing publishes. */
+  /** Ziru document ID once parsing publishes. */
   readonly documentId?: string
   /** Public Blob URL for original-file preview and download. */
   readonly originalFile?: SourceOriginalFileView
-  /** Count from the Knowhere chunks API, not a local aggregate. */
+  /** Count from the Ziru chunks API, not a local aggregate. */
   readonly chunkCount?: number
   /** User opt-out for this query session. Drives excludeDocumentIds. */
   readonly excludedFromQuery?: boolean

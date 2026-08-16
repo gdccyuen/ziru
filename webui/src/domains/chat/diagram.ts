@@ -215,7 +215,7 @@ export function buildChatDiagramPrompt(answer: string): string {
   const antvSkillContext = getAntvChartSkillContext(answer)
 
   return [
-    "You are responsible for turning Notebook answer content into one visualization opportunity.",
+    "You are responsible for turning WebUI answer content into one visualization opportunity.",
     "Use the AntV chart visualization skills retrieved from @antv/chart-visualization-skills.",
     "",
     "Workflow:",

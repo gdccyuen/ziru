@@ -6,7 +6,7 @@ import {
   markSourceReadyAfterReconciliation,
   pollSourceReconciliation,
 } from "@/domains/sources/source-reconcile-workflow"
-import { makeKnowhereClient } from "@/integrations/knowhere"
+import { makeZiruClient } from "@/integrations/ziru"
 import { logger } from "@/lib/logger"
 import { sourceWorkflowRuntime } from "./workflow-runtime"
 
@@ -52,7 +52,7 @@ async function runPollAndMirrorWorkflow(input: {
 }): Promise<void> {
   const { context, payload } = input
   const { workspaceId, sourceId, apiKey } = payload
-  const client = makeKnowhereClient(apiKey)
+  const client = makeZiruClient(apiKey)
   let delay = initialDelaySeconds
   let completedJob: {
     readonly jobId: string

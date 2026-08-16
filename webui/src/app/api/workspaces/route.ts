@@ -7,7 +7,7 @@ import {
   activeWorkspaceCookieName,
 } from "@/domains/workspace/service"
 import { databaseRuntime } from "@/domains/workspace/database-runtime"
-import { knowhereApiKeysRepository } from "@/infrastructure/auth/knowhere-api-keys-repository"
+import { ziruApiKeysRepository } from "@/infrastructure/auth/ziru-api-keys-repository"
 import { localizeWorkspaceNamespace } from "@/domains/sources/localize-namespace"
 import { nextRouteResponse } from "@/lib/next-route-response"
 import { routeResult } from "@/lib/route-result"
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
       const key = await databaseRuntime
         .runPromise(
-          knowhereApiKeysRepository.findByIdAndUserEffect(keyId, user.id),
+          ziruApiKeysRepository.findByIdAndUserEffect(keyId, user.id),
         )
         .catch(() => null)
       if (!key) {
@@ -54,12 +54,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       )
       await databaseRuntime
         .runPromise(
-          knowhereApiKeysRepository.setActiveEffect(workspace.id, key.id),
+          ziruApiKeysRepository.setActiveEffect(workspace.id, key.id),
         )
         .catch(() => {})
 
       const apiKey = await databaseRuntime
-        .runPromise(knowhereApiKeysRepository.decryptStoredEffect(key))
+        .runPromise(ziruApiKeysRepository.decryptStoredEffect(key))
         .catch(() => null)
       const sources = apiKey
         ? await localizeWorkspaceNamespace(workspace, apiKey)

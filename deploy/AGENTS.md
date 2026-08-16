@@ -17,23 +17,23 @@ There is **no test, lint, typecheck, or format toolchain** in this repo — do n
 ./scripts/smoke-test.sh
 ```
 
-It brings up the full stack under `COMPOSE_PROJECT_NAME=knowhere-self-hosted-smoke` on shifted ports (dashboard `13000`, API `15005`, postgres `15432`, redis `16379`, localstack `14566`) and polls `/login` + `/health` for up to 90×2s.
+It brings up the full stack under `COMPOSE_PROJECT_NAME=ziru-self-hosted-smoke` on shifted ports (dashboard `13000`, API `15005`, postgres `15432`, redis `16379`, localstack `14566`) and polls `/login` + `/health` for up to 90×2s.
 
 For shell/Python script edits, sanity-check with `bash -n scripts/*.sh` and `python3 -m py_compile scripts/*.py`.
 
 ## Local image build
 
-The Dockerfile copies from `.build/sources/{knowhere,knowhere-dashboard}/`, which is gitignored and staged by:
+The Dockerfile copies from `.build/sources/{core,admin}/`, which is gitignored and staged by:
 
 ```bash
 ./scripts/prepare-sources.sh
 ```
 
-By default it expects sibling checkouts at `../knowhere` and `../knowhere-dashboard` (archive of `HEAD`). Override with `KNOWHERE_API_SOURCE` / `KNOWHERE_API_REF` / `KNOWHERE_DASHBOARD_SOURCE` / `KNOWHERE_DASHBOARD_REF`. Then `docker build .`.
+By default it expects sibling checkouts at `../core` and `../admin` (archive of `HEAD`). Override with `ZIRU_API_SOURCE` / `ZIRU_API_REF` / `ZIRU_DASHBOARD_SOURCE` / `ZIRU_DASHBOARD_REF`. Then `docker build .`.
 
 ## Image publishing
 
-Automated via `.github/workflows/publish-image.yml` only — **manually triggered** (`workflow_dispatch`) with `image_tag`, `api_ref`, `dashboard_ref`, `publish_latest`, `create_github_release`. Builds multi-arch (`linux/amd64,linux/arm64`) and pushes to both GHCR (`ghcr.io/ontos-ai/knowhere`) and Aliyun ACR. Tags matching `-(alpha|beta|rc)` are marked prerelease. Do not push tags by hand to release.
+Currently **disabled** (`.github/workflows/publish-image.yml.disabled`): it pushed to the upstream registries (`ghcr.io/ontos-ai/knowhere`, Aliyun ACR) and must be rewritten to publish Ziru images (`ghcr.io/gdccyuen/ziru`) before re-enabling.
 
 ## Environment configuration
 
@@ -41,7 +41,7 @@ Automated via `.github/workflows/publish-image.yml` only — **manually triggere
 
 Runtime defaults are layered further by `scripts/entrypoint.sh` via `setDefault` and several values are **derived** (e.g. `API_DATABASE_URL` from `POSTGRES_*`, `NEXT_PUBLIC_APP_URL` from `DASHBOARD_PUBLIC_URL`, `CELERY_REDIS_URL` from `REDIS_*`). When changing a default, check both `.env.defaults` and `entrypoint.sh` — the entrypoint can override what's in the file. Full variable reference: `docs/configuration.md`.
 
-Auto-generated secrets (`SECRET_KEY`, `BETTER_AUTH_SECRET`, `USERS_VERIFY_*`, `USERS_RESET_PASSWORD_*`) are persisted in the `knowhere_secrets` volume at `/data/secrets/`; deleting that volume regenerates them.
+Auto-generated secrets (`SECRET_KEY`, `BETTER_AUTH_SECRET`, `USERS_VERIFY_*`, `USERS_RESET_PASSWORD_*`) are persisted in the `ziru_secrets` volume at `/data/secrets/`; deleting that volume regenerates them.
 
 ## Single-container runtime
 
@@ -58,7 +58,7 @@ The image runs **three processes** in one container via `scripts/entrypoint.sh` 
 
 Container exits if any of the three processes exits. Healthcheck hits both `:3000/login` and `:5005/health`.
 
-Two separate venvs are built in the image: `/opt/knowhere/venvs/api` and `/opt/knowhere/venvs/worker`. Both install from the upstream `uv.lock` with `uv sync --locked --no-dev`.
+Two separate venvs are built in the image: `/opt/ziru/venvs/api` and `/opt/ziru/venvs/worker`. Both install from the upstream `uv.lock` with `uv sync --locked --no-dev`.
 
 ## Compose services
 
@@ -68,14 +68,14 @@ LocalStack is reachable at `localhost.localstack.cloud:4566` (network alias) for
 
 ## Telemetry
 
-Anonymous telemetry is **on by default** (`TELEMETRY_ENABLED=true`). Opt out by setting `TELEMETRY_ENABLED=false`. Event schema and privacy bounds are documented in `docs/configuration.md` → "Anonymous product telemetry".
+Anonymous telemetry is **off by default** in the Ziru fork (`TELEMETRY_ENABLED=false`). Opt in by setting `TELEMETRY_ENABLED=true`. Event schema and privacy bounds are documented in `docs/configuration.md` → "Anonymous product telemetry".
 
 ## Conventions
 
 - Keep `.env.defaults` and `docs/configuration.md` in sync when adding/removing/renaming env vars — the docs are the operator-facing reference and the file is the executable default.
 - `README.md` and `README.zh-CN.md` (plus `docs/configuration.md` / `docs/configuration.zh-CN.md`) are maintained in parallel; update both languages for user-facing changes.
 - Branch naming seen in history: `feat/`, `fix/`, `chore/`, `docs/`, `ci/` with `<author>/<topic>`. PRs merge into `main`.
-- The default image (`KNOWHERE_IMAGE=ghcr.io/ontos-ai/knowhere:latest`) and an Aliyun mirror are both supported; mention both when touching image references.
+- The default image (`ZIRU_IMAGE=ghcr.io/gdccyuen/ziru:latest`) and an Aliyun mirror are both supported; mention both when touching image references.
 
 ## Agent skills
 

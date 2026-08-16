@@ -10,7 +10,7 @@ type ComparisonData = {
   category: string;
   feature: string;
   competitor: "good" | "poor" | "missing";
-  knowhere: "excellent" | "good";
+  ziru: "excellent" | "good";
   description?: string;
 };
 
@@ -19,7 +19,7 @@ const comparisonData: ComparisonData[] = [
     category: "Structures",
     feature: "Hierarchy construction",
     competitor: "poor",
-    knowhere: "excellent",
+    ziru: "excellent",
     description:
       "Automatically recognize and construct hierarchical data structures, such as multi-level section titles and multi-index headers",
   },
@@ -27,21 +27,21 @@ const comparisonData: ComparisonData[] = [
     category: "Tables",
     feature: "Complex merged cells",
     competitor: "poor",
-    knowhere: "excellent",
+    ziru: "excellent",
     description: "Accurately handle multi-level merged cells in both doc files and tables",
   },
   {
     category: "Tables",
     feature: "Table boundary detection",
     competitor: "missing",
-    knowhere: "excellent",
+    ziru: "excellent",
     description: "Automatically separate tables in one table sheet based on boundary detection",
   },
   {
     category: "Interpretability",
     feature: "Source traceability",
     competitor: "poor",
-    knowhere: "excellent",
+    ziru: "excellent",
     description:
       "Trace each information piece to its original section in the raw source with clear boundary",
   },
@@ -49,21 +49,21 @@ const comparisonData: ComparisonData[] = [
     category: "Downstream Improvement",
     feature: "Hierarchical memory & progressive disclosure",
     competitor: "missing",
-    knowhere: "excellent",
+    ziru: "excellent",
     description: "Naturally supports hierarchical memory and progressive disclosure",
   },
   {
     category: "Downstream Improvement",
     feature: "Vectorless RAG & hybrid RAG",
     competitor: "missing",
-    knowhere: "excellent",
+    ziru: "excellent",
     description: "Naturally enables vectorless RAG and hybrid RAG",
   },
   {
     category: "Downstream Improvement",
     feature: "Top-K boost ~10%+ in production",
     competitor: "missing",
-    knowhere: "excellent",
+    ziru: "excellent",
     description:
       "Boost Top-K by ~10%+ in production data when applying RAG pipelines to parsed data",
   },
@@ -71,7 +71,7 @@ const comparisonData: ComparisonData[] = [
     category: "Downstream Improvement",
     feature: "50%+ token savings on graphs",
     competitor: "missing",
-    knowhere: "excellent",
+    ziru: "excellent",
     description: "Save 50%+ tokens when developing graphs",
   },
 ];
@@ -105,7 +105,7 @@ export const ProductComparison = () => {
           </div>
           <PixelDivider variant="dashed" className="mb-6 max-w-md mx-auto" />
           <p className="font-sans text-lg text-pixel-muted">
-            Real-world comparisons showing why developers choose Knowhere API
+            Real-world comparisons showing why developers choose Ziru API
           </p>
         </div>
 
@@ -135,7 +135,7 @@ export const ProductComparison = () => {
             <div className="grid grid-cols-3 gap-4 p-4 md:p-6 bg-pixel-border/20 border-b-2 border-pixel-border">
               <div className="font-pixel text-pixel-xs text-pixel-muted">Feature</div>
               <div className="font-pixel text-pixel-xs text-pixel-muted text-center">Others</div>
-              <div className="font-pixel text-pixel-xs text-pixel-green text-center">Knowhere</div>
+              <div className="font-pixel text-pixel-xs text-pixel-green text-center">Ziru</div>
             </div>
 
             {/* Table Body */}
@@ -178,7 +178,7 @@ export const ProductComparison = () => {
                     )}
                   </div>
 
-                  {/* Knowhere Status */}
+                  {/* Ziru Status */}
                   <div className="flex items-center justify-center">
                     <div className="flex items-center gap-2 text-pixel-green">
                       <PixelIcon icon="check" size={16} />

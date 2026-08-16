@@ -63,9 +63,9 @@ class QStashClientAdapter:
         """Call the QStash publish API."""
         headers = {
             "Content-Type": "application/json",
-            "X-Knowhere-Signature": signature,
-            "X-Knowhere-Event-ID": event_id,
-            "User-Agent": "Knowhere-Webhook/1.0",
+            "X-Ziru-Signature": signature,
+            "X-Ziru-Event-ID": event_id,
+            "User-Agent": "Ziru-Webhook/1.0",
         }
 
         callback_url = app_config.qstash_callback_url
@@ -89,7 +89,7 @@ class QStashClientAdapter:
             "callback": callback_url,
             "failure_callback": failure_callback_url,
             "deduplication_id": event_id,
-            "label": "knowhere-webhook",
+            "label": "ziru-webhook",
         }
 
         response = self.get_client().message.publish(**publish_kwargs)

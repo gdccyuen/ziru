@@ -1,6 +1,6 @@
 "use client";
 
-import { KnowhereIcon } from "@components/ui/knowhere-icon";
+import { ZiruIcon } from "@components/ui/ziru-icon";
 import { cn } from "@lib/utils";
 import { useTheme } from "next-themes";
 import { startTransition, useEffect, useState } from "react";
@@ -34,7 +34,7 @@ export const LandingThemeToggle = ({ className, iconClassName }: LandingThemeTog
         });
       }}
     >
-      <KnowhereIcon
+      <ZiruIcon
         className={cn("size-5 text-current", iconClassName)}
         name={isDark ? "theme-light" : "theme-dark"}
       />

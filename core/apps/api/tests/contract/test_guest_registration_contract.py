@@ -21,7 +21,7 @@ async def test_should_create_a_new_guest_device_when_posting_a_fresh_device_id(
 ) -> None:
     payload: dict[str, str] = {
         "device_id": f"contract-guest-{uuid4().hex[:12]}",
-        "client": "knowhere-hub",
+        "client": "ziru-hub",
         "platform": "macos",
         "app_version": "1.0.0",
     }
@@ -99,7 +99,7 @@ async def test_should_create_a_new_guest_device_when_posting_a_fresh_device_id(
 
     assert user_row["name"] == f"Guest {payload['device_id']}"
     assert str(user_row["email"]).startswith("guest+")
-    assert str(user_row["email"]).endswith("@guest.knowhere.local")
+    assert str(user_row["email"]).endswith("@guest.ziru.local")
     assert balance_row["user_tier"] == "guest"
     assert api_key_row["is_active"] is True
     assert guest_device_row["user_id"] == guest_user_id
@@ -115,7 +115,7 @@ async def test_should_return_conflict_when_posting_an_existing_guest_device_id(
 ) -> None:
     payload: dict[str, str] = {
         "device_id": f"contract-guest-{uuid4().hex[:12]}",
-        "client": "knowhere-hub",
+        "client": "ziru-hub",
         "platform": "macos",
         "app_version": "1.0.0",
     }

@@ -1,10 +1,10 @@
 [project]
-name = "knowhere-worker-app"
+name = "ziru-worker-app"
 version = "0.1.0"
-description = "Knowhere Worker service"
+description = "Ziru Worker service"
 requires-python = ">=3.11"
 dependencies = [
-    "knowhere-shared",
+    "ziru-shared",
     "numpy==2.2.6",
     "pandas==2.3.1",
     "jieba==0.42.1",
@@ -41,7 +41,7 @@ dev = [
 ]
 
 [tool.uv.sources]
-knowhere-shared = { workspace = true }
+ziru-shared = { workspace = true }
 
 [tool.uv]
 package = false

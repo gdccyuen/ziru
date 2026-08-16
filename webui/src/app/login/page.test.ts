@@ -23,7 +23,7 @@ describe("LoginPage", () => {
     expect(screen.getByLabelText("Email")).toBeTruthy();
     expect(screen.getByLabelText("Password")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Sign in" })).toBeTruthy();
-    expect(screen.getByText("Sign in with your Notebook account.")).toBeTruthy();
+    expect(screen.getByText("Sign in with your WebUI account.")).toBeTruthy();
   });
 
   it("uses account language instead of implementation details", async () => {

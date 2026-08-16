@@ -1,13 +1,15 @@
-import type Knowhere from "@ontos-ai/knowhere-sdk"
+import type { ZiruClient } from "@/integrations/ziru-sdk-types"
 
 import type { Source } from "@/infrastructure/db/schema"
 
-type KnowhereJobCreateInput = Parameters<Knowhere["jobs"]["create"]>[0] & {
+type ZiruJobCreateInput = Parameters<
+  ZiruClient["jobs"]["create"]
+>[0] & {
   readonly documentMetadata?: Readonly<Record<string, unknown>>
 }
 
 export type UploadJobResult = Awaited<
-  ReturnType<Knowhere["jobs"]["create"]>
+  ReturnType<ZiruClient["jobs"]["create"]>
 > & {
   readonly documentId?: string | null
 }
@@ -38,12 +40,12 @@ export type UploadSourceRepository = {
   ): Promise<Source>
 }
 
-export type UploadKnowhereClient = {
+export type UploadZiruClient = {
   jobs: {
-    create(input: KnowhereJobCreateInput): Promise<UploadJobResult>
+    create(input: ZiruJobCreateInput): Promise<UploadJobResult>
     get(jobId: string): Promise<UploadJobResult>
     upload(
-      job: Parameters<Knowhere["jobs"]["upload"]>[0],
+      job: Parameters<ZiruClient["jobs"]["upload"]>[0],
       input: { file: string },
     ): Promise<void>
   }
@@ -51,5 +53,5 @@ export type UploadKnowhereClient = {
 
 export type UploadSourceDependencies = {
   repository: UploadSourceRepository
-  knowhere: UploadKnowhereClient
+  ziru: UploadZiruClient
 }

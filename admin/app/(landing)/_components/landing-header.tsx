@@ -4,7 +4,7 @@ import { LandingBrand } from "@app/(landing)/_components/landing-brand";
 import { LandingThemeToggle } from "@app/(landing)/_components/landing-theme-toggle";
 import { LandingTrackedLink } from "@app/(landing)/_components/landing-tracked-link";
 import { LanguageSwitcher } from "@components/language-switcher";
-import { KnowhereIcon } from "@components/ui/knowhere-icon";
+import { ZiruIcon } from "@components/ui/ziru-icon";
 import { useActiveSection } from "@hooks/use-active-section";
 import { cn } from "@lib/utils";
 import Link from "next/link";
@@ -21,7 +21,7 @@ type LandingNavItem = {
 };
 
 const landingNavItems: LandingNavItem[] = [
-  { href: "https://docs.knowhereto.ai/", labelKey: "docs", external: true },
+  { href: "https://docs.ziru.app/", labelKey: "docs", external: true },
   { href: "/github", labelKey: "github" },
 ];
 
@@ -135,7 +135,7 @@ export const LandingHeader = () => {
               className="hidden h-full items-center gap-1 pl-4 pr-3 text-xs leading-4 text-zinc-950 transition-colors hover:text-zinc-600 dark:text-[#fafafa] dark:hover:text-[#d4d4d8] min-[768px]:flex"
             >
               <span>{currentLocaleLabel}</span>
-              <KnowhereIcon className="size-5 text-current" name="chevron-down" />
+              <ZiruIcon className="size-5 text-current" name="chevron-down" />
             </button>
           </LanguageSwitcher>
         </div>
@@ -150,7 +150,7 @@ export const LandingHeader = () => {
             onClick={() => setMobileMenuOpen((open) => !open)}
             type="button"
           >
-            <KnowhereIcon className="h-[14px] w-[14px] text-current" name="menu" />
+            <ZiruIcon className="h-[14px] w-[14px] text-current" name="menu" />
           </button>
         </div>
 
@@ -162,7 +162,7 @@ export const LandingHeader = () => {
                 className="flex h-12 w-full items-center justify-between border-t border-zinc-200 px-4 text-sm text-zinc-950 transition-colors hover:bg-zinc-100/70 dark:border-[#3f3f46] dark:text-[#fafafa] dark:hover:bg-[#27272a]"
               >
                 <span>{currentLocaleLabel}</span>
-                <KnowhereIcon className="size-5 text-current" name="chevron-down" />
+                <ZiruIcon className="size-5 text-current" name="chevron-down" />
               </button>
             </LanguageSwitcher>
             {landingNavItems.map((item) => {

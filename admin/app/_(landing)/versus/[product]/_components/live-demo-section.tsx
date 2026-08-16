@@ -20,7 +20,7 @@ type IframeViewProps = {
   title: string;
   src: string;
   highlights: string[];
-  isKnowhere?: boolean;
+  isZiru?: boolean;
   shouldLoad: boolean;
   onViewDetails: () => void;
 };
@@ -29,7 +29,7 @@ function IframeView({
   title,
   src,
   highlights,
-  isKnowhere,
+  isZiru,
   shouldLoad,
   onViewDetails,
 }: IframeViewProps) {
@@ -41,7 +41,7 @@ function IframeView({
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3
-          className={`font-sans text-base font-semibold ${isKnowhere ? "text-pixel-green" : "text-pixel-fg"}`}
+          className={`font-sans text-base font-semibold ${isZiru ? "text-pixel-green" : "text-pixel-fg"}`}
         >
           {title}
         </h3>
@@ -152,7 +152,7 @@ export function LiveDemoSection({ data, competitorName }: LiveDemoSectionProps) 
   // Preload all HTML files across all demos so tab switching feels instant
   const allDemoFiles = shouldLoadDemo
     ? data.demos.flatMap((d) => [
-        d.knowhereOutput,
+        d.ziruOutput,
         d.competitorOutput,
         ...(d.originalFile ? [d.originalFile] : []),
       ])
@@ -160,12 +160,12 @@ export function LiveDemoSection({ data, competitorName }: LiveDemoSectionProps) 
   usePreloadHtml(allDemoFiles);
 
   // Modal handlers
-  const handleOpenKnowhereDetails = () => {
+  const handleOpenZiruDetails = () => {
     setModalContent({
-      title: "Knowhere",
-      htmlUrl: selectedDemo.knowhereOutput,
-      highlights: selectedDemo.highlights.knowhere,
-      isKnowhere: true,
+      title: "Ziru",
+      htmlUrl: selectedDemo.ziruOutput,
+      highlights: selectedDemo.highlights.ziru,
+      isZiru: true,
     });
     setIsModalOpen(true);
   };
@@ -175,7 +175,7 @@ export function LiveDemoSection({ data, competitorName }: LiveDemoSectionProps) 
       title: competitorName,
       htmlUrl: selectedDemo.competitorOutput,
       highlights: selectedDemo.highlights.competitor,
-      isKnowhere: false,
+      isZiru: false,
     });
     setIsModalOpen(true);
   };
@@ -186,7 +186,7 @@ export function LiveDemoSection({ data, competitorName }: LiveDemoSectionProps) 
       title: "Original Input Document",
       htmlUrl: selectedDemo.originalFile,
       highlights: [],
-      isKnowhere: false,
+      isZiru: false,
     });
     setIsModalOpen(true);
   };
@@ -227,13 +227,13 @@ export function LiveDemoSection({ data, competitorName }: LiveDemoSectionProps) 
           {/* Desktop & Tablet: Side-by-side iframes (>= 768px) */}
           <div className="hidden md:flex gap-8">
             <IframeView
-              key={`desktop-knowhere-${selectedDemo.knowhereOutput}`}
-              title="Knowhere"
-              src={selectedDemo.knowhereOutput}
-              highlights={selectedDemo.highlights.knowhere}
-              isKnowhere
+              key={`desktop-ziru-${selectedDemo.ziruOutput}`}
+              title="Ziru"
+              src={selectedDemo.ziruOutput}
+              highlights={selectedDemo.highlights.ziru}
+              isZiru
               shouldLoad={shouldLoadDemo}
-              onViewDetails={handleOpenKnowhereDetails}
+              onViewDetails={handleOpenZiruDetails}
             />
             <IframeView
               key={`desktop-competitor-${selectedDemo.competitorOutput}`}
@@ -248,13 +248,13 @@ export function LiveDemoSection({ data, competitorName }: LiveDemoSectionProps) 
           {/* Mobile only: Stacked iframes (< 768px) */}
           <div className="md:hidden space-y-8">
             <IframeView
-              key={`mobile-knowhere-${selectedDemo.knowhereOutput}`}
-              title="Knowhere"
-              src={selectedDemo.knowhereOutput}
-              highlights={selectedDemo.highlights.knowhere}
-              isKnowhere
+              key={`mobile-ziru-${selectedDemo.ziruOutput}`}
+              title="Ziru"
+              src={selectedDemo.ziruOutput}
+              highlights={selectedDemo.highlights.ziru}
+              isZiru
               shouldLoad={shouldLoadDemo}
-              onViewDetails={handleOpenKnowhereDetails}
+              onViewDetails={handleOpenZiruDetails}
             />
             <IframeView
               key={`mobile-competitor-${selectedDemo.competitorOutput}`}

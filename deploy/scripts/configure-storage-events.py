@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Configure local S3-compatible upload events for Knowhere self-hosted."""
+"""Configure local S3-compatible upload events for Ziru self-hosted."""
 
 from __future__ import annotations
 
@@ -125,7 +125,7 @@ def configureUploadNotification(
         NotificationConfiguration={
             "TopicConfigurations": [
                 {
-                    "Id": "knowhere-upload-events",
+                    "Id": "ziru-upload-events",
                     "TopicArn": topicArn,
                     "Events": [
                         "s3:ObjectCreated:Put",

@@ -1,4 +1,4 @@
-"""Resource discovery for Knowhere ZIP result packages."""
+"""Resource discovery for Ziru ZIP result packages."""
 
 from __future__ import annotations
 

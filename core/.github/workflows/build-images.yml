@@ -22,7 +22,7 @@ env:
   ACR_REGISTRY: ${{ secrets.ALIYUN_ACR_REGISTRY }}
   ACR_NAMESPACE: ${{ secrets.ALIYUN_ACR_NAMESPACE }}
   ECR_REGISTRY: 107424103509.dkr.ecr.us-east-1.amazonaws.com
-  ECR_REPOSITORY: knowhere
+  ECR_REPOSITORY: ziru
   AWS_EKS_PROD_CLUSTER_NAME: ${{ secrets.AWS_EKS_PROD_CLUSTER_NAME }}
   AWS_EKS_PROD_REGION: ${{ secrets.AWS_EKS_PROD_REGION }}
 
@@ -38,12 +38,12 @@ jobs:
         include:
           - service: api
             dockerfile: deploy/docker/Dockerfile.api
-            image_name: knowhere-backend
-            ecr_repo_name: knowhere-backend
+            image_name: ziru-backend
+            ecr_repo_name: ziru-backend
           - service: worker
             dockerfile: deploy/docker/Dockerfile.worker
-            image_name: knowhere-worker
-            ecr_repo_name: knowhere-worker
+            image_name: ziru-worker
+            ecr_repo_name: ziru-worker
 
     steps:
       - name: Validate semantic release tag
@@ -54,7 +54,7 @@ jobs:
           semver_pattern='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$'
 
           if [[ ! "$release_tag" =~ $semver_pattern ]]; then
-            echo "::error::Knowhere API releases must use semantic version tags like v1.0.1. Date-based tags such as 2026.06.18.1 or v2026.06.18.1 are not supported."
+            echo "::error::Ziru API releases must use semantic version tags like v1.0.1. Date-based tags such as 2026.06.18.1 or v2026.06.18.1 are not supported."
             exit 1
           fi
 
@@ -230,9 +230,9 @@ jobs:
         service: [api, worker]
         include:
           - service: api
-            ecr_repo_name: knowhere-backend
+            ecr_repo_name: ziru-backend
           - service: worker
-            ecr_repo_name: knowhere-worker
+            ecr_repo_name: ziru-worker
 
     steps:
       - name: Decide deployment context
@@ -270,9 +270,9 @@ jobs:
           fi
 
           if [ "$environment" = "prod" ]; then
-            namespace="knowhere-prod"
+            namespace="ziru-prod"
           else
-            namespace="knowhere-staging"
+            namespace="ziru-staging"
           fi
 
           short_sha="${GITHUB_SHA::8}"
@@ -311,7 +311,7 @@ jobs:
         if: steps.context.outputs.should_deploy == 'true'
         shell: bash
         run: |
-          deployment_name="knowhere-${{ matrix.service }}"
+          deployment_name="ziru-${{ matrix.service }}"
           container_name="${{ matrix.service }}"
           namespace="${{ steps.context.outputs.namespace }}"
           image_uri="${{ steps.context.outputs.image_uri }}"
@@ -378,7 +378,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release-assets
-          git archive --format=zip --output="release-assets/knowhere-api-${RELEASE_TAG}-source.zip" "${DEPLOYED_SHA}"
+          git archive --format=zip --output="release-assets/ziru-api-${RELEASE_TAG}-source.zip" "${DEPLOYED_SHA}"
 
           cat > release-assets/build-info.json <<EOF
           {
@@ -399,7 +399,7 @@ jobs:
           set -euo pipefail
 
           gh release upload "${RELEASE_TAG}" \
-            release-assets/knowhere-api-${RELEASE_TAG}-source.zip \
+            release-assets/ziru-api-${RELEASE_TAG}-source.zip \
             release-assets/build-info.json \
             --repo "${GITHUB_REPOSITORY}" \
             --clobber

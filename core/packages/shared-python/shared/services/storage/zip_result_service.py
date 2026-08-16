@@ -1,7 +1,7 @@
 """
 ZIP Result Package Generation Service.
 
-Generates ZIP packages according to the Knowhere API ZIP result format.
+Generates ZIP packages according to the Ziru API ZIP result format.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from loguru import logger
 import pandas as pd
 
 from shared.core.exceptions.domain_exceptions import (
-    KnowhereException,
+    ZiruException,
     StorageServiceException,
 )
 from shared.services.storage.zip_package_writer import (
@@ -110,7 +110,7 @@ class ZipResultService:
                 artifact.zip_size,
             )
 
-        except KnowhereException:
+        except ZiruException:
             raise
         except Exception as exc:
             logger.error(f"Failed to generate ZIP package: {exc}")

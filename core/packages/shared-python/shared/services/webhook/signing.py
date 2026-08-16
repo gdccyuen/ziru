@@ -9,7 +9,7 @@ from typing import Any
 
 
 def sign_webhook_payload(payload: Mapping[str, Any], secret: str) -> str:
-    """Generate the timestamped Knowhere webhook HMAC signature."""
+    """Generate the timestamped Ziru webhook HMAC signature."""
     timestamp = int(time.time())
     payload_text = json.dumps(payload, separators=(",", ":"))
     signed_content = f"{timestamp}.{payload_text}"
@@ -28,7 +28,7 @@ def build_webhook_headers(
     """Build signed HTTP headers for a direct webhook delivery attempt."""
     return {
         "Content-Type": "application/json",
-        "X-Knowhere-Signature": sign_webhook_payload(payload, secret),
-        "X-Knowhere-Attempt-ID": attempt_id,
-        "User-Agent": "Knowhere-Webhook/1.0",
+        "X-Ziru-Signature": sign_webhook_payload(payload, secret),
+        "X-Ziru-Attempt-ID": attempt_id,
+        "User-Agent": "Ziru-Webhook/1.0",
     }

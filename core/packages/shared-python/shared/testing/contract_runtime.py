@@ -24,7 +24,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import URL, make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-CONTRACT_DATABASE_NAME: str = "Knowhere_contract_test"
+CONTRACT_DATABASE_NAME: str = "Ziru_contract_test"
 DEFAULT_POSTGRESQL_PORT: int = 5432
 CONTRACT_POSTGRESQL_PORT_RANGE: tuple[int, int] = (15432, 25432)
 CONTRACT_REDIS_DATABASE: int = 14
@@ -40,10 +40,10 @@ CONTRACT_WEBHOOK_MASTER_KEY: str = "".join(
 _REPO_ROOT: Path = Path(__file__).resolve().parents[4]
 _API_ROOT: Path = _REPO_ROOT / "apps" / "api"
 _SHARED_ROOT: Path = _REPO_ROOT / "packages" / "shared-python"
-_TEST_TMP_ROOT: Path = Path("/tmp/knowhere-api-tests")
+_TEST_TMP_ROOT: Path = Path("/tmp/ziru-api-tests")
 _TEST_OBJECT_STORAGE_ROOT: Path = _TEST_TMP_ROOT / "object-storage"
-_CONTRACT_UPLOADS_BUCKET: str = "knowhere-test-bucket"
-_CONTRACT_RESULTS_BUCKET: str = "knowhere-test-results"
+_CONTRACT_UPLOADS_BUCKET: str = "ziru-test-bucket"
+_CONTRACT_RESULTS_BUCKET: str = "ziru-test-results"
 _STATIC_TABLES_TO_PRESERVE: frozenset[str] = frozenset(
     {
         "alembic_version",
@@ -78,7 +78,7 @@ _MODULE_NAMES_TO_CLEAR: tuple[str, ...] = (
 )
 CONTRACT_DEVELOPER_USER_ID: str = "local-dev-user"
 CONTRACT_DEVELOPER_USER_NAME: str = "Local Development User"
-CONTRACT_DEVELOPER_USER_EMAIL: str = "local-dev-user@knowhere.local"
+CONTRACT_DEVELOPER_USER_EMAIL: str = "local-dev-user@ziru.local"
 CONTRACT_DEVELOPER_USER_TIER: str = "tier_5"
 CONTRACT_DEVELOPER_API_KEY_NAME: str = "contract-developer-api-key"
 _contract_storage_database_url: str | None = None

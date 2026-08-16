@@ -20,7 +20,7 @@ def get_unique_node_name() -> str:
 
 # Create Celery application instance (Redis broker + Redis result backend)
 celery_app = Celery(
-    "Knowhere API",
+    "Ziru API",
     broker=app_config.get_celery_broker_url(),
     backend=app_config.get_celery_result_backend(),
     include=[

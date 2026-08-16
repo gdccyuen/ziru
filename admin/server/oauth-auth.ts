@@ -3,9 +3,9 @@ import { db } from "@lib/db";
 import { oauthAuthorizationCode, oauthRefreshToken } from "@lib/db/schema";
 import { type OAuthLoginRequest, type Permission, validatePkceVerifier } from "@lib/oauth-request";
 import {
-  issueKnowhereServiceJwt,
-  KNOWHERE_SERVICE_JWT_EXPIRY_SECONDS,
-} from "@server/knowhere-service-jwt";
+  issueZiruServiceJwt,
+  ZIRU_SERVICE_JWT_EXPIRY_SECONDS,
+} from "@server/ziru-service-jwt";
 import { and, eq, gt, isNull } from "drizzle-orm";
 
 const OAUTH_AUTH_CODE_TTL_MS = 5 * 60 * 1000;
@@ -119,8 +119,8 @@ export async function refreshOAuthAccessToken(refreshToken: string): Promise<OAu
   const permission = normalizeStoredPermission(storedRefreshToken.permission);
 
   return {
-    accessToken: await issueKnowhereServiceJwt(storedRefreshToken.userId, { permission }),
-    expiresInSeconds: KNOWHERE_SERVICE_JWT_EXPIRY_SECONDS,
+    accessToken: await issueZiruServiceJwt(storedRefreshToken.userId, { permission }),
+    expiresInSeconds: ZIRU_SERVICE_JWT_EXPIRY_SECONDS,
     permission,
     tokenType: "Bearer",
   };
@@ -159,8 +159,8 @@ async function issueOAuthTokenPair({
   });
 
   return {
-    accessToken: await issueKnowhereServiceJwt(userId, { permission }),
-    expiresInSeconds: KNOWHERE_SERVICE_JWT_EXPIRY_SECONDS,
+    accessToken: await issueZiruServiceJwt(userId, { permission }),
+    expiresInSeconds: ZIRU_SERVICE_JWT_EXPIRY_SECONDS,
     permission,
     refreshToken,
     refreshTokenExpiresAt: refreshTokenExpiresAt.toISOString(),

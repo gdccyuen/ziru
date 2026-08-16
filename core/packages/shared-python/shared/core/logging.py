@@ -81,9 +81,9 @@ def get_log_context() -> Dict[str, Any]:
 
 def _is_expected_client_exception(exception: BaseException) -> bool:
     """Identify handled 4xx exceptions that should stay warnings in Logfire."""
-    from shared.core.exceptions.knowhere_exception import KnowhereException
+    from shared.core.exceptions.ziru_exception import ZiruException
 
-    if isinstance(exception, KnowhereException):
+    if isinstance(exception, ZiruException):
         return 400 <= exception.http_status_code < 500
 
     try:
@@ -123,7 +123,7 @@ def setup_logging(service_name: str):
     - Log level filtering
 
     Args:
-        service_name: Must be "knowhere-api" or "knowhere-worker"
+        service_name: Must be "ziru-api" or "ziru-worker"
         component: Must be "api" or "worker"
         app: FastAPI app instance (optional, for FastAPI instrumentation)
 
@@ -132,7 +132,7 @@ def setup_logging(service_name: str):
 
     Usage:
         # API startup (apps/api/main.py)
-        setup_logging(service_name="knowhere-api")
+        setup_logging(service_name="ziru-api")
         app = FastAPI(...)
         # Then instrument FastAPI separately if needed
 
@@ -141,16 +141,16 @@ def setup_logging(service_name: str):
 
         @worker_init.connect()
         def init_worker(*args, **kwargs):
-            setup_logging(service_name="knowhere-worker")
+            setup_logging(service_name="ziru-worker")
     """
     # Import settings here to avoid circular imports
     from shared.core.config import settings
 
     # Validate service_name
-    if service_name not in ["knowhere-api", "knowhere-worker"]:
+    if service_name not in ["ziru-api", "ziru-worker"]:
         raise ValueError(
             f"Invalid service_name: {service_name}. "
-            "Must be 'knowhere-api' or 'knowhere-worker'"
+            "Must be 'ziru-api' or 'ziru-worker'"
         )
 
     # Remove all existing handlers
@@ -171,7 +171,7 @@ def setup_logging(service_name: str):
 
     # enqueue=True uses a background thread for log writes, which deadlocks
     # with gevent's cooperative scheduling on stdout. Disable for worker.
-    use_enqueue = service_name != "knowhere-worker"
+    use_enqueue = service_name != "ziru-worker"
 
     logger.add(
         sys.stdout,
@@ -205,7 +205,7 @@ def setup_logging(service_name: str):
             )
 
             # Instrument based on service type
-            if service_name == "knowhere-api":
+            if service_name == "ziru-api":
                 logfire.instrument_celery()  # Required for trace propagation (enqueue side)
                 logfire.instrument_httpx()  # Instrument HTTP client calls
 
@@ -216,7 +216,7 @@ def setup_logging(service_name: str):
 
                 # Redis instrumentation disabled to reduce production noise/cost.
 
-            elif service_name == "knowhere-worker":
+            elif service_name == "ziru-worker":
                 from shared.core.otel_gevent_compat import patch_otel_context_for_gevent
 
                 patch_otel_context_for_gevent()

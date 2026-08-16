@@ -1,4 +1,4 @@
-"""Chunk projection for Knowhere ZIP result packages."""
+"""Chunk projection for Ziru ZIP result packages."""
 
 from __future__ import annotations
 

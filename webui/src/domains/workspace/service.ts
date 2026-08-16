@@ -9,7 +9,7 @@ import { workspaceRepository } from "./repository"
 import type { Workspace } from "@/infrastructure/db/schema"
 
 /** Cookie that holds the active workspace id for the current browser session. */
-export const activeWorkspaceCookieName = "notebook-ws"
+export const activeWorkspaceCookieName = "ziru-ws"
 
 type WorkspaceService = {
   readonly ensureWorkspaceEffect: (
@@ -31,7 +31,7 @@ type WorkspaceService = {
 /**
  * Resolve the workspace that should serve the current request.
  *
- * 1. If the `notebook-ws` cookie names a workspace owned by the user, use it.
+ * 1. If the `ziru-ws` cookie names a workspace owned by the user, use it.
  * 2. Otherwise use the user's first workspace.
  * 3. If the user has no workspace yet, return null — callers must decide how
  *    to handle the empty state (a new user must add an API key and pick a
@@ -104,7 +104,7 @@ const pingDatabase: WorkspaceService["pingDatabase"] = () =>
   databaseRuntime.runPromise(pingDatabaseEffect())
 
 /**
- * Read the active workspace id from the `notebook-ws` cookie. Returns null
+ * Read the active workspace id from the `ziru-ws` cookie. Returns null
  * outside a request scope (background jobs, tests, CLI).
  */
 const readActiveWorkspaceIdEffect: Effect.Effect<

@@ -12,9 +12,9 @@ const monoReadableClassName = "font-[family-name:var(--font-mono-readable)]";
 type CodeTab = "python" | "node" | "curl";
 
 const pythonCode = `# pip install knowhere-python-sdk
-import knowhere
+import ziru
 
-client = knowhere.Knowhere(api_key="sk_...")
+client = ziru.Ziru(api_key="sk_...")
 
 result = client.parse(url="https://arxiv.org/pdf/1706.03762.pdf")
 
@@ -22,9 +22,9 @@ print(result.statistics.total_chunks)
 print(result.full_markdown[:200])`;
 
 const nodeCode = `// npm install @ontos-ai/knowhere-sdk
-import Knowhere from "@ontos-ai/knowhere-sdk";
+import Ziru from "@ontos-ai/knowhere-sdk";
 
-const client = new Knowhere({
+const client = new Ziru({
   apiKey: "sk_...",
 });
 
@@ -35,8 +35,8 @@ const result = await client.parse({
 console.log("Text chunks:", result.textChunks.length);
 console.log(result.textChunks[0]?.content);`;
 
-const curlCode = `curl -X POST https://api.knowhereto.ai/v1/jobs \\
-  --oauth2-bearer "$KNOWHERE_API_KEY" \\
+const curlCode = `curl -X POST https://api.ziru.app/v1/jobs \\
+  --oauth2-bearer "$ZIRU_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
     "source_type": "url",

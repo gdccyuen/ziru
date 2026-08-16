@@ -9,7 +9,7 @@ import {
 import { type ClawNavItem, clawNavItems } from "@app/(landing)/claw/_components/claw-content";
 import { clawHeaderDesign } from "@app/(landing)/claw/_components/claw-header-design";
 import { LanguageSwitcher } from "@components/language-switcher";
-import { KnowhereIcon } from "@components/ui/knowhere-icon";
+import { ZiruIcon } from "@components/ui/ziru-icon";
 import { useActiveSection } from "@hooks/use-active-section";
 import { cn } from "@lib/utils";
 import Link from "next/link";
@@ -131,7 +131,7 @@ export const ClawHeader = ({
                 className="hidden h-full items-center gap-1 pl-4 pr-3 text-xs leading-4 text-[#09090b] transition-colors hover:text-[#52525c] min-[768px]:flex"
               >
                 <span>{currentLocaleLabel}</span>
-                <KnowhereIcon className="size-5 text-current" name="chevron-down" />
+                <ZiruIcon className="size-5 text-current" name="chevron-down" />
               </button>
             </LanguageSwitcher>
           ) : null}
@@ -148,7 +148,7 @@ export const ClawHeader = ({
             onClick={() => setMobileMenuOpen((open) => !open)}
             type="button"
           >
-            <KnowhereIcon className="h-[14px] w-[14px] text-current" name="menu" />
+            <ZiruIcon className="h-[14px] w-[14px] text-current" name="menu" />
           </button>
           {showUtilityControls ? (
             <LandingThemeToggle

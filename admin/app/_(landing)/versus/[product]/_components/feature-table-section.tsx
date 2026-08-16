@@ -26,16 +26,16 @@ function FeatureRowComponent({ feature, competitorName }: FeatureRowComponentPro
           {feature.tooltip && <span className="text-xs text-[var(--pixel-text-muted)]">ℹ️</span>}
         </div>
 
-        {/* Knowhere status */}
+        {/* Ziru status */}
         <div className="flex items-center gap-2">
           <PixelIcon
-            icon={feature.knowhere.supported ? "check" : "cross"}
+            icon={feature.ziru.supported ? "check" : "cross"}
             size={16}
-            color={feature.knowhere.supported ? "green" : "red"}
+            color={feature.ziru.supported ? "green" : "red"}
           />
-          {feature.knowhere.details && (
+          {feature.ziru.details && (
             <span className="text-xs font-sans text-[var(--pixel-text-muted)]">
-              {feature.knowhere.details}
+              {feature.ziru.details}
             </span>
           )}
         </div>
@@ -65,21 +65,21 @@ function FeatureRowComponent({ feature, competitorName }: FeatureRowComponentPro
 
         {/* Comparison */}
         <div className="grid grid-cols-2 gap-4">
-          {/* Knowhere */}
+          {/* Ziru */}
           <div className="space-y-1">
             <div className="text-xs font-semibold font-sans text-[var(--pixel-text-muted)]">
-              Knowhere
+              Ziru
             </div>
             <div className="flex items-start gap-2">
               <PixelIcon
-                icon={feature.knowhere.supported ? "check" : "cross"}
+                icon={feature.ziru.supported ? "check" : "cross"}
                 size={16}
-                color={feature.knowhere.supported ? "green" : "red"}
+                color={feature.ziru.supported ? "green" : "red"}
                 className="mt-0.5"
               />
-              {feature.knowhere.details && (
+              {feature.ziru.details && (
                 <span className="text-xs font-sans text-[var(--pixel-text-muted)] leading-relaxed">
-                  {feature.knowhere.details}
+                  {feature.ziru.details}
                 </span>
               )}
             </div>
@@ -159,7 +159,7 @@ export function FeatureTableSection({ data, competitorName }: FeatureTableSectio
             {/* Table header - Desktop only */}
             <div className="hidden md:grid grid-cols-[2fr_1fr_1fr] gap-4 pb-4 mb-4 border-b-2 border-pixel-border">
               <div className="text-pixel-xs font-pixel text-pixel-fg">FEATURE</div>
-              <div className="text-pixel-xs font-pixel text-pixel-fg">KNOWHERE</div>
+              <div className="text-pixel-xs font-pixel text-pixel-fg">ZIRU</div>
               <div className="text-pixel-xs font-pixel text-pixel-fg">
                 {competitorName.toUpperCase()}
               </div>

@@ -19,7 +19,7 @@ from shared.core.exceptions.redis_exceptions import RedisConfigurationError
 
 DEFAULT_SYSTEM_LIMIT: int = 1000
 CONCURRENCY_RETRY_AFTER_SECONDS: int = 30
-REDIS_KEY_PREFIX: str = "knowhere-api:"
+REDIS_KEY_PREFIX: str = "ziru-api:"
 DEFAULT_SYSTEM_PERIOD: str = "minute"
 
 _RATE_LIMIT_ENABLED_ENV: str = "RATE_LIMIT_ENABLED"

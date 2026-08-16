@@ -1,5 +1,5 @@
 """
-Base Exception class for the Knowhere API.
+Base Exception class for the Ziru API.
 
 =============================================================================
 SECURITY RULE: THE "4xx vs 5xx" MESSAGE PATTERN
@@ -56,7 +56,7 @@ Correct Usage (5xx - System Error):
 
 Wrong Usage:
     # DO NOT DO THIS:
-    raise KnowhereException(code=ErrorCode.INVALID_ARGUMENT, ...)
+    raise ZiruException(code=ErrorCode.INVALID_ARGUMENT, ...)
 """
 
 from typing import Any, Dict, Literal, Optional
@@ -69,9 +69,9 @@ DEFAULT_4XX_USER_MESSAGE = "Invalid request. Please check your input."
 LogErrorCategory = Literal["client", "system"]
 
 
-class KnowhereException(Exception):
+class ZiruException(Exception):
     """
-    Abstract base class for all Knowhere API exceptions.
+    Abstract base class for all Ziru API exceptions.
 
     ==========================================================================
     SECURITY: THE DUAL-MESSAGE PATTERN
@@ -124,7 +124,7 @@ class KnowhereException(Exception):
         original_exception: Optional[Exception] = None,
     ):
         """
-        Initialize a KnowhereException.
+        Initialize a ZiruException.
 
         Args:
             code: The canonical ErrorCode for this exception.
@@ -295,7 +295,7 @@ class KnowhereException(Exception):
         Note: original_exception is NOT serialized (it may contain unpickleable objects).
         """
         return (
-            _reconstruct_knowhere_exception,
+            _reconstruct_ziru_exception,
             (self.__class__, self.__getstate__()),
         )
 
@@ -313,9 +313,9 @@ class KnowhereException(Exception):
         Exception.__init__(self, self.internal_message)
 
 
-def _reconstruct_knowhere_exception(cls, state):
+def _reconstruct_ziru_exception(cls, state):
     """
-    Factory function for unpickling KnowhereException subclasses.
+    Factory function for unpickling ZiruException subclasses.
 
     Bypasses __init__ to handle subclasses with different signatures.
     """

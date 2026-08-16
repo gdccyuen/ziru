@@ -6,9 +6,9 @@ import { env } from "@lib/env";
 import { ORPCError } from "@orpc/server";
 import { createApiKey } from "@server/external-api/api-keys";
 import {
-  issueKnowhereServiceJwt,
-  KNOWHERE_SERVICE_JWT_EXPIRY_SECONDS,
-} from "@server/knowhere-service-jwt";
+  issueZiruServiceJwt,
+  ZIRU_SERVICE_JWT_EXPIRY_SECONDS,
+} from "@server/ziru-service-jwt";
 import { protectedProcedure, publicProcedure } from "@server/orpc";
 import type { User } from "better-auth/types";
 import { and, eq, gt } from "drizzle-orm";
@@ -526,11 +526,11 @@ export const usersRouter = protectedProcedure.router({
   }),
 
   /**
-   * Issue a short-lived Knowhere JWT for a sibling/relying app.
+   * Issue a short-lived Ziru JWT for a sibling/relying app.
    *
-   * The returned token is passed to the Knowhere Node SDK as `apiKey`
-   * and validated by Knowhere's JWKS verification against this Dashboard.
-   * No persistent Knowhere API key is created, stored, or returned.
+   * The returned token is passed to the Ziru Node SDK as `apiKey`
+   * and validated by Ziru's JWKS verification against this Dashboard.
+   * No persistent Ziru API key is created, stored, or returned.
    *
    * The Dashboard session cookie already authenticates the caller, so
    * the JWT stays short-lived. If a relying app needs a fresh token
@@ -538,8 +538,8 @@ export const usersRouter = protectedProcedure.router({
    */
   issueServiceJwt: protectedProcedure.handler(async ({ context }) => {
     return {
-      token: await issueKnowhereServiceJwt(context.user.id),
-      expiresInSeconds: KNOWHERE_SERVICE_JWT_EXPIRY_SECONDS,
+      token: await issueZiruServiceJwt(context.user.id),
+      expiresInSeconds: ZIRU_SERVICE_JWT_EXPIRY_SECONDS,
     };
   }),
 });

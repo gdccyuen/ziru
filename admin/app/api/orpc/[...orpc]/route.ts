@@ -30,7 +30,7 @@ const openAPIPlugins = isProduction
         schemaConverters: [new ZodToJsonSchemaConverter()],
         specGenerateOptions: {
           info: {
-            title: "Knowhere API - oRPC Endpoints",
+            title: "Ziru API - oRPC Endpoints",
             version: "1.0.0",
             description:
               "Auto-generated API documentation for oRPC procedures. This documentation is automatically generated from the code and stays in sync with the implementation.\n\n" +

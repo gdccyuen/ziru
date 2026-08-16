@@ -306,7 +306,7 @@ class AgenticResult:
 
     - ``evidence_text``: complete hierarchical context for LLM answering
       (rendered doc tree with outline + leaf content + inline tables)
-    - ``answer_text``: deprecated; always empty because KNOWHERE returns
+    - ``answer_text``: deprecated; always empty because ZIRU returns
       evidence only and downstream agents synthesize answers.
     - ``referenced_chunks``: minimal chunk references for hit stats
       and frontend display (chunk_id, document_id, chunk_type, etc.)

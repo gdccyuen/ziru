@@ -1,7 +1,7 @@
 import path from "node:path"
 import { createHash } from "node:crypto"
 import { put } from "@vercel/blob"
-import type { RetrievalResult } from "@ontos-ai/knowhere-sdk"
+import type { RetrievalResult } from "@/integrations/ziru-sdk-types"
 
 import type {
   ChatArtifactView,
@@ -215,7 +215,7 @@ async function hardenAssetUrl(
   reference: AssetUrlReference,
   context: HardeningContext,
 ): Promise<string> {
-  if (isNotebookOwnedAssetUrl(reference.assetUrl)) {
+  if (isWebUIOwnedAssetUrl(reference.assetUrl)) {
     return reference.assetUrl
   }
 
@@ -343,7 +343,7 @@ function resolveAssetFetchRequest(assetUrl: string): AssetFetchRequest | null {
   }
 }
 
-function isNotebookOwnedAssetUrl(assetUrl: string): boolean {
+function isWebUIOwnedAssetUrl(assetUrl: string): boolean {
   const pathname = getAssetUrlPathname(assetUrl).toLowerCase()
   if (
     pathname.includes(`/${parsedResultDirectoryName}/`) ||
@@ -433,7 +433,7 @@ function getPathBasename(value: string): string {
 
 function getAssetUrlPathname(assetUrl: string): string {
   try {
-    return new URL(assetUrl, "http://notebook.local").pathname
+    return new URL(assetUrl, "http://webui.local").pathname
   } catch {
     return assetUrl.split("?")[0] ?? assetUrl
   }
@@ -461,7 +461,7 @@ function createSourcesByDocumentId(
 ): ReadonlyMap<string, Source> {
   return new Map(
     sources.flatMap((source): readonly [string, Source][] =>
-      source.knowhereDocumentId ? [[source.knowhereDocumentId, source]] : [],
+      source.ziruDocumentId ? [[source.ziruDocumentId, source]] : [],
     ),
   )
 }

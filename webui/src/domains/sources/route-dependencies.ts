@@ -6,8 +6,8 @@ import {
   loadChunkPageForSource,
   loadChunksForSource,
 } from "@/domains/chunks/server"
-import { ensureApiKeyForWorkspace } from "@/integrations/knowhere-credentials"
-import { makeKnowhereClient as makeDefaultKnowhereClient } from "@/integrations/knowhere"
+import { ensureApiKeyForWorkspace } from "@/integrations/ziru-credentials"
+import { makeZiruClient as makeDefaultZiruClient } from "@/integrations/ziru"
 import { getCurrentUser, requireUser } from "@/infrastructure/auth"
 import { workspaceService } from "@/domains/workspace/service"
 import { workspaceRepository } from "@/domains/workspace/repository"
@@ -17,7 +17,7 @@ import { reconcileSourcesForWorkspace as reconcileDefaultSourcesForWorkspace } f
 import { sourceWorkflowRuntime } from "./workflow-runtime"
 import { sourceService as defaultSourceService } from "./service"
 import type {
-  SourceRouteKnowhereClient,
+  SourceRouteZiruClient,
   SourceRouteServiceDependencies,
   SourceRouteServiceOverrides,
 } from "./route-types"
@@ -34,17 +34,17 @@ const defaultDependencies: SourceRouteServiceDependencies = {
   getSourceViewOptionsBySourceId: (sources, client) =>
     getDefaultSourceViewOptionsBySourceId(
       sources,
-      client as ReturnType<typeof makeDefaultKnowhereClient>,
+      client as ReturnType<typeof makeDefaultZiruClient>,
     ),
   loadChunkPageForSource,
   loadChunksForSource,
-  makeKnowhereClient: (apiKey: string) =>
-    makeDefaultKnowhereClient(apiKey) as SourceRouteKnowhereClient,
+  makeZiruClient: (apiKey: string) =>
+    makeDefaultZiruClient(apiKey) as SourceRouteZiruClient,
   listSourcesForWorkspace: sourceWorkflowRuntime.listForWorkspace,
   reconcileSourcesForWorkspace: (workspace, client) =>
     reconcileDefaultSourcesForWorkspace(
       workspace,
-      client as ReturnType<typeof makeDefaultKnowhereClient>,
+      client as ReturnType<typeof makeDefaultZiruClient>,
     ),
   requireUser,
   sourceService: {
@@ -53,9 +53,9 @@ const defaultDependencies: SourceRouteServiceDependencies = {
     localizeRemoteDocument: defaultSourceService.localizeRemoteDocument,
     updateSourceRevisionKey: defaultSourceService.updateSourceRevisionKey,
     softDelete: defaultSourceService.softDelete,
-    retrySourceToKnowhere: defaultSourceService.retrySourceToKnowhere,
-    uploadSourceBlobToKnowhere: defaultSourceService.uploadSourceBlobToKnowhere,
-    uploadSourceToKnowhere: defaultSourceService.uploadSourceToKnowhere,
+    retrySourceToZiru: defaultSourceService.retrySourceToZiru,
+    uploadSourceBlobToZiru: defaultSourceService.uploadSourceBlobToZiru,
+    uploadSourceToZiru: defaultSourceService.uploadSourceToZiru,
   },
 }
 
@@ -77,11 +77,11 @@ async function getClientForWorkspace(
   cookieHeader: string,
   deps: Pick<
     SourceRouteServiceDependencies,
-    "ensureApiKeyForWorkspace" | "makeKnowhereClient"
+    "ensureApiKeyForWorkspace" | "makeZiruClient"
   >,
-): Promise<SourceRouteKnowhereClient> {
+): Promise<SourceRouteZiruClient> {
   const apiKey = await deps.ensureApiKeyForWorkspace(workspaceId)
-  return deps.makeKnowhereClient(apiKey)
+  return deps.makeZiruClient(apiKey)
 }
 
 export { createSourceRouteDependencies, getClientForWorkspace }

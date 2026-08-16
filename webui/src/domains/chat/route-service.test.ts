@@ -45,7 +45,7 @@ vi.mock("@/domains/sources/workflow-runtime", () => ({
 }))
 
 vi.mock("@/domains/workspace/request-context", () => ({
-  notebookRequestContext: {
+  webuiRequestContext: {
     getAuthenticated: mocks.getAuthenticated,
     getAuthenticatedWithClient: mocks.getAuthenticatedWithClient,
   },
@@ -145,7 +145,7 @@ describe("chat route services", () => {
     const client = { retrieval: { query: vi.fn() } }
     const parsingSource = makeSource({
       status: "parsing",
-      knowhereDocumentId: null,
+      ziruDocumentId: null,
     })
     mocks.getAuthenticatedWithClient.mockResolvedValue({
       user: { id: "user_1" },
@@ -366,8 +366,8 @@ function makeWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
     id: "workspace_1",
     userId: "user_1",
-      activeKnowhereApiKeyId: null,
-    namespace: "notebook-workspace_1",
+      activeZiruApiKeyId: null,
+    namespace: "webui-workspace_1",
     createdAt: new Date("2026-05-06T00:00:00Z"),
     ...overrides,
   }
@@ -382,8 +382,8 @@ function makeSource(overrides: Partial<Source> = {}): Source {
     sizeBytes: 100,
     status: "ready",
     failureReason: null,
-    knowhereJobId: "job_123",
-    knowhereDocumentId: "doc_1",
+    ziruJobId: "job_123",
+    ziruDocumentId: "doc_1",
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,

@@ -3,7 +3,7 @@ import type {
   RetrievalQueryParams,
   RetrievalQueryResponse,
   RetrievalResult,
-} from "@ontos-ai/knowhere-sdk"
+} from "@/integrations/ziru-sdk-types"
 
 import { logger } from "@/lib/logger"
 import type {
@@ -21,7 +21,7 @@ import type {
 } from "@/agent-harness"
 import {
   toChatCitationViews,
-  useNotebookSourceTitles,
+  useWebUISourceTitles,
 } from "./citations"
 import type {
   AgenticRetrievalQuery,
@@ -44,12 +44,12 @@ import {
 const DEFAULT_TOP_K = 8
 const MAX_AGENTIC_TOP_K = 12
 const MAX_CITATION_RESULTS = 20
-const KNOWHERE_RESPONSE_TEXT_LOG_LIMIT = 200
-const KNOWHERE_CHUNK_LOG_LIMIT = 100
+const ZIRU_RESPONSE_TEXT_LOG_LIMIT = 200
+const ZIRU_CHUNK_LOG_LIMIT = 100
 const NO_RESULTS_ANSWER = "I couldn't find that in your sources."
 const NULLISH_ANSWER_PATTERN = /^(?:null|undefined)$/i
 const HARNESS_VALIDATION_FAILURE_ANSWER =
-  "I couldn't safely finish that response because the agent output did not pass Notebook's validation checks. Please try again."
+  "I couldn't safely finish that response because the agent output did not pass WebUI's validation checks. Please try again."
 const RAW_URL_PATTERN = /https?:\/\/[^\s)\]}>"']+/g
 const REDACTED_MEDIA_URL = "[media asset URL hidden]"
 const RETRIEVAL_TARGET_CONTENT_DATA_TYPES: Readonly<
@@ -66,7 +66,7 @@ const RETRIEVAL_TARGET_CONTENT_DATA_TYPES: Readonly<
 
 type RetrievalDataType = NonNullable<RetrievalQueryParams["dataType"]>
 
-type KnowhereQueryResponseLog = {
+type ZiruQueryResponseLog = {
   readonly namespace: string
   readonly query: string
   readonly routerUsed: string | null | undefined
@@ -76,16 +76,16 @@ type KnowhereQueryResponseLog = {
   readonly referencedChunkCount: number
   readonly answerText: string
   readonly evidenceText: string
-  readonly results: readonly KnowhereResultChunkLog[]
-  readonly referencedChunks: readonly KnowhereReferencedChunkLog[]
+  readonly results: readonly ZiruResultChunkLog[]
+  readonly referencedChunks: readonly ZiruReferencedChunkLog[]
 }
 
-type KnowhereResultChunkLog = {
+type ZiruResultChunkLog = {
   readonly chunkType: string
   readonly content: string
 }
 
-type KnowhereReferencedChunkLog = {
+type ZiruReferencedChunkLog = {
   readonly chunkType: string
   readonly summary: string
 }
@@ -186,9 +186,9 @@ export const answerQuestionWithRetrieval = (
             failureReason: response.failureReason ?? null,
             targetContent: retrievalPlan.targetContent,
           })
-          logger.info("chat-agent: knowhere query response", {
+          logger.info("chat-agent: ziru query response", {
             durationMs: Date.now() - startedAt,
-            response: formatKnowhereQueryResponseForLog(response),
+            response: formatZiruQueryResponseForLog(response),
           })
         } catch (error) {
           queryFailures.push(error)
@@ -264,7 +264,7 @@ export const answerQuestionWithRetrieval = (
 
     const enrichedResults = yield* Effect.tryPromise(() =>
       enrichRetrievalResultsWithAssetUrls({
-        results: useNotebookSourceTitles(rawResults, input.sources),
+        results: useWebUISourceTitles(rawResults, input.sources),
         sources: input.sources,
         loadSourceAssetUrls: input.loadSourceAssetUrls,
         evidenceText: formatRetrievalEvidenceText(retrievalResponses),
@@ -441,7 +441,7 @@ function normalizeHarnessSource(
   sources: readonly AnswerQuestionInput["sources"][number][],
 ): ChatCitationView["source"] {
   const sourceTitle = source.documentId
-    ? sources.find((candidate) => candidate.knowhereDocumentId === source.documentId)
+    ? sources.find((candidate) => candidate.ziruDocumentId === source.documentId)
         ?.title
     : undefined
 
@@ -577,9 +577,9 @@ function looksLikeNullishAnswer(answer: string): boolean {
   return trimmed.length === 0 || NULLISH_ANSWER_PATTERN.test(trimmed)
 }
 
-function formatKnowhereQueryResponseForLog(
+function formatZiruQueryResponseForLog(
   response: RetrievalQueryResponse,
-): KnowhereQueryResponseLog {
+): ZiruQueryResponseLog {
   return {
     namespace: response.namespace,
     query: response.query,
@@ -590,36 +590,36 @@ function formatKnowhereQueryResponseForLog(
     referencedChunkCount: response.referencedChunks.length,
     answerText: truncateLogText(
       response.answerText ?? "",
-      KNOWHERE_RESPONSE_TEXT_LOG_LIMIT,
+      ZIRU_RESPONSE_TEXT_LOG_LIMIT,
     ),
     evidenceText: truncateLogText(
       response.evidenceText ?? "",
-      KNOWHERE_RESPONSE_TEXT_LOG_LIMIT,
+      ZIRU_RESPONSE_TEXT_LOG_LIMIT,
     ),
-    results: response.results.map(formatKnowhereResultChunkForLog),
+    results: response.results.map(formatZiruResultChunkForLog),
     referencedChunks: response.referencedChunks.map(
-      formatKnowhereReferencedChunkForLog,
+      formatZiruReferencedChunkForLog,
     ),
   }
 }
 
-function formatKnowhereResultChunkForLog(
+function formatZiruResultChunkForLog(
   result: RetrievalResult,
-): KnowhereResultChunkLog {
+): ZiruResultChunkLog {
   return {
     chunkType: result.chunkType,
-    content: truncateLogText(result.content, KNOWHERE_CHUNK_LOG_LIMIT),
+    content: truncateLogText(result.content, ZIRU_CHUNK_LOG_LIMIT),
   }
 }
 
-function formatKnowhereReferencedChunkForLog(
+function formatZiruReferencedChunkForLog(
   chunk: RetrievalQueryResponse["referencedChunks"][number],
-): KnowhereReferencedChunkLog {
+): ZiruReferencedChunkLog {
   return {
     chunkType: chunk.chunkType,
     summary: truncateLogText(
       chunk.sectionPath || chunk.filePath || chunk.chunkId,
-      KNOWHERE_CHUNK_LOG_LIMIT,
+      ZIRU_CHUNK_LOG_LIMIT,
     ),
   }
 }
@@ -1005,7 +1005,7 @@ function collectRetrievalResults(
   const seenKeys = new Set<string>()
   const sourceTitlesByDocumentId = new Map(
     sources.flatMap((source): readonly [string, string][] =>
-      source.knowhereDocumentId ? [[source.knowhereDocumentId, source.title]] : [],
+      source.ziruDocumentId ? [[source.ziruDocumentId, source.title]] : [],
     ),
   )
 

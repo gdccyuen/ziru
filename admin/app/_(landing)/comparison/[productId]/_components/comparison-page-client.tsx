@@ -17,14 +17,14 @@ type ComparisonPageClientProps = {
 };
 
 // Tab parser for nuqs
-const tabParser = parseAsStringLiteral(["knowhere", "unstructured", "markitdown"] as const);
+const tabParser = parseAsStringLiteral(["ziru", "unstructured", "markitdown"] as const);
 
 export function ComparisonPageClient({ productId }: ComparisonPageClientProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // Use nuqs for tab state management (default to productId if it's a competitor)
-  const defaultTab = productId === "original" ? "knowhere" : (productId as CompetitorProductId);
+  const defaultTab = productId === "original" ? "ziru" : (productId as CompetitorProductId);
   const [currentTab, setCurrentTab] = useQueryState("tab", tabParser.withDefault(defaultTab));
 
   // Set mounted state for portal
@@ -88,7 +88,7 @@ export function ComparisonPageClient({ productId }: ComparisonPageClientProps) {
                 />
               </motion.div>
               <span className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
-                Knowhere API
+                Ziru API
               </span>
             </Link>
           </div>

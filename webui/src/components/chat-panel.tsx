@@ -40,7 +40,7 @@ import type {
 import type { RetrievalOverrides } from "@/domains/chat/contracts";
 import { workspaceClient } from "@/domains/workspace/client";
 import {
-  trackNotebookAssistantQuestionSubmitted,
+  trackWebUIAssistantQuestionSubmitted,
   type AnalyticsContext,
 } from "@/lib/posthog";
 
@@ -162,7 +162,7 @@ export function ChatPanel({
       return;
     }
 
-    void trackNotebookAssistantQuestionSubmitted({
+    void trackWebUIAssistantQuestionSubmitted({
       context: analyticsContext,
       threadId: activeThreadId,
       selectedSourcesCount,
@@ -203,7 +203,7 @@ export function ChatPanel({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="truncate text-sm font-bold text-foreground">
-              Knowhere Assistant
+              Ziru Assistant
             </h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
               Using{" "}

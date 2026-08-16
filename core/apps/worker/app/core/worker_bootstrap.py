@@ -23,7 +23,7 @@ def _register_task_modules() -> None:
 @worker_init.connect
 def init_worker(**kwargs) -> None:
     """Initialize structured logging and sync Redis when worker process starts."""
-    setup_logging(service_name="knowhere-worker")
+    setup_logging(service_name="ziru-worker")
     start_worker_heartbeat()
 
     # Celery gevent cannot cancel greenlets on transport reconnect, so use a no-op.

@@ -1,7 +1,7 @@
 "use client";
 
 import { NAV_LINKS } from "@app/_(landing)/_lib/constants";
-import { KnowhereBrand } from "@components/brand/knowhere-brand";
+import { ZiruBrand } from "@components/brand/ziru-brand";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -50,8 +50,8 @@ export const Navbar = ({ customLinks }: NavbarProps = {}) => {
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="inline-flex items-center group" aria-label="Knowhere">
-            <KnowhereBrand className="w-[116px]" priority sizes="116px" />
+          <Link href="/" className="inline-flex items-center group" aria-label="Ziru">
+            <ZiruBrand className="w-[116px]" priority sizes="116px" />
           </Link>
 
           {/* Desktop Navigation */}

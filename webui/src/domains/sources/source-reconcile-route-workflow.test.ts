@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({
   loggerError: vi.fn(),
   loggerInfo: vi.fn(),
   loggerWarn: vi.fn(),
-  makeKnowhereClient: vi.fn(),
+  makeZiruClient: vi.fn(),
   markFailed: vi.fn(),
   markSourceReadyAfterReconciliation: vi.fn(),
   pollSourceReconciliation: vi.fn(),
@@ -21,8 +21,8 @@ vi.mock("@/domains/sources/workflow-runtime", () => ({
   },
 }))
 
-vi.mock("@/integrations/knowhere", () => ({
-  makeKnowhereClient: mocks.makeKnowhereClient,
+vi.mock("@/integrations/ziru", () => ({
+  makeZiruClient: mocks.makeZiruClient,
 }))
 
 vi.mock("@/lib/logger", () => ({
@@ -57,7 +57,7 @@ describe("sourceReconcileRouteWorkflow", () => {
     })
   })
 
-  it("marks the source ready when Knowhere publishes a document id", async () => {
+  it("marks the source ready when Ziru publishes a document id", async () => {
     const context = createWorkflowContext()
     const continuations: ContinuationTriggerInput[] = []
     const restore =
@@ -67,7 +67,7 @@ describe("sourceReconcileRouteWorkflow", () => {
         },
       )
     const client = { jobs: {} }
-    mocks.makeKnowhereClient.mockReturnValue(client)
+    mocks.makeZiruClient.mockReturnValue(client)
     mocks.pollSourceReconciliation.mockResolvedValue({
       kind: "ready-to-prepare",
       jobId: "job_1",
@@ -98,7 +98,7 @@ describe("sourceReconcileRouteWorkflow", () => {
     expect(continuations).toEqual([])
   })
 
-  it("triggers a fresh poll run when Knowhere is still running after the segment budget", async () => {
+  it("triggers a fresh poll run when Ziru is still running after the segment budget", async () => {
     const context = createWorkflowContext()
     const continuations: ContinuationTriggerInput[] = []
     const restore =
@@ -107,7 +107,7 @@ describe("sourceReconcileRouteWorkflow", () => {
           continuations.push(input)
         },
       )
-    mocks.makeKnowhereClient.mockReturnValue({ jobs: {} })
+    mocks.makeZiruClient.mockReturnValue({ jobs: {} })
     mocks.pollSourceReconciliation.mockResolvedValue({
       kind: "waiting",
       jobId: "job_1",
@@ -131,7 +131,7 @@ describe("sourceReconcileRouteWorkflow", () => {
     expect(mocks.pollSourceReconciliation).toHaveBeenCalledTimes(25)
     expect(continuations).toEqual([
       {
-        url: "https://notebook.example/api/sources/reconcile",
+        url: "https://webui.example/api/sources/reconcile",
         payload: {
           workspaceId: "workspace_1",
           sourceId: "source_1",
@@ -189,6 +189,6 @@ function createWorkflowContext(stepResults = new Map<string, unknown>()): {
       return result
     },
     sleep: vi.fn(async () => undefined),
-    url: "https://notebook.example/api/sources/reconcile",
+    url: "https://webui.example/api/sources/reconcile",
   }
 }

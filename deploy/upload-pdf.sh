@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Upload a PDF to Knowhere via the API.
+# Upload a PDF to Ziru via the API.
 # Usage: ./upload-pdf.sh <API_KEY> [file_path] [namespace]
-#   API_KEY   - Knowhere API key (from dashboard Settings → API Keys)
+#   API_KEY   - Ziru API key (from dashboard Settings → API Keys)
 #   file_path - path to PDF file (required)
 #   namespace - retrieval namespace (default: "default")
 

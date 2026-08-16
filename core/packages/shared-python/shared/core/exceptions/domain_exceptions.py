@@ -22,7 +22,7 @@ Each exception follows the dual-message pattern:
 =============================================================================
 
 Each exception has a fixed `details` structure that clients can rely on.
-Do NOT raise KnowhereException directly - use these domain exceptions.
+Do NOT raise ZiruException directly - use these domain exceptions.
 
 Usage (4xx - Client Error):
     from shared.core.exceptions import ValidationException
@@ -44,7 +44,7 @@ Usage (5xx - System Error):
 
 from typing import Any, Dict, List, Optional, TypedDict
 
-from shared.core.exceptions.knowhere_exception import KnowhereException
+from shared.core.exceptions.ziru_exception import ZiruException
 from shared.core.response.ErrorCode import ErrorCode, SubCode
 
 # ============================================================================
@@ -74,7 +74,7 @@ class ResourceInfo(TypedDict):
 # ============================================================================
 
 
-class ValidationException(KnowhereException):
+class ValidationException(ZiruException):
     """
     Invalid input from client. HTTP 400.
 
@@ -99,7 +99,7 @@ class ValidationException(KnowhereException):
         self.violations = violations
 
 
-class AuthException(KnowhereException):
+class AuthException(ZiruException):
     """
     Authentication failed. HTTP 401.
 
@@ -121,7 +121,7 @@ class AuthException(KnowhereException):
         )
 
 
-class InsufficientCreditsException(KnowhereException):
+class InsufficientCreditsException(ZiruException):
     """
     Payment required. HTTP 402.
 
@@ -152,7 +152,7 @@ class InsufficientCreditsException(KnowhereException):
         )
 
 
-class PermissionDeniedException(KnowhereException):
+class PermissionDeniedException(ZiruException):
     """
     Permission denied. HTTP 403.
 
@@ -179,7 +179,7 @@ class PermissionDeniedException(KnowhereException):
         )
 
 
-class NotFoundException(KnowhereException):
+class NotFoundException(ZiruException):
     """
     Resource not found. HTTP 404.
 
@@ -205,7 +205,7 @@ class NotFoundException(KnowhereException):
         )
 
 
-class ConflictException(KnowhereException):
+class ConflictException(ZiruException):
     """
     Resource conflict (e.g., already exists, concurrent update). HTTP 409.
 
@@ -246,7 +246,7 @@ class ConflictException(KnowhereException):
         )
 
 
-class RateLimitException(KnowhereException):
+class RateLimitException(ZiruException):
     """
     Rate limit exceeded. HTTP 429. RETRYABLE.
 
@@ -306,7 +306,7 @@ class RateLimitException(KnowhereException):
         self.period = period
 
 
-class QuotaExceededException(KnowhereException):
+class QuotaExceededException(ZiruException):
     """
     Quota exceeded. HTTP 429. NOT RETRYABLE.
 
@@ -345,7 +345,7 @@ class QuotaExceededException(KnowhereException):
 # ============================================================================
 
 
-class UnavailableException(KnowhereException):
+class UnavailableException(ZiruException):
     """
     Service temporarily unavailable. HTTP 503. RETRYABLE.
 
@@ -386,7 +386,7 @@ class UnavailableException(KnowhereException):
         self.period = period
 
 
-class TimeoutException(KnowhereException):
+class TimeoutException(ZiruException):
     """
     Request timed out. HTTP 504. RETRYABLE.
 
@@ -427,9 +427,9 @@ class TimeoutException(KnowhereException):
         self.period = period
 
 
-class UnknownException(KnowhereException):
+class UnknownException(ZiruException):
     """
-    Wrapper for non-KnowhereException errors. HTTP 500.
+    Wrapper for non-ZiruException errors. HTTP 500.
     Like a syntax error in the code.
 
     5xx Error: Auto-defaults to safe user_message.
@@ -462,7 +462,7 @@ class UnknownException(KnowhereException):
 # ============================================================================
 
 
-class FileSystemException(KnowhereException):
+class FileSystemException(ZiruException):
     """
     File system operation failed (read, write, create directory). HTTP 500.
 
@@ -491,7 +491,7 @@ class FileSystemException(KnowhereException):
         )
 
 
-class PDFParsingException(KnowhereException):
+class PDFParsingException(ZiruException):
     """
     PDF parsing failed (encrypted, corrupted, layout issues).
 
@@ -518,7 +518,7 @@ class PDFParsingException(KnowhereException):
         )
 
 
-class DocxParsingException(KnowhereException):
+class DocxParsingException(ZiruException):
     """
     DOCX parsing failed (structure issues).
 
@@ -545,7 +545,7 @@ class DocxParsingException(KnowhereException):
         )
 
 
-class TableParsingException(KnowhereException):
+class TableParsingException(ZiruException):
     """
     Table extraction failed.
 
@@ -572,7 +572,7 @@ class TableParsingException(KnowhereException):
         )
 
 
-class ImageParsingException(KnowhereException):
+class ImageParsingException(ZiruException):
     """
     Image processing/OCR failed.
 
@@ -599,7 +599,7 @@ class ImageParsingException(KnowhereException):
         )
 
 
-class TextParsingException(KnowhereException):
+class TextParsingException(ZiruException):
     """
     Text decoding or format failed.
 
@@ -626,7 +626,7 @@ class TextParsingException(KnowhereException):
         )
 
 
-class LLMServiceException(KnowhereException):
+class LLMServiceException(ZiruException):
     """
     LLM service call failed.
 
@@ -656,7 +656,7 @@ class LLMServiceException(KnowhereException):
         )
 
 
-class StorageServiceException(KnowhereException):
+class StorageServiceException(ZiruException):
     """
     Storage service (S3/MinIO) failed.
 
@@ -682,7 +682,7 @@ class StorageServiceException(KnowhereException):
         )
 
 
-class LibreOfficeServiceException(KnowhereException):
+class LibreOfficeServiceException(ZiruException):
     """
     LibreOffice document conversion failed.
 
@@ -715,7 +715,7 @@ class LibreOfficeServiceException(KnowhereException):
         )
 
 
-class RedisServiceException(KnowhereException):
+class RedisServiceException(ZiruException):
     """
     Redis/Cache service failed.
 
@@ -741,7 +741,7 @@ class RedisServiceException(KnowhereException):
         )
 
 
-class MinerUServiceException(KnowhereException):
+class MinerUServiceException(ZiruException):
     """
     Third-party PDF extraction service failed.
 
@@ -772,7 +772,7 @@ class MinerUServiceException(KnowhereException):
         )
 
 
-class WorkerHandlingException(KnowhereException):
+class WorkerHandlingException(ZiruException):
     """
     Worker handling failed (internal logic error).
 
@@ -796,7 +796,7 @@ class WorkerHandlingException(KnowhereException):
         )
 
 
-class SystemSettingMissingException(KnowhereException):
+class SystemSettingMissingException(ZiruException):
     """
     Required system setting is missing.
 
@@ -820,7 +820,7 @@ class SystemSettingMissingException(KnowhereException):
         )
 
 
-class SystemSettingInvalidException(KnowhereException):
+class SystemSettingInvalidException(ZiruException):
     """
     System setting has an invalid value.
 
@@ -844,7 +844,7 @@ class SystemSettingInvalidException(KnowhereException):
         )
 
 
-class DependencyMissingException(KnowhereException):
+class DependencyMissingException(ZiruException):
     """
     Required Python dependency is not installed.
 
@@ -868,7 +868,7 @@ class DependencyMissingException(KnowhereException):
         )
 
 
-class StripeServiceException(KnowhereException):
+class StripeServiceException(ZiruException):
     """
     Stripe payment service operations failed.
 
@@ -890,7 +890,7 @@ class StripeServiceException(KnowhereException):
         )
 
 
-class ConcurrencyControlException(KnowhereException):
+class ConcurrencyControlException(ZiruException):
     """
     Concurrency control (locks, state machine) operations failed.
 
@@ -912,7 +912,7 @@ class ConcurrencyControlException(KnowhereException):
         )
 
 
-class APIKeyOperationException(KnowhereException):
+class APIKeyOperationException(ZiruException):
     """
     API Key management operations failed.
 
@@ -934,7 +934,7 @@ class APIKeyOperationException(KnowhereException):
         )
 
 
-class JobOperationException(KnowhereException):
+class JobOperationException(ZiruException):
     """
     Job management operations failed.
 
@@ -956,7 +956,7 @@ class JobOperationException(KnowhereException):
         )
 
 
-class EmailServiceException(KnowhereException):
+class EmailServiceException(ZiruException):
     """
     Email service operations failed.
 
@@ -978,7 +978,7 @@ class EmailServiceException(KnowhereException):
         )
 
 
-class WebhookServiceException(KnowhereException):
+class WebhookServiceException(ZiruException):
     """
     Webhook service operations failed.
 
@@ -1000,7 +1000,7 @@ class WebhookServiceException(KnowhereException):
         )
 
 
-class QStashServiceException(KnowhereException):
+class QStashServiceException(ZiruException):
     """
     QStash service operations failed.
 
@@ -1023,7 +1023,7 @@ class QStashServiceException(KnowhereException):
         )
 
 
-class UndefinedSubscriptionPlanException(KnowhereException):
+class UndefinedSubscriptionPlanException(ZiruException):
     """
     Subscription plan is undefined.
 

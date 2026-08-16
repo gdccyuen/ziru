@@ -48,7 +48,7 @@ export const SCROLL_THRESHOLDS = {
 
 // Social links
 export const SOCIAL_LINKS = {
-  github: "https://github.com/Ontos-AI/knowhere",
+  github: "https://github.com/gdccyuen/ziru",
   discord: "#",
   twitter: "#",
   linkedin: "#",
@@ -58,7 +58,7 @@ export const SOCIAL_LINKS = {
 export const NAV_LINKS = [
   { label: "Comparison", href: "#comparison" },
   { label: "Pricing", href: "#pricing" },
-  { label: "Docs", href: "https://docs.knowhereto.ai/" },
+  { label: "Docs", href: "https://docs.ziru.app/" },
 ] as const;
 
 // Trust metrics (to be updated with real data)
@@ -217,7 +217,7 @@ export const CTA_PRIMARY = {
 
 export const CTA_SECONDARY = {
   text: "View Documentation",
-  href: "https://docs.knowhereto.ai/",
+  href: "https://docs.ziru.app/",
 } as const;
 
 export const CTA_DEMO = {
@@ -282,7 +282,7 @@ export const FOOTER_LINKS = {
 
 // Meta information
 export const SITE_META = {
-  title: "Knowhere API - Transform Documents into Structured Data",
+  title: "Ziru API - Transform Documents into Structured Data",
   description:
     "The most accurate document parsing API for AI agents. Extract tables, formulas, and structured data with unmatched precision.",
   keywords: ["document parsing", "OCR", "data extraction", "AI", "API", "RAG", "unstructured data"],

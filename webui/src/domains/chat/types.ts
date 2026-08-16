@@ -19,7 +19,7 @@ export type RetrievalResultView = {
 
 /**
  * Persisted chat citation metadata. This deliberately excludes source chunk
- * text so Notebook never stores upstream chunk content in Postgres.
+ * text so WebUI never stores upstream chunk content in Postgres.
  */
 export type CitationView = Omit<RetrievalResultView, "content"> & {
   readonly description?: string

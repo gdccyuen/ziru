@@ -38,7 +38,7 @@ const C = WorkspaceShell as React.FC<Record<string, unknown>>;
 const shellWorkspaceProps = {
   workspace: { id: "workspace_1", namespace: "adobe" },
   workspaces: [{ id: "workspace_1", namespace: "adobe" }],
-  knowhereKeyLabels: [],
+  ziruKeyLabels: [],
 };
 
 describe("WorkspaceShell", () => {
@@ -617,7 +617,7 @@ describe("WorkspaceShell", () => {
       React.createElement(C, {
         workspace: { id: "workspace_2", namespace: "default" },
         workspaces: [{ id: "workspace_2", namespace: "default" }],
-        knowhereKeyLabels: [],
+        ziruKeyLabels: [],
         sources: [],
         chatThreads: [],
         activeChatThreadId: null,

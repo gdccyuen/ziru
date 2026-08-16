@@ -83,7 +83,7 @@ async def test_should_mark_the_matching_event_delivered_and_persist_a_webhook_lo
                 "body": "accepted",
                 "retried": 1,
                 "sourceMessageId": "qstash-message-success",
-                "sourceHeader": {"X-Knowhere-Event-Id": event_id},
+                "sourceHeader": {"X-Ziru-Event-Id": event_id},
             },
             headers={"upstash-signature": "contract-valid"},
         )
@@ -148,7 +148,7 @@ async def test_should_keep_the_matching_event_delivering_for_retry_callback_with
                 "body": "temporary unavailable",
                 "retried": 2,
                 "sourceMessageId": "qstash-message-retry",
-                "sourceHeader": {"X-Knowhere-Event-Id": event_id},
+                "sourceHeader": {"X-Ziru-Event-Id": event_id},
             },
             headers={"upstash-signature": "contract-valid"},
         )
@@ -214,7 +214,7 @@ async def test_should_not_downgrade_terminal_event_when_retry_callback_arrives_l
                 "body": "late retry callback",
                 "retried": 1,
                 "sourceMessageId": "qstash-message-late-retry",
-                "sourceHeader": {"X-Knowhere-Event-Id": event_id},
+                "sourceHeader": {"X-Ziru-Event-Id": event_id},
             },
             headers={"upstash-signature": "contract-valid"},
         )
@@ -278,7 +278,7 @@ async def test_should_mark_the_matching_event_failed_and_persist_the_error_on_fa
                 "retried": 5,
                 "maxRetries": 5,
                 "sourceMessageId": "qstash-message-failure",
-                "sourceHeader": {"x-knowhere-event-id": event_id},
+                "sourceHeader": {"x-ziru-event-id": event_id},
             },
             headers={"upstash-signature": "contract-valid"},
         )

@@ -300,7 +300,7 @@ def _upload_demo_result_bundle(
     job_id: str,
     source_directory: Path,
 ) -> dict[str, int | str]:
-    with tempfile.TemporaryDirectory(prefix="knowhere-demo-result-") as temp_directory:
+    with tempfile.TemporaryDirectory(prefix="ziru-demo-result-") as temp_directory:
         zip_base_path = Path(temp_directory) / job_id
         zip_file_path = Path(
             shutil.make_archive(

@@ -179,8 +179,8 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       void sendAuthEmail({
         to: user.email,
-        subject: "Reset your Knowhere password",
-        title: "Reset your Knowhere password",
+        subject: "Reset your Ziru password",
+        title: "Reset your Ziru password",
         intro: "You requested a password reset. Click the button below to set a new password:",
         buttonText: "Reset Password",
         url,
@@ -226,8 +226,8 @@ export const auth = betterAuth({
       sendMagicLink: async ({ email, url }) => {
         await sendAuthEmail({
           to: email,
-          subject: "Knowhere Account Login Link",
-          title: "Log in to Knowhere",
+          subject: "Ziru Account Login Link",
+          title: "Log in to Ziru",
           intro: "You requested a login link. Click the button below to sign in:",
           buttonText: "Sign In",
           url,

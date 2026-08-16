@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 
-SUPPORT_EMAIL = "team@knowhereto.ai"
-ISSUES_URL = "https://github.com/Ontos-AI/knowhere/issues"
+SUPPORT_EMAIL = "team@ziruto.ai"
+ISSUES_URL = "https://github.com/gdccyuen/ziru/issues"
 
 
 def build_file_size_limit_message(*, limit_mb: int, file_extension: str) -> str:

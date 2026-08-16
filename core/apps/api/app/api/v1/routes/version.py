@@ -35,7 +35,7 @@ async def get_version():
         "commit": commit,
         "build_time": build_time,
         "environment": environment,
-        "service": "knowhere-api",
+        "service": "ziru-api",
     }
 
 

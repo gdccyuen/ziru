@@ -141,7 +141,7 @@ def _create_alembic_engine(
 ) -> Iterator[Engine]:
     configure_contract_environment(monkeypatch, postgresql_proc)
 
-    database_name = f"knowhere_migration_{uuid4().hex[:12]}"
+    database_name = f"ziru_migration_{uuid4().hex[:12]}"
     async_database_url, sync_database_url = _build_database_urls(database_name)
     admin_database_url = _build_admin_database_url(sync_database_url)
 

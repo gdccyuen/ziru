@@ -1,5 +1,5 @@
 import { Effect } from "effect"
-import type { DocumentChunk } from "@ontos-ai/knowhere-sdk"
+import type { DocumentChunk } from "@/integrations/ziru-sdk-types"
 
 import { parsedChunkNormalization } from "./normalization"
 import type { Source } from "@/infrastructure/db/schema"
@@ -10,7 +10,7 @@ const documentChunkPageSize = 200
 const defaultChunkPageSize = 50
 const maximumChunkPageSize = 200
 
-export type ChunkKnowhereClient = {
+export type ChunkZiruClient = {
   documents: {
     listChunks(
       documentId: string,
@@ -79,11 +79,11 @@ export function getChunkPageParams(
 
 export const loadChunksForSource = (
   source: Source,
-  client: ChunkKnowhereClient,
+  client: ChunkZiruClient,
   options: LoadChunksOptions = {},
 ) =>
   Effect.gen(function* () {
-    if (source.status !== "ready" || !source.knowhereDocumentId) return []
+    if (source.status !== "ready" || !source.ziruDocumentId) return []
 
     const chunks: DocumentChunk[] = []
     let page = 1
@@ -91,7 +91,7 @@ export const loadChunksForSource = (
 
     do {
       const response = yield* Effect.promise(() =>
-        client.documents.listChunks(source.knowhereDocumentId!, {
+        client.documents.listChunks(source.ziruDocumentId!, {
           page,
           pageSize: documentChunkPageSize,
           includeAssetUrls: true,
@@ -107,7 +107,7 @@ export const loadChunksForSource = (
       toParsedChunkView(
         chunk,
         source.title,
-        source.knowhereDocumentId ?? undefined,
+        source.ziruDocumentId ?? undefined,
         options,
       ),
     ))
@@ -115,12 +115,12 @@ export const loadChunksForSource = (
 
 export const loadChunkPageForSource = (
   source: Source,
-  client: ChunkKnowhereClient,
+  client: ChunkZiruClient,
   params: ChunkPageParams,
   options: LoadChunksOptions = {},
 ) =>
   Effect.gen(function* () {
-    if (source.status !== "ready" || !source.knowhereDocumentId) {
+    if (source.status !== "ready" || !source.ziruDocumentId) {
       return {
         chunks: [],
         pagination: {
@@ -133,7 +133,7 @@ export const loadChunkPageForSource = (
     }
 
     const response = yield* Effect.promise(() =>
-      client.documents.listChunks(source.knowhereDocumentId!, {
+      client.documents.listChunks(source.ziruDocumentId!, {
         page: params.page,
         pageSize: params.pageSize,
         includeAssetUrls: true,
@@ -143,7 +143,7 @@ export const loadChunkPageForSource = (
       toParsedChunkView(
         chunk,
         source.title,
-        source.knowhereDocumentId ?? undefined,
+        source.ziruDocumentId ?? undefined,
         options,
       ),
     )

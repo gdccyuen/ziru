@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { appMetadata } from "./app-metadata";
 
-const notebookIconPath = "/images/knowhere/logo-icon.png" as const;
+const webuiIconPath = "/images/ziru/logo-icon.png" as const;
 const rootDirectory: string = process.cwd();
 
 async function hasFile(filePath: string): Promise<boolean> {
@@ -17,11 +17,11 @@ async function hasFile(filePath: string): Promise<boolean> {
   }
 }
 
-describe("notebook page icon", () => {
-  it("configures the Knowhere mark as an HTML icon", () => {
+describe("webui page icon", () => {
+  it("configures the Ziru mark as an HTML icon", () => {
     const serializedIcons: string = JSON.stringify(appMetadata.icons);
 
-    expect(serializedIcons).toContain(notebookIconPath);
+    expect(serializedIcons).toContain(webuiIconPath);
     expect(serializedIcons).toContain("image/png");
   });
 
@@ -30,7 +30,7 @@ describe("notebook page icon", () => {
       rootDirectory,
       "public",
       "images",
-      "knowhere",
+      "ziru",
       "logo-icon.png",
     );
 

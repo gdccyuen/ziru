@@ -75,16 +75,16 @@ function UseCaseCard({ useCase, competitorName }: UseCaseCardProps) {
           <p className="text-sm font-sans text-[var(--pixel-text-muted)]">{useCase.scenario}</p>
         </div>
 
-        {/* Knowhere advantage */}
+        {/* Ziru advantage */}
         <div
           className="border-2 border-pixel-green bg-pixel-bg p-3"
           style={{ boxShadow: "2px 2px 0 var(--pixel-shadow)" }}
         >
           <h4 className="text-xs font-pixel text-pixel-xs text-pixel-green mb-1">
-            KNOWHERE ADVANTAGE
+            ZIRU ADVANTAGE
           </h4>
           <p className="text-sm font-sans text-[var(--pixel-text-muted)]">
-            {useCase.knowhereAdvantage}
+            {useCase.ziruAdvantage}
           </p>
         </div>
 

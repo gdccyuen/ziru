@@ -59,9 +59,9 @@ function createNewsletterEmailHtml(confirmationUrl: string): string {
     </head>
     <body class="body-bg" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #ffffff;">
       <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-        <h2 class="content-text" style="color: #09090b; margin-bottom: 24px; font-size: 24px; font-weight: 600;">Confirm your Knowhere newsletter subscription</h2>
+        <h2 class="content-text" style="color: #09090b; margin-bottom: 24px; font-size: 24px; font-weight: 600;">Confirm your Ziru newsletter subscription</h2>
         <p class="content-text" style="color: #09090b; margin-bottom: 24px; line-height: 1.6; font-size: 16px;">
-          Click the button below to confirm this email address and finish subscribing to product updates from Knowhere.
+          Click the button below to confirm this email address and finish subscribing to product updates from Ziru.
         </p>
 
         <a href="${confirmationUrl}" class="button-primary" style="display: inline-block; padding: 12px 24px; background-color: #09090b; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 16px;">
@@ -105,7 +105,7 @@ async function sendNewsletterConfirmationEmail(
   const { error } = await resend.emails.send({
     from: env.RESEND_FROM,
     to: email,
-    subject: "Confirm your Knowhere newsletter subscription",
+    subject: "Confirm your Ziru newsletter subscription",
     html: createNewsletterEmailHtml(confirmationUrl),
   });
 

@@ -15,7 +15,7 @@ from gevent.lock import Semaphore
 from loguru import logger
 
 HEARTBEAT_PATH = Path(
-    os.getenv("WORKER_HEARTBEAT_FILE", "/tmp/knowhere-worker-heartbeat.json")
+    os.getenv("WORKER_HEARTBEAT_FILE", "/tmp/ziru-worker-heartbeat.json")
 )
 HEARTBEAT_INTERVAL_SECONDS = float(os.getenv("WORKER_HEARTBEAT_INTERVAL_SECONDS", "5"))
 HEARTBEAT_STALE_AFTER_SECONDS = float(

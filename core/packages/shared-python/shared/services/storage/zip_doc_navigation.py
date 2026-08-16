@@ -1,4 +1,4 @@
-"""Document navigation projection for Knowhere ZIP result packages."""
+"""Document navigation projection for Ziru ZIP result packages."""
 
 from __future__ import annotations
 

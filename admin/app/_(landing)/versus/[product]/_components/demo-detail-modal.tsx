@@ -10,7 +10,7 @@ export type DemoContent = {
   title: string;
   htmlUrl: string;
   highlights: string[];
-  isKnowhere?: boolean;
+  isZiru?: boolean;
 };
 
 type DemoDetailModalProps = {
@@ -69,7 +69,7 @@ export function DemoDetailModal({ isOpen, onClose, content }: DemoDetailModalPro
         <DialogHeader className="px-6 pt-6 pb-4 border-b-2 border-pixel-border shrink-0">
           <DialogTitle
             className={
-              content.isKnowhere
+              content.isZiru
                 ? "text-xl font-pixel text-pixel-green"
                 : "text-xl font-pixel text-pixel-fg"
             }

@@ -7,7 +7,7 @@ import {
 } from "@app/(landing)/_components/landing-home-data";
 import { LandingUnstructuredBrand } from "@app/(landing)/_components/landing-unstructured-brand";
 import { StatefulTab } from "@app/(landing)/_components/stateful-tab";
-import { KnowhereIcon } from "@components/ui/knowhere-icon";
+import { ZiruIcon } from "@components/ui/ziru-icon";
 import { cn } from "@lib/utils";
 import { useState } from "react";
 
@@ -69,7 +69,7 @@ export const WhyChooseShowcase = () => {
             {activeProduct.advantages.map((advantage) => (
               <div key={advantage} className="flex items-center gap-4 py-2.5">
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#009966] border-r-4 bg-[#00bc7d] text-white">
-                  <KnowhereIcon className="size-5 shrink-0 text-current" name="check-pix" />
+                  <ZiruIcon className="size-5 shrink-0 text-current" name="check-pix" />
                 </div>
                 <span className="text-base font-bold leading-6 text-zinc-950">{advantage}</span>
               </div>

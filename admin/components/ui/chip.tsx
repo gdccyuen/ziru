@@ -1,9 +1,9 @@
-import { KnowhereIcon, type KnowhereIconName } from "@components/ui/knowhere-icon";
+import { ZiruIcon, type ZiruIconName } from "@components/ui/ziru-icon";
 import { cn } from "@lib/utils";
 import type { ComponentProps, ReactNode } from "react";
 
 export type ChipProps = ComponentProps<"div"> & {
-  icon?: KnowhereIconName;
+  icon?: ZiruIconName;
   size?: "compact" | "default";
   value?: ReactNode;
   variant?: "message" | "pop";
@@ -34,7 +34,7 @@ export const Chip = ({
       )}
       {...props}
     >
-      <KnowhereIcon
+      <ZiruIcon
         className={cn(variant === "message" ? "size-6 text-zinc-50" : "size-5 text-zinc-400")}
         name={resolvedIcon}
       />

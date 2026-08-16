@@ -68,7 +68,7 @@ export type WorkspaceShellLayoutProps = {
   readonly citationListViewRequestId: number
   readonly activeWorkspace?: WorkspaceSwitcherWorkspace
   readonly workspaces?: readonly WorkspaceSwitcherWorkspace[]
-  readonly knowhereKeyLabels?: readonly {
+  readonly ziruKeyLabels?: readonly {
     readonly id: string
     readonly label: string
     readonly mask: string
@@ -205,7 +205,7 @@ export function WorkspaceShellLayout(
                 activeWorkspace={props.activeWorkspace}
                 userName={props.user ? (props.user.name ?? props.user.email ?? undefined) : undefined}
                 workspaces={props.workspaces ?? []}
-                knowhereKeyLabels={props.knowhereKeyLabels ?? []}
+                ziruKeyLabels={props.ziruKeyLabels ?? []}
                 isBlobConfigured={props.isBlobConfigured ?? false}
                 analyticsContext={props.analyticsContext}
                 sourceCountSnapshot={props.sources.length}
@@ -293,7 +293,7 @@ export function WorkspaceShellLayout(
           activeWorkspace={props.activeWorkspace}
           userName={props.user ? (props.user.name ?? props.user.email ?? undefined) : undefined}
           workspaces={props.workspaces ?? []}
-          knowhereKeyLabels={props.knowhereKeyLabels ?? []}
+          ziruKeyLabels={props.ziruKeyLabels ?? []}
           analyticsContext={props.analyticsContext}
           sourceCountSnapshot={props.sources.length}
           onSourceUploaded={props.onSourceUploaded}

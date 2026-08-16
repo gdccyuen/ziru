@@ -2,8 +2,8 @@ import { type ConsentSurface, handleConsentGet, handleConsentPost } from "@serve
 
 const CLI_CONSENT_SURFACE: ConsentSurface = {
   loginPath: "/cli/login",
-  title: "Authorize Knowhere CLI",
-  summary: "is requesting access to your Knowhere account from the command line.",
+  title: "Authorize Ziru CLI",
+  summary: "is requesting access to your Ziru account from the command line.",
 };
 
 export async function GET(request: Request): Promise<Response> {

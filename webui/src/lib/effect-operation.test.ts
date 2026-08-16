@@ -27,7 +27,7 @@ describe("effectOperation", () => {
       await Effect.runPromise(
         effectOperation.addContext(
           "source.count",
-          Effect.die(new Error("Knowhere document list timed out")),
+          Effect.die(new Error("Ziru document list timed out")),
         ),
       )
       throw new Error("Expected operation to fail.")
@@ -35,7 +35,7 @@ describe("effectOperation", () => {
       const formatted = formatUnknownForLog(error)
 
       expect(formatted).toContain("source.count")
-      expect(formatted).toContain("Knowhere document list timed out")
+      expect(formatted).toContain("Ziru document list timed out")
     }
   })
 

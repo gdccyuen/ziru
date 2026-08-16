@@ -3,7 +3,7 @@ import type { NextRequest, NextResponse } from "next/server"
 import { withApiErrorResponse } from "@/lib/api-error-response"
 import { getCurrentUser } from "@/infrastructure/auth"
 import { databaseRuntime } from "@/domains/workspace/database-runtime"
-import { knowhereApiKeysRepository } from "@/infrastructure/auth/knowhere-api-keys-repository"
+import { ziruApiKeysRepository } from "@/infrastructure/auth/ziru-api-keys-repository"
 import { nextRouteResponse } from "@/lib/next-route-response"
 import { routeResult } from "@/lib/route-result"
 
@@ -33,7 +33,7 @@ export async function PATCH(
       }
 
       const key = await databaseRuntime.runPromise(
-        knowhereApiKeysRepository.findByIdAndUserEffect(apiKeyId, user.id),
+        ziruApiKeysRepository.findByIdAndUserEffect(apiKeyId, user.id),
       )
       if (!key) {
         return nextRouteResponse.toNextResponse(
@@ -42,7 +42,7 @@ export async function PATCH(
       }
 
       await databaseRuntime.runPromise(
-        knowhereApiKeysRepository.setActiveEffect(workspaceId, key.id),
+        ziruApiKeysRepository.setActiveEffect(workspaceId, key.id),
       )
       return nextRouteResponse.toNextResponse(routeResult.ok({}))
     },
@@ -66,7 +66,7 @@ export async function DELETE(
       }
 
       const key = await databaseRuntime.runPromise(
-        knowhereApiKeysRepository.findByIdAndUserEffect(apiKeyId, user.id),
+        ziruApiKeysRepository.findByIdAndUserEffect(apiKeyId, user.id),
       )
       if (!key) {
         return nextRouteResponse.toNextResponse(
@@ -75,11 +75,11 @@ export async function DELETE(
       }
 
       await databaseRuntime.runPromise(
-        knowhereApiKeysRepository.softDeleteEffect(apiKeyId, user.id),
+        ziruApiKeysRepository.softDeleteEffect(apiKeyId, user.id),
       )
       // Sweep: any workspace pointing at this key loses its active credential.
       await databaseRuntime.runPromise(
-        knowhereApiKeysRepository.clearActiveForKeyEffect(apiKeyId, user.id),
+        ziruApiKeysRepository.clearActiveForKeyEffect(apiKeyId, user.id),
       )
 
       return nextRouteResponse.toNextResponse(routeResult.ok({}))

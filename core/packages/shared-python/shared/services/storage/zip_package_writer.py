@@ -1,4 +1,4 @@
-"""Physical ZIP writing for Knowhere result packages."""
+"""Physical ZIP writing for Ziru result packages."""
 
 from __future__ import annotations
 

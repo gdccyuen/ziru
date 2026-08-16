@@ -30,7 +30,7 @@ engine_options: dict[str, Any] = {
     "pool_reset_on_return": ProcessingConstants.DB_POOL_RESET_ON_RETURN,
     "connect_args": {
         "server_settings": {
-            "application_name": "knowhere_api",
+            "application_name": "ziru_api",
             "timezone": "UTC",
             "statement_timeout": "30000",
             "idle_in_transaction_session_timeout": "60000",

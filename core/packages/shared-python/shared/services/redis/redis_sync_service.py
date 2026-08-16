@@ -18,7 +18,7 @@ from shared.services.redis.key_builder import RedisKeyType, redis_key_builder
 class SyncRedisService:
     """Sync Redis service for gevent worker."""
 
-    _KEY_PREFIX: str = "knowhere-api"
+    _KEY_PREFIX: str = "ziru-api"
 
     def __init__(self, config_manager: Optional[RedisConfigManager] = None):
         if config_manager is None:

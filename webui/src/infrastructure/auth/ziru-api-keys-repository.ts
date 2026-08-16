@@ -5,14 +5,14 @@ import { Effect } from "effect"
 
 import { DbClient } from "@/infrastructure/db"
 import {
-  knowhereApiKeys,
+  ziruApiKeys,
   workspaces,
-  type KnowhereApiKey,
+  type ZiruApiKey,
 } from "@/infrastructure/db/schema"
 import { decryptSecret, encryptSecret } from "@/lib/secret-crypto"
-import { maskApiKey } from "@/integrations/knowhere-keys"
+import { maskApiKey } from "@/integrations/ziru-keys"
 
-export type StoredKnowhereApiKey = {
+export type StoredZiruApiKey = {
   readonly id: string
   readonly userId: string
   readonly label: string
@@ -20,29 +20,29 @@ export type StoredKnowhereApiKey = {
   readonly createdAt: Date
 }
 
-type KnowhereApiKeysRepository = {
+type ZiruApiKeysRepository = {
   readonly createForUserEffect: (input: {
     readonly userId: string
     readonly label: string
     readonly apiKey: string
-  }) => Effect.Effect<KnowhereApiKey, never, DbClient>
+  }) => Effect.Effect<ZiruApiKey, never, DbClient>
   readonly listByUserEffect: (
     userId: string,
-  ) => Effect.Effect<StoredKnowhereApiKey[], never, DbClient>
+  ) => Effect.Effect<StoredZiruApiKey[], never, DbClient>
   readonly findByIdAndUserEffect: (
     id: string,
     userId: string,
-  ) => Effect.Effect<StoredKnowhereApiKey | null, never, DbClient>
+  ) => Effect.Effect<StoredZiruApiKey | null, never, DbClient>
   readonly softDeleteEffect: (
     id: string,
     userId: string,
   ) => Effect.Effect<void, never, DbClient>
   readonly getActiveForWorkspaceEffect: (
     workspaceId: string,
-  ) => Effect.Effect<StoredKnowhereApiKey | null, never, DbClient>
+  ) => Effect.Effect<StoredZiruApiKey | null, never, DbClient>
   readonly firstForUserEffect: (
     userId: string,
-  ) => Effect.Effect<StoredKnowhereApiKey | null, never, DbClient>
+  ) => Effect.Effect<StoredZiruApiKey | null, never, DbClient>
   readonly setActiveEffect: (
     workspaceId: string,
     apiKeyId: string | null,
@@ -52,11 +52,11 @@ type KnowhereApiKeysRepository = {
     userId: string,
   ) => Effect.Effect<void, never, DbClient>
   readonly decryptStoredEffect: (
-    stored: StoredKnowhereApiKey,
+    stored: StoredZiruApiKey,
   ) => Effect.Effect<string, never, DbClient>
 }
 
-const toStored = (row: KnowhereApiKey): StoredKnowhereApiKey => ({
+const toStored = (row: ZiruApiKey): StoredZiruApiKey => ({
   id: row.id,
   userId: row.userId,
   label: row.label,
@@ -64,7 +64,7 @@ const toStored = (row: KnowhereApiKey): StoredKnowhereApiKey => ({
   createdAt: row.createdAt,
 })
 
-const createForUserEffect: KnowhereApiKeysRepository["createForUserEffect"] = (
+const createForUserEffect: ZiruApiKeysRepository["createForUserEffect"] = (
   input,
 ) =>
   Effect.gen(function* () {
@@ -72,7 +72,7 @@ const createForUserEffect: KnowhereApiKeysRepository["createForUserEffect"] = (
     const encrypted = encryptSecret(input.apiKey)
     const rows = yield* Effect.promise(() =>
       db
-        .insert(knowhereApiKeys)
+        .insert(ziruApiKeys)
         .values({
           userId: input.userId,
           label: input.label,
@@ -85,13 +85,13 @@ const createForUserEffect: KnowhereApiKeysRepository["createForUserEffect"] = (
     const row = rows[0]
     if (!row) {
       return yield* Effect.die(
-        new Error("knowhere_api_keys: insert returned no row."),
+        new Error("ziru_api_keys: insert returned no row."),
       )
     }
     return row
   })
 
-const listByUserEffect: KnowhereApiKeysRepository["listByUserEffect"] = (
+const listByUserEffect: ZiruApiKeysRepository["listByUserEffect"] = (
   userId: string,
 ) =>
   Effect.gen(function* () {
@@ -99,31 +99,31 @@ const listByUserEffect: KnowhereApiKeysRepository["listByUserEffect"] = (
     const rows = yield* Effect.promise(() =>
       db
         .select()
-        .from(knowhereApiKeys)
+        .from(ziruApiKeys)
         .where(
           and(
-            eq(knowhereApiKeys.userId, userId),
-            isNull(knowhereApiKeys.deletedAt),
+            eq(ziruApiKeys.userId, userId),
+            isNull(ziruApiKeys.deletedAt),
           ),
         )
-        .orderBy(knowhereApiKeys.createdAt),
+        .orderBy(ziruApiKeys.createdAt),
     )
     return rows.map(toStored)
   })
 
-const findByIdAndUserEffect: KnowhereApiKeysRepository["findByIdAndUserEffect"] =
+const findByIdAndUserEffect: ZiruApiKeysRepository["findByIdAndUserEffect"] =
   (id: string, userId: string) =>
     Effect.gen(function* () {
       const db = yield* DbClient
       const rows = yield* Effect.promise(() =>
         db
           .select()
-          .from(knowhereApiKeys)
+          .from(ziruApiKeys)
           .where(
             and(
-              eq(knowhereApiKeys.id, id),
-              eq(knowhereApiKeys.userId, userId),
-              isNull(knowhereApiKeys.deletedAt),
+              eq(ziruApiKeys.id, id),
+              eq(ziruApiKeys.userId, userId),
+              isNull(ziruApiKeys.deletedAt),
             ),
           )
           .limit(1),
@@ -131,7 +131,7 @@ const findByIdAndUserEffect: KnowhereApiKeysRepository["findByIdAndUserEffect"] 
       return rows[0] ? toStored(rows[0]) : null
     })
 
-const softDeleteEffect: KnowhereApiKeysRepository["softDeleteEffect"] = (
+const softDeleteEffect: ZiruApiKeysRepository["softDeleteEffect"] = (
   id: string,
   userId: string,
 ) =>
@@ -139,39 +139,39 @@ const softDeleteEffect: KnowhereApiKeysRepository["softDeleteEffect"] = (
     const db = yield* DbClient
     yield* Effect.promise(() =>
       db
-        .update(knowhereApiKeys)
+        .update(ziruApiKeys)
         .set({ deletedAt: new Date() })
         .where(
           and(
-            eq(knowhereApiKeys.id, id),
-            eq(knowhereApiKeys.userId, userId),
+            eq(ziruApiKeys.id, id),
+            eq(ziruApiKeys.userId, userId),
           ),
         ),
     )
   })
 
-const getActiveForWorkspaceEffect: KnowhereApiKeysRepository["getActiveForWorkspaceEffect"] =
+const getActiveForWorkspaceEffect: ZiruApiKeysRepository["getActiveForWorkspaceEffect"] =
   (workspaceId: string) =>
     Effect.gen(function* () {
       const db = yield* DbClient
       const workspaceRows = yield* Effect.promise(() =>
         db
-          .select({ activeKnowhereApiKeyId: workspaces.activeKnowhereApiKeyId })
+          .select({ activeZiruApiKeyId: workspaces.activeZiruApiKeyId })
           .from(workspaces)
           .where(eq(workspaces.id, workspaceId))
           .limit(1),
       )
-      const activeId = workspaceRows[0]?.activeKnowhereApiKeyId
+      const activeId = workspaceRows[0]?.activeZiruApiKeyId
       if (!activeId) return null
 
       const rows = yield* Effect.promise(() =>
         db
           .select()
-          .from(knowhereApiKeys)
+          .from(ziruApiKeys)
           .where(
             and(
-              eq(knowhereApiKeys.id, activeId),
-              isNull(knowhereApiKeys.deletedAt),
+              eq(ziruApiKeys.id, activeId),
+              isNull(ziruApiKeys.deletedAt),
             ),
           )
           .limit(1),
@@ -179,7 +179,7 @@ const getActiveForWorkspaceEffect: KnowhereApiKeysRepository["getActiveForWorksp
       return rows[0] ? toStored(rows[0]) : null
     })
 
-const firstForUserEffect: KnowhereApiKeysRepository["firstForUserEffect"] = (
+const firstForUserEffect: ZiruApiKeysRepository["firstForUserEffect"] = (
   userId: string,
 ) =>
   Effect.gen(function* () {
@@ -187,20 +187,20 @@ const firstForUserEffect: KnowhereApiKeysRepository["firstForUserEffect"] = (
     const rows = yield* Effect.promise(() =>
       db
         .select()
-        .from(knowhereApiKeys)
+        .from(ziruApiKeys)
         .where(
           and(
-            eq(knowhereApiKeys.userId, userId),
-            isNull(knowhereApiKeys.deletedAt),
+            eq(ziruApiKeys.userId, userId),
+            isNull(ziruApiKeys.deletedAt),
           ),
         )
-        .orderBy(knowhereApiKeys.createdAt)
+        .orderBy(ziruApiKeys.createdAt)
         .limit(1),
     )
     return rows[0] ? toStored(rows[0]) : null
   })
 
-const setActiveEffect: KnowhereApiKeysRepository["setActiveEffect"] = (
+const setActiveEffect: ZiruApiKeysRepository["setActiveEffect"] = (
   workspaceId: string,
   apiKeyId: string | null,
 ) =>
@@ -209,44 +209,44 @@ const setActiveEffect: KnowhereApiKeysRepository["setActiveEffect"] = (
     yield* Effect.promise(() =>
       db
         .update(workspaces)
-        .set({ activeKnowhereApiKeyId: apiKeyId })
+        .set({ activeZiruApiKeyId: apiKeyId })
         .where(eq(workspaces.id, workspaceId)),
     )
   })
 
-const clearActiveForKeyEffect: KnowhereApiKeysRepository["clearActiveForKeyEffect"] =
+const clearActiveForKeyEffect: ZiruApiKeysRepository["clearActiveForKeyEffect"] =
   (apiKeyId: string, userId: string) =>
     Effect.gen(function* () {
       const db = yield* DbClient
       yield* Effect.promise(() =>
         db
           .update(workspaces)
-          .set({ activeKnowhereApiKeyId: null })
+          .set({ activeZiruApiKeyId: null })
           .where(
             and(
               eq(workspaces.userId, userId),
-              eq(workspaces.activeKnowhereApiKeyId, apiKeyId),
+              eq(workspaces.activeZiruApiKeyId, apiKeyId),
             ),
           ),
       )
     })
 
-const decryptStoredEffect: KnowhereApiKeysRepository["decryptStoredEffect"] = (
-  stored: StoredKnowhereApiKey,
+const decryptStoredEffect: ZiruApiKeysRepository["decryptStoredEffect"] = (
+  stored: StoredZiruApiKey,
 ) =>
   Effect.gen(function* () {
     const db = yield* DbClient
     const rows = yield* Effect.promise(() =>
       db
         .select()
-        .from(knowhereApiKeys)
-        .where(eq(knowhereApiKeys.id, stored.id))
+        .from(ziruApiKeys)
+        .where(eq(ziruApiKeys.id, stored.id))
         .limit(1),
     )
     const row = rows[0]
     if (!row) {
       return yield* Effect.die(
-        new Error("knowhere_api_keys: row not found for decrypt."),
+        new Error("ziru_api_keys: row not found for decrypt."),
       )
     }
     return decryptSecret({
@@ -255,7 +255,7 @@ const decryptStoredEffect: KnowhereApiKeysRepository["decryptStoredEffect"] = (
     })
   })
 
-export const knowhereApiKeysRepository: KnowhereApiKeysRepository = {
+export const ziruApiKeysRepository: ZiruApiKeysRepository = {
   createForUserEffect,
   listByUserEffect,
   findByIdAndUserEffect,

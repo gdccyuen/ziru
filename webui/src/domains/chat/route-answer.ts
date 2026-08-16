@@ -15,9 +15,9 @@ import { chatTurnPersistence } from "@/domains/chat/chat-turn-persistence"
 import { startBackgroundReconciliation } from "@/domains/sources/background-reconcile"
 import { sourceService } from "@/domains/sources/service"
 import { sourceWorkflowRuntime } from "@/domains/sources/workflow-runtime"
-import { notebookRequestContext } from "@/domains/workspace/request-context"
+import { webuiRequestContext } from "@/domains/workspace/request-context"
 import type { Source } from "@/infrastructure/db/schema"
-import { isAuthError } from "@/integrations/knowhere-credentials"
+import { isAuthError } from "@/integrations/ziru-credentials"
 import { summarizeUnknownError } from "@/lib/format-log-value"
 import { logger } from "@/lib/logger"
 import { routeResult, type RouteResult } from "@/lib/route-result"
@@ -58,7 +58,7 @@ const answerChatEffect = (input: AnswerChatInput) =>
     }
 
     const { workspace, client, apiKey } = yield* Effect.tryPromise(() =>
-      notebookRequestContext.getAuthenticatedWithClient(),
+      webuiRequestContext.getAuthenticatedWithClient(),
     )
     const sources = yield* Effect.tryPromise(() =>
       sourceWorkflowRuntime.listForWorkspace(workspace.id),
@@ -152,7 +152,7 @@ function triggerBackgroundReconciliationForParsingSources(input: {
   readonly apiKey: string
 }): void {
   const parsingSources = input.sources.filter(
-    (source) => source.status === "parsing" && source.knowhereJobId,
+    (source) => source.status === "parsing" && source.ziruJobId,
   )
   if (parsingSources.length === 0) return
 

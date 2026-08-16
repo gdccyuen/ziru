@@ -14,7 +14,7 @@ from app.services.document_agent.manifest import PageAnatomyMap, ToolContext, To
 def _artifact_dir(ctx: ToolContext) -> Path:
     if ctx.output_dir:
         return Path(ctx.output_dir)
-    base = Path(os.path.expanduser("~/.knowhere/_debug_profile"))
+    base = Path(os.path.expanduser("~/.ziru/_debug_profile"))
     return base / Path(ctx.pdf_path).stem
 
 

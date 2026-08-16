@@ -2,10 +2,10 @@ import Link from "next/link";
 import { OpenClawShellDemo } from "@/app/_(landing)/claw/_components/openclaw-shell-demo";
 import {
   installCards,
-  KNOWHERE_CLAW_PACKAGE_NAME,
-  KNOWHERE_CLAW_PACKAGE_URL,
-  KNOWHERE_CLAWHUB_SKILL_NAME,
-  KNOWHERE_CLAWHUB_SKILL_URL,
+  ZIRU_CLAW_PACKAGE_NAME,
+  ZIRU_CLAW_PACKAGE_URL,
+  ZIRU_CLAWHUB_SKILL_NAME,
+  ZIRU_CLAWHUB_SKILL_URL,
 } from "@/app/_(landing)/claw/_components/plugin-content";
 import { SectionIntro } from "@/app/_(landing)/claw/_components/section-intro";
 
@@ -34,12 +34,12 @@ export function IntegrationSection() {
               </p>
               <p className="mt-3 font-mono text-sm text-pixel-fg sm:text-base">
                 <Link
-                  href={KNOWHERE_CLAW_PACKAGE_URL}
+                  href={ZIRU_CLAW_PACKAGE_URL}
                   target="_blank"
                   rel="noreferrer"
                   className="break-all underline decoration-current underline-offset-4 transition-colors hover:text-pixel-green sm:break-normal"
                 >
-                  {KNOWHERE_CLAW_PACKAGE_NAME}
+                  {ZIRU_CLAW_PACKAGE_NAME}
                 </Link>
               </p>
               <p className="mt-4 font-sans text-sm leading-7 text-pixel-muted sm:text-base sm:leading-8">
@@ -52,16 +52,16 @@ export function IntegrationSection() {
               </p>
               <p className="mt-3 font-mono text-sm text-pixel-fg sm:text-base">
                 <Link
-                  href={KNOWHERE_CLAWHUB_SKILL_URL}
+                  href={ZIRU_CLAWHUB_SKILL_URL}
                   target="_blank"
                   rel="noreferrer"
                   className="underline decoration-current underline-offset-4 transition-colors hover:text-pixel-green"
                 >
-                  {KNOWHERE_CLAWHUB_SKILL_NAME}
+                  {ZIRU_CLAWHUB_SKILL_NAME}
                 </Link>
               </p>
               <p className="mt-2 font-sans text-sm leading-7 text-pixel-muted sm:text-base sm:leading-8">
-                If you install from ClawHub, look for the skill named Knowhere.
+                If you install from ClawHub, look for the skill named Ziru.
               </p>
             </div>
 

@@ -256,7 +256,7 @@ def extract_toc_with_boundaries(
     dpi = int(ctx.settings.get("toc_png_dpi", "144"))
     page_count = ctx.blackboard.page_count
     output_dir = str(
-        Path(ctx.output_dir or os.path.expanduser("~/.knowhere/_debug_profile"))
+        Path(ctx.output_dir or os.path.expanduser("~/.ziru/_debug_profile"))
         / "toc_pages"
     )
     os.makedirs(output_dir, exist_ok=True)

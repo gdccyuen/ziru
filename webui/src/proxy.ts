@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { notebookSessionCookieName } from "@/infrastructure/auth/session-cookie-constants"
+import { ziruSessionCookieName } from "@/infrastructure/auth/session-cookie-constants"
 
 /**
  * Edge-runtime proxy (renamed from middleware.ts in Next.js 16).
@@ -41,7 +41,7 @@ function isPublicPath(req: NextRequest): boolean {
 export function proxy(req: NextRequest): NextResponse {
   if (isPublicPath(req)) return NextResponse.next()
 
-  if (req.cookies.get(notebookSessionCookieName)) return NextResponse.next()
+  if (req.cookies.get(ziruSessionCookieName)) return NextResponse.next()
 
   return NextResponse.redirect(new URL("/login", req.url))
 }

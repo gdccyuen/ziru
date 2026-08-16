@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 import { Effect } from "effect"
 
-import type Knowhere from "@ontos-ai/knowhere-sdk"
+import type { ZiruClient } from "@/integrations/ziru-sdk-types"
 
 import type { Source } from "@/infrastructure/db/schema"
 
@@ -14,8 +14,8 @@ function makeSource(overrides: Partial<Source> = {}): Source {
     sizeBytes: 1,
     status: "ready",
     failureReason: null,
-    knowhereJobId: "job_1",
-    knowhereDocumentId: "doc_1",
+    ziruJobId: "job_1",
+    ziruDocumentId: "doc_1",
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,
@@ -28,22 +28,22 @@ function makeSource(overrides: Partial<Source> = {}): Source {
 }
 
 describe("countChunksBySourceId", () => {
-  it("counts chunks only for ready sources with a Knowhere document id", async () => {
+  it("counts chunks only for ready sources with a Ziru document id", async () => {
     const listChunks = vi.fn().mockResolvedValue({
       pagination: { total: 12 },
     })
     const mockClient = {
       documents: { listChunks },
-    } as unknown as Knowhere
+    } as unknown as ZiruClient
 
     const { countChunksBySourceId } = await import("./counts")
 
     const counts = await Effect.runPromise(
       countChunksBySourceId(
         [
-          makeSource({ id: "ready", knowhereDocumentId: "doc_ready" }),
-          makeSource({ id: "parsing", status: "parsing", knowhereDocumentId: null }),
-          makeSource({ id: "missing-doc", knowhereDocumentId: null }),
+          makeSource({ id: "ready", ziruDocumentId: "doc_ready" }),
+          makeSource({ id: "parsing", status: "parsing", ziruDocumentId: null }),
+          makeSource({ id: "missing-doc", ziruDocumentId: null }),
         ],
         mockClient,
       ),
@@ -57,17 +57,17 @@ describe("countChunksBySourceId", () => {
     expect(counts).toEqual(new Map([["ready", 12]]))
   })
 
-  it("skips a source count when Knowhere chunks lookup fails", async () => {
+  it("skips a source count when Ziru chunks lookup fails", async () => {
     const listChunks = vi.fn().mockRejectedValue(new Error("temporary outage"))
     const mockClient = {
       documents: { listChunks },
-    } as unknown as Knowhere
+    } as unknown as ZiruClient
 
     const { countChunksBySourceId } = await import("./counts")
 
     const counts = await Effect.runPromise(
       countChunksBySourceId(
-        [makeSource({ id: "ready", knowhereDocumentId: "doc_ready" })],
+        [makeSource({ id: "ready", ziruDocumentId: "doc_ready" })],
         mockClient,
       ),
     )

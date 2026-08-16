@@ -60,7 +60,7 @@ describe("GET /api/auth/dashboard/start", () => {
     mocks.loginWithDashboardSession.mockResolvedValue("/")
     mocks.cookieJar.getAll.mockReturnValue([
       { name: "better-auth.session_token", value: "abc" },
-      { name: "notebook-session", value: "xyz" },
+      { name: "ziru-session", value: "xyz" },
     ])
 
     const request = new NextRequest("http://localhost:3001/api/auth/dashboard/start")
@@ -70,7 +70,7 @@ describe("GET /api/auth/dashboard/start", () => {
     expect(response.status).toBe(200)
     expect(body.url).toBe("/")
     expect(mocks.loginWithDashboardSession).toHaveBeenCalledWith(
-      "better-auth.session_token=abc; notebook-session=xyz",
+      "better-auth.session_token=abc; ziru-session=xyz",
       "http://localhost:3000",
     )
   })
@@ -85,7 +85,7 @@ describe("GET /api/auth/dashboard/start", () => {
     mocks.loginWithDashboardSession.mockRejectedValue(
       new mocks.DashboardLoginError(
         "no-dashboard-session",
-        "You are not logged into the Knowhere Dashboard.",
+        "You are not logged into the Ziru Dashboard.",
       ),
     )
 

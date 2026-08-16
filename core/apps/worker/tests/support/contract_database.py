@@ -25,7 +25,7 @@ def insert_contract_user(
         {
             "user_id": user_id,
             "name": name or f"Worker Contract User {user_id}",
-            "email": email or f"{user_id}@worker-contract.knowhere.local",
+            "email": email or f"{user_id}@worker-contract.ziru.local",
         },
     )
 

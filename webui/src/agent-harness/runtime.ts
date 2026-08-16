@@ -269,7 +269,7 @@ export function createHarnessTools(input: {
 
     retrieve: tool({
       description:
-        "Ask KNOWHERE for evidence context. KNOWHERE handles internal navigation; this tool only submits a concise query and records returned evidence.",
+        "Ask ZIRU for evidence context. ZIRU handles internal navigation; this tool only submits a concise query and records returned evidence.",
       inputSchema: z.object({
         query: z.string().min(1),
         modalities: z.array(targetModalitySchema).default(["text"]),
@@ -335,7 +335,7 @@ export function createHarnessTools(input: {
 
     readEvidence: tool({
       description:
-        "Read more text from an evidence chunk already returned by KNOWHERE.",
+        "Read more text from an evidence chunk already returned by ZIRU.",
       inputSchema: z.object({
         ref: z.string().min(1),
         offset: z.number().int().min(0).optional(),
@@ -612,8 +612,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function buildHarnessSystemPrompt(turn: AgentTurnInput): string {
   return [
-    "You are the outer Knowhere Agent Harness.",
-    "KNOWHERE is only an evidence provider. Do not infer or control its internal navigation algorithm.",
+    "You are the outer Ziru Agent Harness.",
+    "ZIRU is only an evidence provider. Do not infer or control its internal navigation algorithm.",
     "Your job is to understand intent, decide context use, optionally retrieve evidence, select evidence/artifacts, create source-backed derived tables when useful, and finalize an output manifest.",
     "",
     "Required workflow:",
@@ -630,11 +630,11 @@ export function buildHarnessSystemPrompt(turn: AgentTurnInput): string {
     "- If the user uses references like this document, that image, or the previous answer, choose referential_only or full_recent and read the prior turn you depend on.",
     "",
     "Retrieval rules:",
-    "- KNOWHERE retrieval is keyword-based (BM25). Use exact terms and distinctive keywords likely to appear in the documents; avoid vague paraphrases.",
+    "- ZIRU retrieval is keyword-based (BM25). Use exact terms and distinctive keywords likely to appear in the documents; avoid vague paraphrases.",
     "- Expand queries with synonyms, acronyms, and domain terms that might appear in the sources (for example brand names, metric names, table headers).",
     "- For multi-part or ambiguous questions, call retrieve more than once with different query phrasings, one per distinct aspect, and combine evidence from all calls.",
     "- Prefer multiple focused queries over one long unfocused query.",
-    "- For directory-style lookups (people, phone numbers, addresses, office locations, contact details), set retrieve modalities to ['page'] so KNOWHERE retrieves whole pages where this information lives.",
+    "- For directory-style lookups (people, phone numbers, addresses, office locations, contact details), set retrieve modalities to ['page'] so ZIRU retrieves whole pages where this information lives.",
     "Output rules:",
     "- Final output is the OutputManifest passed to finalize, not freeform tool JSON or trailing text.",
     "- artifacts with display=true are the exact images/tables shown. Never display every candidate; honor constraints.desiredCount / maxCount.",

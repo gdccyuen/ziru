@@ -1,9 +1,9 @@
-import { KnowhereIcon, type KnowhereIconName } from "@components/ui/knowhere-icon";
+import { ZiruIcon, type ZiruIconName } from "@components/ui/ziru-icon";
 import { cn } from "@lib/utils";
 import * as React from "react";
 
 export type IconButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  icon?: KnowhereIconName;
+  icon?: ZiruIconName;
 };
 
 export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
@@ -17,7 +17,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
       type={type}
       {...props}
     >
-      <KnowhereIcon className="size-6 text-current" name={icon} />
+      <ZiruIcon className="size-6 text-current" name={icon} />
     </button>
   )
 );

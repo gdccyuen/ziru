@@ -5,12 +5,13 @@ repoRoot="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 workspaceRoot="$(dirname "$repoRoot")"
 sourceRoot="${repoRoot}/.build/sources"
 
-# CI passes explicit checkout paths and refs. Local builds default to sibling
-# checkouts and archive their current HEAD unless these env vars are overridden.
-apiSource="${KNOWHERE_API_SOURCE:-${workspaceRoot}/knowhere}"
-apiRef="${KNOWHERE_API_REF:-HEAD}"
-dashboardSource="${KNOWHERE_DASHBOARD_SOURCE:-${workspaceRoot}/knowhere-dashboard}"
-dashboardRef="${KNOWHERE_DASHBOARD_REF:-HEAD}"
+# CI passes explicit checkout paths and refs. Local builds default to the
+# monorepo's core/ and admin/ directories and archive their current HEAD
+# unless these env vars are overridden.
+apiSource="${ZIRU_API_SOURCE:-${workspaceRoot}/core}"
+apiRef="${ZIRU_API_REF:-HEAD}"
+dashboardSource="${ZIRU_DASHBOARD_SOURCE:-${workspaceRoot}/admin}"
+dashboardRef="${ZIRU_DASHBOARD_REF:-HEAD}"
 
 copySource() {
   local sourcePath="$1"
@@ -43,8 +44,8 @@ copySource() {
 }
 
 mkdir -p "$sourceRoot"
-copySource "$apiSource" "$apiRef" "${sourceRoot}/knowhere" "Knowhere API"
-copySource "$dashboardSource" "$dashboardRef" "${sourceRoot}/knowhere-dashboard" "Knowhere dashboard"
+copySource "$apiSource" "$apiRef" "${sourceRoot}/core" "Ziru API"
+copySource "$dashboardSource" "$dashboardRef" "${sourceRoot}/admin" "Ziru dashboard"
 
 echo "Prepared sources:"
 echo "  API:       ${apiSource} @ ${apiRef}"

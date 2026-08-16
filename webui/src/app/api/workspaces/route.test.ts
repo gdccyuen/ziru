@@ -4,7 +4,7 @@ import { Effect } from "effect";
 
 const mocks = vi.hoisted(() => {
   return {
-    activeWorkspaceCookieName: "notebook-ws",
+    activeWorkspaceCookieName: "ziru-ws",
     ensureWorkspaceForNamespace: vi.fn(),
     findByIdAndUserEffect: vi.fn(),
     setActiveEffect: vi.fn(),
@@ -21,8 +21,8 @@ vi.mock("@/domains/workspace/service", () => ({
   },
 }));
 
-vi.mock("@/infrastructure/auth/knowhere-api-keys-repository", () => ({
-  knowhereApiKeysRepository: {
+vi.mock("@/infrastructure/auth/ziru-api-keys-repository", () => ({
+  ziruApiKeysRepository: {
     findByIdAndUserEffect: mocks.findByIdAndUserEffect,
     setActiveEffect: mocks.setActiveEffect,
     decryptStoredEffect: vi.fn(async () => "sk_test"),
@@ -51,7 +51,7 @@ const workspace = {
   id: "ws_1",
   userId: "user_1",
   namespace: "adobe",
-  activeKnowhereApiKeyId: null,
+  activeZiruApiKeyId: null,
   createdAt: new Date(),
 };
 const key = {
@@ -95,7 +95,7 @@ describe("POST /api/workspaces", () => {
       namespace: "adobe",
     });
     expect(body.sources).toEqual([]);
-    expect(response.cookies.get("notebook-ws")?.value).toBe("ws_1");
+    expect(response.cookies.get("ziru-ws")?.value).toBe("ws_1");
   });
 
   it("rejects requests without keyId or namespace", async () => {
@@ -152,7 +152,7 @@ describe("POST /api/workspaces/activate", () => {
 
     expect(mocks.runPromise).toHaveBeenCalled();
     expect(response.status).toBe(200);
-    expect(response.cookies.get("notebook-ws")?.value).toBe("ws_1");
+    expect(response.cookies.get("ziru-ws")?.value).toBe("ws_1");
   });
 
   it("rejects a workspace that does not belong to the user", async () => {

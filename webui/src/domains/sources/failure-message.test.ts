@@ -32,7 +32,7 @@ code: 'RESOURCE_EXHAUSTED',
           },
         },
       },
-      "Knowhere upload failed.",
+      "Ziru upload failed.",
     )
 
     expect(message).toBe("Too many concurrent requests.")

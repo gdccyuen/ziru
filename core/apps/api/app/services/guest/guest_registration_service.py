@@ -30,7 +30,7 @@ _GUEST_TIER: str = "guest"
 _GUEST_KEY_NAME_PREFIX: str = "guest-device"
 _GUEST_DISPLAY_NAME_PREFIX: str = "Guest "
 _GUEST_DISPLAY_NAME_MAX_LENGTH: int = 255
-_GUEST_EMAIL_DOMAIN: str = "guest.knowhere.local"
+_GUEST_EMAIL_DOMAIN: str = "guest.ziru.local"
 _GUEST_RATE_LIMIT_RETRY_AFTER_SECONDS: int = 60
 
 

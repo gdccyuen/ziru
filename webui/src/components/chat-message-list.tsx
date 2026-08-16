@@ -276,7 +276,7 @@ function EmptyChat({
             ? "Log in to start asking questions about your sources."
             : disabled
             ? "Add a ready source to start asking questions."
-            : "Ask anything about your sources. Answers include source links when Notebook finds support."}
+            : "Ask anything about your sources. Answers include source links when WebUI finds support."}
       </p>
     </div>
   );
@@ -797,14 +797,14 @@ function getCitationSourceChipLabel(
   if (sourceTitle) return sourceTitle;
 
   const sourceFileName = getTrimmedCitationField(citation.source.sourceFileName);
-  if (sourceFileName && !isGeneratedKnowhereFileName(sourceFileName)) {
+  if (sourceFileName && !isGeneratedZiruFileName(sourceFileName)) {
     return sourceFileName;
   }
 
   return "Source";
 }
 
-function isGeneratedKnowhereFileName(value: string): boolean {
+function isGeneratedZiruFileName(value: string): boolean {
   return /^document-[A-Za-z0-9_-]{16,}\.[A-Za-z0-9]+$/u.test(value);
 }
 
@@ -949,7 +949,7 @@ function getCitationDisplayKey(
 
 function getMeaningfulCitationKeyField(value: string | null | undefined): string | null {
   const field = getTrimmedCitationField(value);
-  if (!field || field === "Root" || isGeneratedKnowhereFileName(field)) return null;
+  if (!field || field === "Root" || isGeneratedZiruFileName(field)) return null;
   return field;
 }
 

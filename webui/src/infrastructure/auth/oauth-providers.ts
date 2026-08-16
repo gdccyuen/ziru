@@ -32,8 +32,8 @@ export type OAuthProviderConfig = {
 
 /**
  * Dashboard SSO: no redirect flow — the user is already logged into the
- * Knowhere Dashboard on the same host (another port, or a shared parent
- * domain via the Dashboard's AUTH_COOKIE_DOMAIN). The notebook forwards the
+ * Ziru Dashboard on the same host (another port, or a shared parent
+ * domain via the Dashboard's AUTH_COOKIE_DOMAIN). The webui forwards the
  * incoming browser Cookie header to Dashboard's public `users.getCurrentUser`
  * oRPC endpoint, which resolves the Better Auth session.
  */

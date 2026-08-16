@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Notebook route handlers previously mixed HTTP parsing, authentication context,
+WebUI route handlers previously mixed HTTP parsing, authentication context,
 domain workflow, and `NextResponse` serialization. Chat and Source routes also
 repeated the same `{ status, body }` response shape.
 

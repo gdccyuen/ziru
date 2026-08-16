@@ -2,7 +2,7 @@ import "server-only"
 
 import { logger } from "@/lib/logger"
 import type { Workspace } from "@/infrastructure/db/schema"
-import { makeKnowhereClient } from "@/integrations/knowhere"
+import { makeZiruClient } from "@/integrations/ziru"
 import { sourceService } from "./service"
 import { sourceWorkflowRuntime } from "./workflow-runtime"
 import { toSourceView } from "./view"
@@ -18,14 +18,14 @@ export async function localizeWorkspaceNamespace(
   workspace: Workspace,
   apiKey: string,
 ): Promise<ReturnType<typeof toSourceView>[]> {
-  const client = makeKnowhereClient(apiKey)
+  const client = makeZiruClient(apiKey)
 
   const localSources = await sourceWorkflowRuntime.listForWorkspace(
     workspace.id,
   )
   const localDocumentIds = new Set(
     localSources.flatMap((source) =>
-      source.knowhereDocumentId ? [source.knowhereDocumentId] : [],
+      source.ziruDocumentId ? [source.ziruDocumentId] : [],
     ),
   )
 

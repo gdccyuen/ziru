@@ -22,7 +22,7 @@ from shared.core.exceptions.domain_exceptions import (
     PermissionDeniedException,
     WebhookServiceException,
 )
-from shared.core.exceptions.knowhere_exception import KnowhereException
+from shared.core.exceptions.ziru_exception import ZiruException
 from shared.models.schemas.webhook import (
     WebhookLogList,
     WebhookLogResponse,
@@ -176,7 +176,7 @@ async def trigger_webhook(
             error_message=delivery_result.error_message,
         )
 
-    except KnowhereException:
+    except ZiruException:
         # Re-raise all known exceptions (NotFoundException, ValidationException, etc.)
         raise
     except Exception as e:

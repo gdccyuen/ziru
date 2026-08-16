@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   getSourceParseAssetUrls: vi.fn(),
   localizeRemoteDocument: vi.fn(),
-  makeKnowhereClient: vi.fn(),
+  makeZiruClient: vi.fn(),
   requireUser: vi.fn(),
   updateSourceRevisionKey: vi.fn(),
 }))
@@ -20,7 +20,7 @@ vi.mock("next/headers", () => ({
   headers: vi.fn(async () => new Headers({ cookie: "session=abc" })),
 }))
 
-vi.mock("@/integrations/knowhere-credentials", () => ({
+vi.mock("@/integrations/ziru-credentials", () => ({
   ensureApiKeyForWorkspace: mocks.ensureApiKeyForWorkspace,
 }))
 
@@ -29,8 +29,8 @@ vi.mock("@/infrastructure/auth", () => ({
   requireUser: mocks.requireUser,
 }))
 
-vi.mock("@/integrations/knowhere", () => ({
-  makeKnowhereClient: mocks.makeKnowhereClient,
+vi.mock("@/integrations/ziru", () => ({
+  makeZiruClient: mocks.makeZiruClient,
 }))
 
 vi.mock("@vercel/blob", () => ({
@@ -67,7 +67,7 @@ describe("GET /api/sources/[sourceId]/chunks", () => {
   })
 
   it("loads authenticated workspace chunks without probing the demo endpoint first", async () => {
-    const knowhereClient = {
+    const ziruClient = {
       documents: {
         listChunks: vi.fn(async () => ({
           chunks: [
@@ -100,7 +100,7 @@ describe("GET /api/sources/[sourceId]/chunks", () => {
     mocks.ensureWorkspace.mockResolvedValue({
       id: "workspace_1",
       userId: "user_1",
-      namespace: "notebook-workspace_1",
+      namespace: "webui-workspace_1",
       createdAt: new Date("2026-05-10T00:00:00.000Z"),
     })
     mocks.findSourceInWorkspace.mockResolvedValue({
@@ -111,8 +111,8 @@ describe("GET /api/sources/[sourceId]/chunks", () => {
       sizeBytes: 1024,
       status: "ready",
       failureReason: null,
-      knowhereJobId: "job_1",
-      knowhereDocumentId: "doc_1",
+      ziruJobId: "job_1",
+      ziruDocumentId: "doc_1",
       stagedBlobPathname: null,
       stagedBlobUrl: null,
       originalBlobPathname: null,
@@ -122,7 +122,7 @@ describe("GET /api/sources/[sourceId]/chunks", () => {
       deletedAt: null,
     })
     mocks.ensureApiKeyForWorkspace.mockResolvedValue("jwt_123")
-    mocks.makeKnowhereClient.mockReturnValue(knowhereClient)
+    mocks.makeZiruClient.mockReturnValue(ziruClient)
     mocks.getSourceParseAssetUrls.mockResolvedValue({})
 
     const response = await GET(
@@ -148,7 +148,7 @@ describe("GET /api/sources/[sourceId]/chunks", () => {
       },
     })
     expect(response.status).toBe(200)
-    expect(knowhereClient.documents.listChunks).toHaveBeenCalledWith("doc_1", {
+    expect(ziruClient.documents.listChunks).toHaveBeenCalledWith("doc_1", {
       page: 1,
       pageSize: 1,
       includeAssetUrls: true,
@@ -156,7 +156,7 @@ describe("GET /api/sources/[sourceId]/chunks", () => {
   })
 
   it("materializes a remote source id on open before loading chunks", async () => {
-    const knowhereClient = {
+    const ziruClient = {
       documents: {
         list: vi.fn(async () => ({
           documents: [
@@ -205,11 +205,11 @@ describe("GET /api/sources/[sourceId]/chunks", () => {
     mocks.ensureWorkspace.mockResolvedValue({
       id: "workspace_1",
       userId: "user_1",
-      namespace: "notebook-workspace_1",
+      namespace: "webui-workspace_1",
       createdAt: new Date("2026-05-10T00:00:00.000Z"),
     })
     mocks.ensureApiKeyForWorkspace.mockResolvedValue("jwt_123")
-    mocks.makeKnowhereClient.mockReturnValue(knowhereClient)
+    mocks.makeZiruClient.mockReturnValue(ziruClient)
     mocks.localizeRemoteDocument.mockResolvedValue({
       id: "00000000-0000-0000-0000-000000000009",
       workspaceId: "workspace_1",
@@ -218,8 +218,8 @@ describe("GET /api/sources/[sourceId]/chunks", () => {
       sizeBytes: 0,
       status: "ready",
       failureReason: null,
-      knowhereJobId: "job_result_1",
-      knowhereDocumentId: "doc_remote",
+      ziruJobId: "job_result_1",
+      ziruDocumentId: "doc_remote",
       stagedBlobPathname: null,
       stagedBlobUrl: null,
       originalBlobPathname: null,
@@ -231,11 +231,11 @@ describe("GET /api/sources/[sourceId]/chunks", () => {
 
     const response = await GET(
       new NextRequest(
-        "http://localhost:3001/api/sources/knowhere-doc:default:doc_remote/chunks?page=1&pageSize=1",
+        "http://localhost:3001/api/sources/ziru-doc:default:doc_remote/chunks?page=1&pageSize=1",
       ),
       {
         params: Promise.resolve({
-          sourceId: "knowhere-doc:default:doc_remote",
+          sourceId: "ziru-doc:default:doc_remote",
         }),
       },
     )
@@ -272,7 +272,7 @@ describe("GET /api/sources/[sourceId]/chunks", () => {
         revisionKey: "job_result_1",
       },
     )
-    expect(knowhereClient.documents.listChunks).toHaveBeenCalledWith(
+    expect(ziruClient.documents.listChunks).toHaveBeenCalledWith(
       "doc_remote",
       {
         page: 1,

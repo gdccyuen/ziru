@@ -84,7 +84,7 @@ const tryPromiseOrDie = <A>(f: () => Promise<A>) =>
 export const handleChatTurnEffect = (input: ChatTurnInput) =>
   Effect.gen(function* () {
     const readySources = input.sources.filter(
-      (source) => source.status === "ready" && source.knowhereDocumentId,
+      (source) => source.status === "ready" && source.ziruDocumentId,
     )
     if (readySources.length === 0) {
       return yield* Effect.fail(noReadySources)

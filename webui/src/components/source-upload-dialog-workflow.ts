@@ -12,8 +12,8 @@ import {
 import type { SourceView } from "@/domains/sources/types";
 import { postSourceUpload } from "@/domains/sources/upload-request";
 import {
-  trackNotebookDocumentUploadCompleted,
-  trackNotebookDocumentUploadFailed,
+  trackWebUIDocumentUploadCompleted,
+  trackWebUIDocumentUploadFailed,
   type AnalyticsContext,
 } from "@/lib/posthog";
 
@@ -116,7 +116,7 @@ export function useSourceUploadDialogWorkflow({
       const { body } = response;
 
       if (!isSuccessfulStatus(response.status) || !body.source) {
-        void trackNotebookDocumentUploadFailed({
+        void trackWebUIDocumentUploadFailed({
           context: analyticsContext,
           fileType: file.type || null,
           fileSizeBytes: file.size,
@@ -131,7 +131,7 @@ export function useSourceUploadDialogWorkflow({
       }
 
       clearSelectedFile();
-      void trackNotebookDocumentUploadCompleted({
+      void trackWebUIDocumentUploadCompleted({
         context: analyticsContext,
         uploadedCount: 1,
         fileType: file.type,
@@ -142,7 +142,7 @@ export function useSourceUploadDialogWorkflow({
       onSourceUploaded?.(body.source);
       setIsDialogOpen(false);
     } catch {
-      void trackNotebookDocumentUploadFailed({
+      void trackWebUIDocumentUploadFailed({
         context: analyticsContext,
         fileType: file.type || null,
         fileSizeBytes: file.size,

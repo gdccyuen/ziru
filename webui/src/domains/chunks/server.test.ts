@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, type Mock } from "vitest"
 import { Effect } from "effect"
-import type { DocumentChunk } from "@ontos-ai/knowhere-sdk"
+import type { DocumentChunk } from "@/integrations/ziru-sdk-types"
 
 import type { Source } from "@/infrastructure/db/schema"
 import {
@@ -35,7 +35,7 @@ describe("server chunk cache", () => {
           chunkId: "parser_image_1",
           chunkType: "image",
           filePath: "images/image-1.png",
-          assetUrl: "https://knowhere.example/assets/image-1.png",
+          assetUrl: "https://ziru.example/assets/image-1.png",
         }),
       ],
       pagination: {
@@ -53,7 +53,7 @@ describe("server chunk cache", () => {
 
     const page = await Effect.runPromise(
       loadChunkPageForSource(
-        makeSource({ knowhereJobId: "revision_1" }),
+        makeSource({ ziruJobId: "revision_1" }),
         { documents: { listChunks } },
         { page: 1, pageSize: 1 },
         {
@@ -66,7 +66,7 @@ describe("server chunk cache", () => {
     )
 
     expect(page.chunks[0]?.assetUrl).toBe(
-      "https://knowhere.example/assets/image-1.png",
+      "https://ziru.example/assets/image-1.png",
     )
     expect(cacheStore.putMock).not.toHaveBeenCalled()
     expect(warmTasks).toHaveLength(1)
@@ -74,7 +74,7 @@ describe("server chunk cache", () => {
     await warmTasks[0]?.()
 
     expect(fetchAsset).toHaveBeenCalledWith(
-      "https://knowhere.example/assets/image-1.png",
+      "https://ziru.example/assets/image-1.png",
     )
     expect(cacheStore.putMock).toHaveBeenCalledWith(
       expect.stringContaining("/chunk-assets/revision_1/"),
@@ -94,7 +94,7 @@ describe("server chunk cache", () => {
     )
   })
 
-  it("returns a cached visible page after verifying the current Knowhere revision", async () => {
+  it("returns a cached visible page after verifying the current Ziru revision", async () => {
     const cachedPage = {
       chunks: [
         {
@@ -133,7 +133,7 @@ describe("server chunk cache", () => {
 
     const page = await Effect.runPromise(
       loadChunkPageForSource(
-        makeSource({ knowhereJobId: "revision_1" }),
+        makeSource({ ziruJobId: "revision_1" }),
         { documents: { listChunks } },
         { page: 1, pageSize: 1 },
         {
@@ -155,7 +155,7 @@ describe("server chunk cache", () => {
     )
   })
 
-  it("ignores old cached pages when Knowhere reports a new job id", async () => {
+  it("ignores old cached pages when Ziru reports a new job id", async () => {
     const warmTasks: Array<() => Promise<void>> = []
     const staleCachedPage = {
       chunks: [
@@ -210,7 +210,7 @@ describe("server chunk cache", () => {
 
     const page = await Effect.runPromise(
       loadChunkPageForSource(
-        makeSource({ knowhereJobId: "job_old" }),
+        makeSource({ ziruJobId: "job_old" }),
         { documents: { listChunks } },
         { page: 1, pageSize: 1 },
         {
@@ -259,7 +259,7 @@ describe("server chunk cache", () => {
 
     const chunks = await Effect.runPromise(
       loadChunksForSource(
-        makeSource({ knowhereJobId: "revision_1" }),
+        makeSource({ ziruJobId: "revision_1" }),
         { documents: { listChunks } },
         {
           cacheStore,
@@ -309,7 +309,7 @@ describe("server chunk cache", () => {
           content: "tables/table-19 ….html",
           filePath: "tables/table-19 ….html",
           assetUrl:
-            "http://localhost.localstack.cloud:4566/knowhere-results/results/job_x/tables/table-19 ….html",
+            "http://localhost.localstack.cloud:4566/ziru-results/results/job_x/tables/table-19 ….html",
         }),
       ],
       pagination: {
@@ -324,7 +324,7 @@ describe("server chunk cache", () => {
 
     const chunks = await Effect.runPromise(
       loadChunksForSource(
-        makeSource({ knowhereJobId: "revision_1" }),
+        makeSource({ ziruJobId: "revision_1" }),
         { documents: { listChunks } },
         {
           cacheStore,
@@ -353,7 +353,7 @@ describe("server chunk cache", () => {
     ).toBe("tables/table-18 ….html")
   })
 
-  it("caches media chunks without previews when Knowhere has no upstream asset URL", async () => {
+  it("caches media chunks without previews when Ziru has no upstream asset URL", async () => {
     const warmTasks: Array<() => Promise<void>> = []
     const cacheStore = createCacheStore()
     const listChunks = vi.fn(async () => ({
@@ -379,7 +379,7 @@ describe("server chunk cache", () => {
 
     const page = await Effect.runPromise(
       loadChunkPageForSource(
-        makeSource({ knowhereJobId: "revision_1" }),
+        makeSource({ ziruJobId: "revision_1" }),
         { documents: { listChunks } },
         { page: 1, pageSize: 1 },
         {
@@ -500,8 +500,8 @@ function makeSource(overrides: Partial<Source> = {}): Source {
     sizeBytes: 100,
     status: "ready",
     failureReason: null,
-    knowhereJobId: "revision_1",
-    knowhereDocumentId: "doc_1",
+    ziruJobId: "revision_1",
+    ziruDocumentId: "doc_1",
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,

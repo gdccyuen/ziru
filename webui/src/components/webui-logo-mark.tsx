@@ -5,17 +5,17 @@ const DASHBOARD_MARK = {
   width: 92,
 } as const;
 
-type NotebookLogoMarkProps = {
+type WebUILogoMarkProps = {
   width: number;
   className?: string;
 };
 
-export function NotebookLogoMark({ width, className }: NotebookLogoMarkProps) {
+export function WebUILogoMark({ width, className }: WebUILogoMarkProps) {
   const height = width * (DASHBOARD_MARK.height / DASHBOARD_MARK.width);
 
   return (
     <Image
-      src="/images/knowhere/logo-icon.png"
+      src="/images/ziru/logo-icon.png"
       alt=""
       aria-hidden
       className={className}

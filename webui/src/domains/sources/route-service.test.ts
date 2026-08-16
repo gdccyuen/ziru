@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { Effect } from "effect";
-import type { Job } from "@ontos-ai/knowhere-sdk";
+import type { Job } from "@/integrations/ziru-sdk-types";
 
 import type { Source, Workspace } from "@/infrastructure/db/schema";
 import { createRouteListing } from "./route-listing";
@@ -9,8 +9,8 @@ import { createSourceRouteService } from "./route-service";
 const workspace: Workspace = {
   id: "workspace_1",
   userId: "user_1",
-  activeKnowhereApiKeyId: null,
-  namespace: "notebook-workspace_1",
+  activeZiruApiKeyId: null,
+  namespace: "webui-workspace_1",
   createdAt: new Date("2026-05-10T00:00:00Z"),
 };
 
@@ -22,8 +22,8 @@ const source: Source = {
   sizeBytes: 5,
   status: "parsing",
   failureReason: null,
-  knowhereJobId: "job_1",
-  knowhereDocumentId: null,
+  ziruJobId: "job_1",
+  ziruDocumentId: null,
   stagedBlobPathname: null,
   stagedBlobUrl: null,
   originalBlobPathname: null,
@@ -37,7 +37,7 @@ const localizeNoRemoteDocuments = vi.fn(async () => source);
 
 describe("source route service", () => {
   it("lists authenticated sources and triggers background reconciliation", async () => {
-    const knowhereClient = {
+    const ziruClient = {
       documents: {
         archive: vi.fn(async () => undefined),
         listChunks: vi.fn(async () => ({
@@ -72,7 +72,7 @@ describe("source route service", () => {
         name: null,
       })),
       getSourceViewOptionsBySourceId,
-      makeKnowhereClient: vi.fn(() => knowhereClient),
+      makeZiruClient: vi.fn(() => ziruClient),
       listSourcesForWorkspace,
       reconcileSourcesForWorkspace,
       startBackgroundReconciliation,
@@ -116,8 +116,8 @@ describe("source route service", () => {
       ...source,
       id: "source_ready",
       status: "ready",
-      knowhereJobId: null,
-      knowhereDocumentId: "doc_local",
+      ziruJobId: null,
+      ziruDocumentId: "doc_local",
     };
     const listDocuments = vi.fn().mockResolvedValueOnce({
       documents: [
@@ -144,7 +144,7 @@ describe("source route service", () => {
         totalPages: 1,
       },
     });
-    const knowhereClient = {
+    const ziruClient = {
       documents: {
         archive: vi.fn(async () => undefined),
         list: listDocuments,
@@ -171,8 +171,8 @@ describe("source route service", () => {
       title: input.title ?? input.documentId,
       mimeType: input.mimeType ?? "application/octet-stream",
       status: "ready" as const,
-      knowhereJobId: null,
-      knowhereDocumentId: input.documentId,
+      ziruJobId: null,
+      ziruDocumentId: input.documentId,
     })) as unknown as Parameters<typeof createRouteListing>[0]["sourceService"]["localizeRemoteDocument"];
     const listing = createRouteListing({
       ensureApiKeyForWorkspace: vi.fn(async () => "jwt_123"),
@@ -183,7 +183,7 @@ describe("source route service", () => {
         name: null,
       })),
       getSourceViewOptionsBySourceId: vi.fn(() => Effect.succeed(new Map())),
-      makeKnowhereClient: vi.fn(() => knowhereClient),
+      makeZiruClient: vi.fn(() => ziruClient),
       listSourcesForWorkspace: vi.fn(async () => [localReadySource]),
       reconcileSourcesForWorkspace: vi.fn(async () => [localReadySource]),
       sourceService: {
@@ -220,7 +220,7 @@ describe("source route service", () => {
     ]);
   });
 
-  it("keeps matching Notebook uploads parsing until artifacts are ready", async () => {
+  it("keeps matching WebUI uploads parsing until artifacts are ready", async () => {
     const parsingSource: Source = {
       ...source,
       id: "source_1",
@@ -228,8 +228,8 @@ describe("source route service", () => {
       mimeType: "application/pdf",
       sizeBytes: 100,
       status: "parsing",
-      knowhereJobId: "job_1",
-      knowhereDocumentId: null,
+      ziruJobId: "job_1",
+      ziruDocumentId: null,
     };
     const listDocuments = vi
       .fn()
@@ -241,7 +241,7 @@ describe("source route service", () => {
             status: "active",
             sourceFileName: "uploaded.pdf",
             documentMetadata: {
-              createdByClient: "notebook",
+              createdByClient: "webui",
               title: "uploaded.pdf",
               mimeType: "application/pdf",
               sizeBytes: 100,
@@ -250,7 +250,7 @@ describe("source route service", () => {
         ],
       })
       .mockResolvedValueOnce({ documents: [] });
-    const knowhereClient = {
+    const ziruClient = {
       documents: {
         archive: vi.fn(async () => undefined),
         list: listDocuments,
@@ -282,7 +282,7 @@ describe("source route service", () => {
         name: null,
       })),
       getSourceViewOptionsBySourceId: vi.fn(() => Effect.succeed(new Map())),
-      makeKnowhereClient: vi.fn(() => knowhereClient),
+      makeZiruClient: vi.fn(() => ziruClient),
       listSourcesForWorkspace: vi.fn(async () => [parsingSource]),
       reconcileSourcesForWorkspace,
       startBackgroundReconciliation,
@@ -329,15 +329,15 @@ describe("source route service", () => {
   });
 
   it("uploads a parsed multipart file through the source workflow", async () => {
-    const knowhereJob: Job = {
+    const ziruJob: Job = {
       jobId: "job_1",
       status: "waiting-file",
       sourceType: "file",
       createdAt: new Date("2026-05-10T00:00:00Z"),
     };
-    const knowhereClient = {
+    const ziruClient = {
       jobs: {
-        create: vi.fn(async () => knowhereJob),
+        create: vi.fn(async () => ziruJob),
         get: vi.fn(),
         upload: vi.fn(async () => undefined),
       },
@@ -355,7 +355,7 @@ describe("source route service", () => {
       },
     };
     const ensureApiKeyForWorkspace = vi.fn(async () => "jwt_123");
-    const uploadSourceToKnowhere = vi.fn(async () => source);
+    const uploadSourceToZiru = vi.fn(async () => source);
     const onUploadFinished = vi.fn();
     const service = createSourceRouteService({
       ensureApiKeyForWorkspace,
@@ -365,9 +365,9 @@ describe("source route service", () => {
         email: null,
         name: null,
       })),
-      makeKnowhereClient: vi.fn(() => knowhereClient),
+      makeZiruClient: vi.fn(() => ziruClient),
       sourceService: {
-        uploadSourceToKnowhere,
+        uploadSourceToZiru,
       },
     });
     const file = new File(["hello"], "notes.pdf", {
@@ -396,10 +396,10 @@ describe("source route service", () => {
     expect(ensureApiKeyForWorkspace).toHaveBeenCalledWith(
       workspace.id,
     );
-    expect(uploadSourceToKnowhere).toHaveBeenCalledWith(
+    expect(uploadSourceToZiru).toHaveBeenCalledWith(
       workspace,
       file,
-      knowhereClient,
+      ziruClient,
     );
     expect(onUploadFinished).toHaveBeenCalledOnce();
   });
@@ -408,7 +408,7 @@ describe("source route service", () => {
     const failedSource: Source = {
       ...source,
       status: "failed",
-      failureReason: "Knowhere upload failed.",
+      failureReason: "Ziru upload failed.",
       originalBlobPathname: "source-uploads/upload_1/document.pdf",
       originalBlobUrl:
         "https://store.public.blob.vercel-storage.com/source-uploads/upload_1/document.pdf",
@@ -417,9 +417,9 @@ describe("source route service", () => {
       ...failedSource,
       status: "parsing",
       failureReason: null,
-      knowhereJobId: "job_retry",
+      ziruJobId: "job_retry",
     };
-    const knowhereClient = {
+    const ziruClient = {
       jobs: {
         create: vi.fn(),
         get: vi.fn(),
@@ -439,11 +439,11 @@ describe("source route service", () => {
       },
     };
     const ensureApiKeyForWorkspace = vi.fn(async () => "jwt_123");
-    const retrySourceToKnowhere = vi.fn(async () => parsingSource);
+    const retrySourceToZiru = vi.fn(async () => parsingSource);
     const service = createSourceRouteService({
       ensureApiKeyForWorkspace,
       ensureWorkspace: vi.fn(async () => workspace),
-      makeKnowhereClient: vi.fn(() => knowhereClient),
+      makeZiruClient: vi.fn(() => ziruClient),
       requireUser: vi.fn(async () => ({
         id: "user_1",
         email: null,
@@ -451,7 +451,7 @@ describe("source route service", () => {
       })),
       sourceService: {
         findInWorkspace: vi.fn(async () => failedSource),
-        retrySourceToKnowhere,
+        retrySourceToZiru,
       },
     });
 
@@ -481,10 +481,10 @@ describe("source route service", () => {
     expect(ensureApiKeyForWorkspace).toHaveBeenCalledWith(
       workspace.id,
     );
-    expect(retrySourceToKnowhere).toHaveBeenCalledWith(
+    expect(retrySourceToZiru).toHaveBeenCalledWith(
       workspace,
       failedSource,
-      knowhereClient,
+      ziruClient,
     );
   });
 
@@ -492,12 +492,12 @@ describe("source route service", () => {
     const failedSource: Source = {
       ...source,
       status: "failed",
-      failureReason: "Knowhere upload failed.",
+      failureReason: "Ziru upload failed.",
       originalBlobPathname: null,
       originalBlobUrl: null,
     };
     const ensureApiKeyForWorkspace = vi.fn(async () => "jwt_123");
-    const retrySourceToKnowhere = vi.fn();
+    const retrySourceToZiru = vi.fn();
     const service = createSourceRouteService({
       ensureApiKeyForWorkspace,
       ensureWorkspace: vi.fn(async () => workspace),
@@ -508,7 +508,7 @@ describe("source route service", () => {
       })),
       sourceService: {
         findInWorkspace: vi.fn(async () => failedSource),
-        retrySourceToKnowhere,
+        retrySourceToZiru,
       },
     });
 
@@ -525,6 +525,6 @@ describe("source route service", () => {
       },
     });
     expect(ensureApiKeyForWorkspace).not.toHaveBeenCalled();
-    expect(retrySourceToKnowhere).not.toHaveBeenCalled();
+    expect(retrySourceToZiru).not.toHaveBeenCalled();
   });
 });

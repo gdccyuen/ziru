@@ -52,23 +52,23 @@ function ComparisonCardComponent({ card, competitorName }: ComparisonCardProps) 
         </PixelBadge>
       </div>
 
-      {/* Knowhere status */}
+      {/* Ziru status */}
       <div className="space-y-2 mb-4">
         <div className="flex items-center gap-2">
           <PixelIcon
-            icon={statusIconMap[card.knowhere.status]}
+            icon={statusIconMap[card.ziru.status]}
             size={16}
-            color={statusColorMap[card.knowhere.status]}
+            color={statusColorMap[card.ziru.status]}
           />
-          <span className="font-sans text-sm font-medium text-pixel-fg">Knowhere</span>
-          {card.knowhere.value && (
+          <span className="font-sans text-sm font-medium text-pixel-fg">Ziru</span>
+          {card.ziru.value && (
             <span className="ml-auto font-mono text-sm font-bold text-pixel-green">
-              {card.knowhere.value}
+              {card.ziru.value}
             </span>
           )}
         </div>
         <p className="font-sans text-sm text-[var(--pixel-text-muted)] pl-6">
-          {card.knowhere.description}
+          {card.ziru.description}
         </p>
       </div>
 

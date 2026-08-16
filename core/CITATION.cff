@@ -6,9 +6,8 @@ authors:
   - family-names: "Yuen"
     given-names: "Gordon"
     email: "gdccyuen@alumni.cuhk.net"
-# TODO: replace the repository URL below with the real Ziru repository once it is published.
-repository-code: "https://github.com/your-org/ziru"
-url: "https://github.com/your-org/ziru"
+repository-code: "https://github.com/gdccyuen/ziru"
+url: "https://github.com/gdccyuen/ziru"
 license: Apache-2.0
 version: "0.1.0"
 date-released: "2026-08-16"

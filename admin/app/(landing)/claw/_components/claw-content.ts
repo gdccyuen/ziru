@@ -1,4 +1,4 @@
-import type { KnowhereIconName } from "@components/ui/knowhere-icon";
+import type { ZiruIconName } from "@components/ui/ziru-icon";
 
 export type ClawNavItem = {
   href: string;
@@ -16,7 +16,7 @@ export const clawNavItems: ClawNavItem[] = [
 export const homeNavItems: ClawNavItem[] = [
   { href: "#workflow", label: "Comparison" },
   { href: "#integration", label: "Pricing" },
-  { href: "https://docs.knowhereto.ai/", isExternal: true, label: "Docs" },
+  { href: "https://docs.ziru.app/", isExternal: true, label: "Docs" },
 ];
 
 export type HeroFileBadge = {
@@ -79,7 +79,7 @@ export const heroCapabilityTags: HeroCapabilityTag[] = [
 
 export type ClawFeatureCard = {
   description: string;
-  icon: KnowhereIconName;
+  icon: ZiruIconName;
   iconBorderColor: string;
   iconColor: string;
   iconSurfaceColor: string;
@@ -91,7 +91,7 @@ export type ClawFeatureCard = {
 export const clawFeatureCards: ClawFeatureCard[] = [
   {
     description:
-      "Knowhere parses the document, OpenClaw stores the returned package locally, and agents can reopen the exact manifest, hierarchy, chunks, and raw files later.",
+      "Ziru parses the document, OpenClaw stores the returned package locally, and agents can reopen the exact manifest, hierarchy, chunks, and raw files later.",
     icon: "download",
     iconBorderColor: "#fee685",
     iconColor: "#e17100",
@@ -101,7 +101,7 @@ export const clawFeatureCards: ClawFeatureCard[] = [
   },
   {
     description:
-      "The plugin registers `knowhere_*` tools for preview, grep, raw-file reads, cleanup, and explicit ingest flows instead of forcing everything through one opaque call.",
+      "The plugin registers `ziru_*` tools for preview, grep, raw-file reads, cleanup, and explicit ingest flows instead of forcing everything through one opaque call.",
     icon: "tools",
     iconBorderColor: "#bedbff",
     iconColor: "#155dfc",
@@ -138,8 +138,8 @@ export const integrationResources: IntegrationResource[] = [
     variant: "package",
   },
   {
-    description: "If you install from ClawHub, look for the skill named Knowhere.",
-    linkLabel: "Knowhere",
+    description: "If you install from ClawHub, look for the skill named Ziru.",
+    linkLabel: "Ziru",
     title: "ClawHub Skill",
     variant: "skill",
   },
@@ -162,7 +162,7 @@ export type IntegrationStep = {
 export const integrationSteps: IntegrationStep[] = [
   {
     command: "openclaw plugins install @ontos-ai/knowhere-claw",
-    description: "Add the packaged runtime so OpenClaw can load the bundled knowhere skill.",
+    description: "Add the packaged runtime so OpenClaw can load the bundled ziru skill.",
     segments: [
       { className: "text-[#00c951]", text: "$ " },
       { className: "text-[#00a6f4]", text: "openclaw plugins install " },
@@ -172,8 +172,8 @@ export const integrationSteps: IntegrationStep[] = [
     title: "Install package",
   },
   {
-    command: 'openclaw config set plugins .entries.knowhere.config.apiKey "sk_..."',
-    description: "Connect this OpenClaw instance to your Knowhere account.",
+    command: 'openclaw config set plugins .entries.ziru.config.apiKey "sk_..."',
+    description: "Connect this OpenClaw instance to your Ziru account.",
     note: "Everything else can be pasted exactly as shown. The API key line is the only place where you replace a value.",
     segments: [
       { className: "text-[#00c951]", text: "$ " },
@@ -181,7 +181,7 @@ export const integrationSteps: IntegrationStep[] = [
       { className: "text-[#fafafa]", text: "config set " },
       { className: "text-[#00a6f4]", text: "plugins" },
       { className: "text-[#fafafa]", text: " .entries." },
-      { className: "text-[#00c951]", text: "knowhere" },
+      { className: "text-[#00c951]", text: "ziru" },
       { className: "text-[#fafafa]", text: ".config.apiKey " },
       { className: "text-[#ff6467]", text: '"sk_..."' },
     ],
@@ -189,12 +189,12 @@ export const integrationSteps: IntegrationStep[] = [
     title: "Attach API key",
   },
   {
-    command: "openclaw plugins enable knowhere",
+    command: "openclaw plugins enable ziru",
     description: "Turn the entry on so agents can load the plugin inside the runtime.",
     segments: [
       { className: "text-[#00c951]", text: "$ " },
       { className: "text-[#00a6f4]", text: "openclaw plugins enable " },
-      { className: "text-[#00c951]", text: "knowhere" },
+      { className: "text-[#00c951]", text: "ziru" },
     ],
     step: "STEP 3",
     title: "Enable plugin",
@@ -210,7 +210,7 @@ export type ChangeItem = {
 export const changeItems: ChangeItem[] = [
   {
     description: "Preview, grep, raw-file reads, ingest, and cleanup become callable in one place.",
-    label: "knowhere_* tools",
+    label: "ziru_* tools",
     tagWidthClassName: "2xl:w-[215px]",
   },
   {

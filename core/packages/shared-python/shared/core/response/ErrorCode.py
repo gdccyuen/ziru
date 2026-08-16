@@ -1,5 +1,5 @@
 """
-Canonical Error Codes for the Knowhere API.
+Canonical Error Codes for the Ziru API.
 
 These codes are the source of truth for all API error responses.
 They follow the gRPC error model mapped to HTTP status codes.
@@ -7,7 +7,7 @@ They follow the gRPC error model mapped to HTTP status codes.
 Usage:
     from shared.core.response.ErrorCode import ErrorCode
 
-    raise KnowhereException(
+    raise ZiruException(
         code=ErrorCode.INVALID_ARGUMENT,
         message="The file format is not supported."
     )

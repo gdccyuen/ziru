@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createOpenAIAdsAdapter } from "@/lib/analytics/adapters/openai-ads";
 import type { AnalyticsEvent } from "@/lib/analytics/types";
 
-const sourceUrl = "https://knowhereto.ai/checkout/success?session_id=cs_123";
+const sourceUrl = "https://ziru.app/checkout/success?session_id=cs_123";
 
 function stubBrowser(oaiq = vi.fn()) {
   const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 202 }));

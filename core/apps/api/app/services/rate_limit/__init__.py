@@ -1,5 +1,5 @@
 """
-Rate limiting package for the Knowhere API.
+Rate limiting package for the Ziru API.
 
 Provides multi-layer rate limiting with async Redis backend:
 - Layer 0: System limits (per-endpoint matched window)

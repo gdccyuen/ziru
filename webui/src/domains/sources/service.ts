@@ -5,11 +5,11 @@ import { Effect } from "effect"
 import type { Source, Workspace } from "@/infrastructure/db/schema"
 import type { SourceBlobUploadInput } from "./blob-upload"
 import {
-  type UploadKnowhereClient,
-  uploadSourceBlobToKnowhereEffect,
-  uploadSourceToKnowhereEffect,
+  type UploadZiruClient,
+  uploadSourceBlobToZiruEffect,
+  uploadSourceToZiruEffect,
 } from "./upload"
-import { retrySourceToKnowhereEffect } from "./retry"
+import { retrySourceToZiruEffect } from "./retry"
 import { sourceWorkflowRuntime } from "./workflow-runtime"
 
 type SourceService = {
@@ -35,60 +35,60 @@ type SourceService = {
     workspaceId: string,
     sourceId: string,
   ) => Promise<boolean>
-  readonly uploadSourceToKnowhere: (
+  readonly uploadSourceToZiru: (
     workspace: Workspace,
     file: File,
-    knowhere: UploadKnowhereClient,
+    ziru: UploadZiruClient,
   ) => Promise<Source>
-  readonly uploadSourceBlobToKnowhere: (
+  readonly uploadSourceBlobToZiru: (
     workspace: Workspace,
     input: SourceBlobUploadInput,
-    knowhere: UploadKnowhereClient,
+    ziru: UploadZiruClient,
   ) => Promise<Source>
-  readonly retrySourceToKnowhere: (
+  readonly retrySourceToZiru: (
     workspace: Workspace,
     source: Source,
-    knowhere: UploadKnowhereClient,
+    ziru: UploadZiruClient,
   ) => Promise<Source>
 }
 
-const uploadSourceToKnowhere: SourceService["uploadSourceToKnowhere"] = (
+const uploadSourceToZiru: SourceService["uploadSourceToZiru"] = (
   workspace: Workspace,
   file: File,
-  knowhere: UploadKnowhereClient,
+  ziru: UploadZiruClient,
 ) =>
   Effect.runPromise(
-    uploadSourceToKnowhereEffect(workspace, file, {
+    uploadSourceToZiruEffect(workspace, file, {
       repository: sourceWorkflowRuntime.createUploadRepository(),
-      knowhere,
+      ziru,
     }),
   )
 
-const uploadSourceBlobToKnowhere: SourceService["uploadSourceBlobToKnowhere"] =
+const uploadSourceBlobToZiru: SourceService["uploadSourceBlobToZiru"] =
   (
     workspace: Workspace,
     input: SourceBlobUploadInput,
-    knowhere: UploadKnowhereClient,
+    ziru: UploadZiruClient,
   ) =>
     Effect.runPromise(
-      uploadSourceBlobToKnowhereEffect(workspace, input, {
+      uploadSourceBlobToZiruEffect(workspace, input, {
         repository: sourceWorkflowRuntime.createUploadRepository(),
-        knowhere,
+        ziru,
       }),
     )
 
-const retrySourceToKnowhere: SourceService["retrySourceToKnowhere"] = (
+const retrySourceToZiru: SourceService["retrySourceToZiru"] = (
   workspace: Workspace,
   source: Source,
-  knowhere: UploadKnowhereClient,
+  ziru: UploadZiruClient,
 ) =>
   Effect.runPromise(
-    retrySourceToKnowhereEffect(workspace, source, {
+    retrySourceToZiruEffect(workspace, source, {
       repository: {
         markSourceFailed: sourceWorkflowRuntime.markFailed,
         markSourceParsing: sourceWorkflowRuntime.markParsing,
       },
-      knowhere,
+      ziru,
     }),
   )
 
@@ -99,7 +99,7 @@ export const sourceService: SourceService = {
   localizeRemoteDocument: sourceWorkflowRuntime.localizeRemoteDocument,
   updateSourceRevisionKey: sourceWorkflowRuntime.updateRevisionKey,
   softDelete: sourceWorkflowRuntime.softDelete,
-  uploadSourceToKnowhere,
-  uploadSourceBlobToKnowhere,
-  retrySourceToKnowhere,
+  uploadSourceToZiru,
+  uploadSourceBlobToZiru,
+  retrySourceToZiru,
 }

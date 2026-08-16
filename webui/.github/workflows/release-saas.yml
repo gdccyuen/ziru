@@ -57,7 +57,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release-assets
-          git archive --format=zip --output="release-assets/knowhere-notebook-${RELEASE_TAG}-source.zip" "${RELEASED_SHA}"
+          git archive --format=zip --output="release-assets/ziru-webui-${RELEASE_TAG}-source.zip" "${RELEASED_SHA}"
 
           cat > release-assets/build-info.json <<EOF
           {
@@ -78,7 +78,7 @@ jobs:
         run: |
           set -euo pipefail
           gh release create "${RELEASE_TAG}" \
-            release-assets/knowhere-notebook-${RELEASE_TAG}-source.zip \
+            release-assets/ziru-webui-${RELEASE_TAG}-source.zip \
             release-assets/build-info.json \
             --repo "${GITHUB_REPOSITORY}" \
             --target "${RELEASED_SHA}" \

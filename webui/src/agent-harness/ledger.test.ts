@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import type { RetrievalQueryResponse } from "@ontos-ai/knowhere-sdk"
+import type { RetrievalQueryResponse } from "@/integrations/ziru-sdk-types"
 
 import { createEvidenceLedger } from "./ledger"
 
@@ -47,7 +47,7 @@ describe("createEvidenceLedger", () => {
 
 function makeRetrievalResponse(): RetrievalQueryResponse {
   return {
-    namespace: "notebook",
+    namespace: "webui",
     query: "q4 revenue images",
     routerUsed: "workflow_single_step",
     answerText: null,

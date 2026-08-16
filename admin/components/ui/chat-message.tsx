@@ -1,12 +1,12 @@
 import { Avatar, AvatarFallback } from "@components/ui/avatar";
 import { Chip } from "@components/ui/chip";
-import type { KnowhereIconName } from "@components/ui/knowhere-icon";
+import type { ZiruIconName } from "@components/ui/ziru-icon";
 import { cn } from "@lib/utils";
 import Image from "next/image";
 import type { ComponentProps } from "react";
 
 type ChatAttachment = {
-  icon?: KnowhereIconName;
+  icon?: ZiruIconName;
   label: string;
 };
 
@@ -50,7 +50,7 @@ export const ChatMessage = ({
             alt=""
             className="size-7"
             height={28}
-            src="/icons/knowhere/agent-avatar.svg"
+            src="/icons/ziru/agent-avatar.svg"
             width={28}
           />
         </AvatarFallback>

@@ -36,7 +36,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="flex flex-col md:flex-row items-center justify-end gap-4 text-center md:text-left">
           <p className="text-sm text-pixel-muted font-sans">
-            &copy; {currentYear} Knowhere API. All rights reserved.
+            &copy; {currentYear} Ziru API. All rights reserved.
           </p>
         </div>
       </div>

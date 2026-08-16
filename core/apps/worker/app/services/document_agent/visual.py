@@ -84,7 +84,7 @@ def _render_pages_worker(
 
 def visual_output_dir(ctx: ToolContext, folder_name: str = "agent_visuals") -> str:
     output_dir = str(
-        Path(ctx.output_dir or os.path.expanduser("~/.knowhere/_debug_profile"))
+        Path(ctx.output_dir or os.path.expanduser("~/.ziru/_debug_profile"))
         / folder_name
     )
     os.makedirs(output_dir, exist_ok=True)

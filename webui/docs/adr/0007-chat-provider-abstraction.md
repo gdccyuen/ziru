@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Notebook chat — answer generation (`src/domains/chat/prompt.ts`) and diagram
+WebUI chat — answer generation (`src/domains/chat/prompt.ts`) and diagram
 generation (`src/domains/chat/diagram.ts`) — routed exclusively through the
 Vercel AI Gateway. The model was passed to the AI SDK as a plain string id and
 `AI_GATEWAY_API_KEY` was hard-required by a guard at every call site.

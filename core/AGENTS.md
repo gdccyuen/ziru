@@ -224,14 +224,14 @@ flowchart LR
 
 ## Persisted Document Corpus Schema (On-Disk Output)
 
-After parsing and chunk conversion, results are persisted to `~/.knowhere/{corpus_name}/`.
+After parsing and chunk conversion, results are persisted to `~/.ziru/{corpus_name}/`.
 This on-disk structure is the **authoritative persisted format** — the intermediate
 DataFrame is an internal detail. Below is the complete schema.
 
 ### Corpus-Level Directory Layout
 
 ```text
-~/.knowhere/{corpus_name}/
+~/.ziru/{corpus_name}/
 ├── knowledge_graph.json           # corpus-wide graph: file metadata + cross-doc edges
 ├── chunk_stats.json               # Per-chunk retrieval hit analytics {chunk_id → stats}
 ├── {source_file_name}/            # One directory per ingested document

@@ -14,7 +14,7 @@ import type { CompetitorProductId, ProductAdvantage } from "@/app/_(landing)/_ty
 import { isValidProductId } from "@/app/_(landing)/_types/comparison";
 
 // Tab parser for nuqs
-const tabParser = parseAsStringLiteral(["knowhere", "unstructured", "markitdown"] as const);
+const tabParser = parseAsStringLiteral(["ziru", "unstructured", "markitdown"] as const);
 
 export default function ComparisonModal() {
   const router = useRouter();
@@ -25,7 +25,7 @@ export default function ComparisonModal() {
   const isValid = isValidProductId(productId) && productId !== "original";
 
   // Use nuqs for tab state management (default to productId if it's a competitor)
-  const defaultTab = productId === "original" ? "knowhere" : (productId as CompetitorProductId);
+  const defaultTab = productId === "original" ? "ziru" : (productId as CompetitorProductId);
   const [activeTab, setActiveTab] = useQueryState("tab", tabParser.withDefault(defaultTab));
 
   // Set mounted state for portal

@@ -22,7 +22,7 @@ export default function SourcePollingTestPage() {
       }}
       workspace={{
         id: "workspace_playwright",
-        namespace: "notebook-playwright",
+        namespace: "webui-playwright",
       }}
       sources={[pendingSource]}
       chatThreads={[]}

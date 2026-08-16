@@ -1,4 +1,4 @@
-import type { RetrievalResult } from "@ontos-ai/knowhere-sdk"
+import type { RetrievalResult } from "@/integrations/ziru-sdk-types"
 
 import type { Source } from "@/infrastructure/db/schema"
 
@@ -35,7 +35,7 @@ export async function enrichRetrievalResultsWithAssetUrls({
 
   const sourcesByDocumentId = new Map(
     sources.flatMap((source): readonly [string, Source][] =>
-      source.knowhereDocumentId ? [[source.knowhereDocumentId, source]] : [],
+      source.ziruDocumentId ? [[source.ziruDocumentId, source]] : [],
     ),
   )
   const assetUrlsBySourceId = new Map<
@@ -184,7 +184,7 @@ function getMediaCitationResultScore(
     if (!isAssetFilePath(sectionPath)) score += 15
     score += Math.min(sectionPath.length, 120) / 12
   }
-  if (isNotebookParsedAssetUrl(assetUrl)) score += 25
+  if (isWebUIParsedAssetUrl(assetUrl)) score += 25
 
   return score
 }
@@ -228,7 +228,7 @@ function isGenericSectionPath(value: string): boolean {
   return ["root", "unknown source"].includes(value.trim().toLowerCase())
 }
 
-function isNotebookParsedAssetUrl(assetUrl: string): boolean {
+function isWebUIParsedAssetUrl(assetUrl: string): boolean {
   return normalizeAssetLookupText(getUrlPathname(assetUrl))?.includes(
     "/parsed-result/",
   ) === true

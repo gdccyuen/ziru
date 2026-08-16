@@ -1,7 +1,7 @@
 import type {
   RetrievalQueryResponse,
   RetrievalResult,
-} from "@ontos-ai/knowhere-sdk"
+} from "@/integrations/ziru-sdk-types"
 
 import type {
   EvidenceAsset,

@@ -1,10 +1,10 @@
 export const MAX_UPLOAD_MB = 300;
 export const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
-export const SUPPORT_EMAIL = "team@knowhereto.ai";
-export const KNOWHERE_ISSUES_URL = "https://github.com/Ontos-AI/knowhere/issues";
+export const SUPPORT_EMAIL = "team@ziruto.ai";
+export const ZIRU_ISSUES_URL = "https://github.com/Ontos-AI/ziru/issues";
 export const FILE_TOO_LARGE_MESSAGE =
   `File is too large. Upload a document up to ${MAX_UPLOAD_MB} MB. ` +
-  `For larger files, contact ${SUPPORT_EMAIL} or open an issue at ${KNOWHERE_ISSUES_URL}.`;
+  `For larger files, contact ${SUPPORT_EMAIL} or open an issue at ${ZIRU_ISSUES_URL}.`;
 
 const SUPPORTED_EXTENSIONS = new Set([
   "doc",

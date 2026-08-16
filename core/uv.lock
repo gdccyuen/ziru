@@ -10,10 +10,10 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "knowhere-api",
-    "knowhere-api-app",
-    "knowhere-shared",
-    "knowhere-worker-app",
+    "ziru-api",
+    "ziru-api-app",
+    "ziru-shared",
+    "ziru-worker-app",
 ]
 
 [[package]]
@@ -1381,7 +1381,7 @@ wheels = [
 ]
 
 [[package]]
-name = "knowhere-api"
+name = "ziru-api"
 version = "0.1.0"
 source = { virtual = "." }
 
@@ -1400,7 +1400,7 @@ lint = [{ name = "ruff", specifier = ">=0.11.13" }]
 typecheck = [{ name = "pyright", specifier = ">=1.1.396" }]
 
 [[package]]
-name = "knowhere-api-app"
+name = "ziru-api-app"
 version = "0.1.0"
 source = { virtual = "apps/api" }
 dependencies = [
@@ -1409,7 +1409,7 @@ dependencies = [
     { name = "celery" },
     { name = "fastapi" },
     { name = "httpx" },
-    { name = "knowhere-shared" },
+    { name = "ziru-shared" },
     { name = "limits" },
     { name = "logfire", extra = ["celery", "fastapi", "httpx", "sqlalchemy"] },
     { name = "loguru" },
@@ -1443,7 +1443,7 @@ requires-dist = [
     { name = "celery", specifier = "==5.4.0" },
     { name = "fastapi", specifier = "==0.135.1" },
     { name = "httpx", specifier = "==0.28.1" },
-    { name = "knowhere-shared", editable = "packages/shared-python" },
+    { name = "ziru-shared", editable = "packages/shared-python" },
     { name = "limits", specifier = ">=5.8,<6" },
     { name = "logfire", extras = ["celery", "fastapi", "httpx", "sqlalchemy"], specifier = ">=4.25.0" },
     { name = "loguru", specifier = "==0.7.3" },
@@ -1471,7 +1471,7 @@ dev = [
 ]
 
 [[package]]
-name = "knowhere-shared"
+name = "ziru-shared"
 version = "0.1.0"
 source = { editable = "packages/shared-python" }
 dependencies = [
@@ -1570,7 +1570,7 @@ requires-dist = [
 ]
 
 [[package]]
-name = "knowhere-worker-app"
+name = "ziru-worker-app"
 version = "0.1.0"
 source = { virtual = "apps/worker" }
 dependencies = [
@@ -1579,7 +1579,7 @@ dependencies = [
     { name = "gevent" },
     { name = "httpcore" },
     { name = "jieba" },
-    { name = "knowhere-shared" },
+    { name = "ziru-shared" },
     { name = "logfire", extra = ["celery", "fastapi", "httpx", "sqlalchemy"] },
     { name = "lxml" },
     { name = "markdownify" },
@@ -1617,7 +1617,7 @@ requires-dist = [
     { name = "gevent", specifier = ">=24.11.1" },
     { name = "httpcore", specifier = ">=1.0.6" },
     { name = "jieba", specifier = "==0.42.1" },
-    { name = "knowhere-shared", editable = "packages/shared-python" },
+    { name = "ziru-shared", editable = "packages/shared-python" },
     { name = "logfire", extras = ["celery", "fastapi", "httpx", "sqlalchemy"], specifier = ">=4.25.0" },
     { name = "lxml", specifier = "==6.1.0" },
     { name = "markdownify", specifier = "==1.2.2" },

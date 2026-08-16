@@ -151,7 +151,7 @@ describe("chunksPanelState", () => {
     ])
   })
 
-  it("formats Knowhere section paths and reference labels for display", () => {
+  it("formats Ziru section paths and reference labels for display", () => {
     expect(
       chunksPanelState.formatChunkSectionPath(
         "Default_Root/Document-->Revenue-->Table 1",
@@ -167,7 +167,7 @@ describe("chunksPanelState", () => {
     ).toBe("Image 12")
   })
 
-  it("builds a section tree from slash and arrow separated Knowhere paths", () => {
+  it("builds a section tree from slash and arrow separated Ziru paths", () => {
     type TestSectionTreeNode = {
       readonly label: string
       readonly chunks: readonly ParsedChunkView[]

@@ -72,7 +72,7 @@ export default function CitationDedupeTestPage() {
       }}
       workspace={{
         id: "workspace_playwright",
-        namespace: "notebook-playwright",
+        namespace: "webui-playwright",
       }}
       sources={duplicateTitleSources}
       chatThreads={chatThreads}

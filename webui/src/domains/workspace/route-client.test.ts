@@ -17,7 +17,7 @@ describe("workspaceRouteClient", () => {
 
       expect(request.method).toBe("POST")
       expect(requestUrl.pathname).toBe("/api/workspace")
-      await expect(request.json()).resolves.toEqual({ name: "Notebook" })
+      await expect(request.json()).resolves.toEqual({ name: "WebUI" })
 
       return Response.json({ ok: true })
     })
@@ -25,7 +25,7 @@ describe("workspaceRouteClient", () => {
 
     await expect(
       workspaceRouteClient.postJson<{ ok: true }>("/api/workspace", {
-        name: "Notebook",
+        name: "WebUI",
       }),
     ).resolves.toEqual({ ok: true })
     expect(fetch).toHaveBeenCalledOnce()

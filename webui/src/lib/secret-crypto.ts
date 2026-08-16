@@ -8,9 +8,9 @@ import {
 } from "node:crypto"
 
 /**
- * AES-256-GCM encryption for secrets at rest (Knowhere API keys).
+ * AES-256-GCM encryption for secrets at rest (Ziru API keys).
  *
- * The encryption key comes from `KNOWHERE_KEY_ENCRYPTION_KEY` env: if it is
+ * The encryption key comes from `ZIRU_KEY_ENCRYPTION_KEY` env: if it is
  * a 32-byte base64 string it is used directly, otherwise it is SHA-256-hashed
  * to 32 bytes (so any string works). GCM auth tag is appended to the cipher
  * text and verified on decrypt.
@@ -22,10 +22,10 @@ export type EncryptedSecret = {
 }
 
 function getEncryptionKey(): Buffer {
-  const configured = process.env.KNOWHERE_KEY_ENCRYPTION_KEY?.trim()
+  const configured = process.env.ZIRU_KEY_ENCRYPTION_KEY?.trim()
   if (!configured || configured.length === 0) {
     throw new Error(
-      "KNOWHERE_KEY_ENCRYPTION_KEY is required to store Knowhere API keys. " +
+      "ZIRU_KEY_ENCRYPTION_KEY is required to store Ziru API keys. " +
         "Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"",
     )
   }

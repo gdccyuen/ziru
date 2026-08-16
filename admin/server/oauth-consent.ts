@@ -19,7 +19,7 @@ import { NextResponse } from "next/server";
 export interface ConsentSurface {
   /** Path of this consent route, used to bounce back after dashboard sign-in. */
   readonly loginPath: string;
-  /** Page heading, e.g. "Authorize Knowhere CLI". */
+  /** Page heading, e.g. "Authorize Ziru CLI". */
   readonly title: string;
   /** Sentence describing the access request; the client name is appended. */
   readonly summary: string;

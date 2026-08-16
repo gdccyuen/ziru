@@ -2,10 +2,10 @@ import { auth } from "@lib/auth";
 import type { Permission } from "@lib/oauth-request";
 import { ORPCError } from "@orpc/server";
 
-export const KNOWHERE_SERVICE_JWT_EXPIRY_SECONDS = 60 * 60;
-const KNOWHERE_SERVICE_JWT_EXPIRATION = "1h";
+export const ZIRU_SERVICE_JWT_EXPIRY_SECONDS = 60 * 60;
+const ZIRU_SERVICE_JWT_EXPIRATION = "1h";
 
-export async function issueKnowhereServiceJwt(
+export async function issueZiruServiceJwt(
   userId: string,
   options: { readonly permission?: Permission } = {}
 ): Promise<string> {
@@ -16,7 +16,7 @@ export async function issueKnowhereServiceJwt(
   const { token } = await auth.api.signJWT({
     body: {
       payload,
-      overrideOptions: { jwt: { expirationTime: KNOWHERE_SERVICE_JWT_EXPIRATION } },
+      overrideOptions: { jwt: { expirationTime: ZIRU_SERVICE_JWT_EXPIRATION } },
     },
   });
 

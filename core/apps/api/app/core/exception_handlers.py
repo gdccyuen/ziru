@@ -1,5 +1,5 @@
 """
-Global Exception Handlers for the Knowhere API.
+Global Exception Handlers for the Ziru API.
 
 =============================================================================
 SECURITY: THE "4xx vs 5xx" MESSAGE PATTERN
@@ -10,19 +10,19 @@ This module enforces the dual-message pattern for all exceptions:
     - `internal_message`: Technical details for LOGS ONLY. NEVER sent to client.
     - `user_message`:     Safe message for CLIENT. ALWAYS sent to user.
 
-The `knowhere_exception_handler` is the central point that:
+The `ziru_exception_handler` is the central point that:
     1. Logs `internal_message` for debugging (server-side only)
     2. Returns `user_message` to the client (via to_dict)
     3. NEVER leaks internal_message to the response
 
 =============================================================================
 
-All exceptions are converted to KnowhereException and handled uniformly.
+All exceptions are converted to ZiruException and handled uniformly.
 This ensures clients always receive a consistent, secure JSON response.
 
 Architecture:
-    1. Each handler converts its exception type to a KnowhereException subclass
-    2. All handlers delegate to `knowhere_exception_handler` for actual response
+    1. Each handler converts its exception type to a ZiruException subclass
+    2. All handlers delegate to `ziru_exception_handler` for actual response
     3. Internal details are logged but NEVER sent to client
 
 Response Format:
@@ -37,7 +37,7 @@ Response Format:
     }
 
 Exception Sources:
-    - KnowhereException: Raised explicitly by our code (domain exceptions)
+    - ZiruException: Raised explicitly by our code (domain exceptions)
     - HTTPException: Raised by FastAPI/Starlette for HTTP-level errors
         - 401: Missing/invalid auth header
         - 403: Permission denied by middleware
@@ -58,7 +58,7 @@ from loguru import logger
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from shared.core.exceptions import (
-    KnowhereException,
+    ZiruException,
     UnknownException,
     ValidationException,
 )
@@ -87,8 +87,8 @@ def _get_request_id(request: Request) -> str:
     return generated_request_id
 
 
-async def knowhere_exception_handler(
-    request: Request, exc: KnowhereException
+async def ziru_exception_handler(
+    request: Request, exc: ZiruException
 ) -> JSONResponse:
     """
     This handler enforces the separation between:
@@ -148,7 +148,7 @@ async def knowhere_exception_handler(
 
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     """
-    Convert FastAPI/Starlette HTTPException to KnowhereException.
+    Convert FastAPI/Starlette HTTPException to ZiruException.
 
     When does HTTPException occur?
         - 401: Auth middleware rejects request (missing/invalid token)
@@ -200,15 +200,15 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
         }
         user_message = safe_messages.get(exc.status_code, "An error occurred")
 
-    # Create KnowhereException with internal_message for logs, user_message for response
-    knowhere_exc = KnowhereException(
+    # Create ZiruException with internal_message for logs, user_message for response
+    ziru_exc = ZiruException(
         code=code,
         internal_message=f"HTTPException detail: {exc.detail}",  # For logs
         user_message=user_message,  # For client
     )
 
     # Delegate to central handler
-    return await knowhere_exception_handler(request, knowhere_exc)
+    return await ziru_exception_handler(request, ziru_exc)
 
 
 async def validation_exception_handler(
@@ -243,7 +243,7 @@ async def validation_exception_handler(
     )
 
     # Delegate to central handler
-    return await knowhere_exception_handler(request, validation_exc)
+    return await ziru_exception_handler(request, validation_exc)
 
 
 async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -263,14 +263,14 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
     unknown_exc = UnknownException(original_exception=exc)
 
     # Delegate to central handler
-    return await knowhere_exception_handler(request, unknown_exc)
+    return await ziru_exception_handler(request, unknown_exc)
 
 
-async def _knowhere_exception_handler_adapter(
+async def _ziru_exception_handler_adapter(
     request: Request, exc: Exception
 ) -> JSONResponse:
-    """Adapt the typed Knowhere handler to FastAPI's generic signature."""
-    return await knowhere_exception_handler(request, cast(KnowhereException, exc))
+    """Adapt the typed Ziru handler to FastAPI's generic signature."""
+    return await ziru_exception_handler(request, cast(ZiruException, exc))
 
 
 async def _http_exception_handler_adapter(
@@ -292,10 +292,10 @@ def setup_exception_handlers(app: FastAPI) -> None:
     Register all exception handlers with the FastAPI app.
 
     Order of registration doesn't matter - FastAPI matches by exception type.
-    More specific types (KnowhereException subclasses) are matched before base.
+    More specific types (ZiruException subclasses) are matched before base.
     """
-    # KnowhereException and all subclasses
-    app.add_exception_handler(KnowhereException, _knowhere_exception_handler_adapter)
+    # ZiruException and all subclasses
+    app.add_exception_handler(ZiruException, _ziru_exception_handler_adapter)
 
     # FastAPI/Starlette HTTP exceptions (convert then delegate)
     http_handler: Callable[[Request, Exception], Awaitable[JSONResponse]] = (

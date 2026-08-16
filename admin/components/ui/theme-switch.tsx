@@ -1,6 +1,6 @@
 "use client";
 
-import { KnowhereIcon } from "@components/ui/knowhere-icon";
+import { ZiruIcon } from "@components/ui/ziru-icon";
 import { cn } from "@lib/utils";
 import * as SwitchPrimitive from "@radix-ui/react-switch";
 import * as React from "react";
@@ -18,8 +18,8 @@ export const ThemeSwitch = React.forwardRef<
     {...props}
   >
     <SwitchPrimitive.Thumb className="flex size-7 items-center justify-center rounded-full bg-white text-primary-dark shadow-xs transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0">
-      <KnowhereIcon className="size-4 group-data-[state=checked]:hidden" name="theme-dark" />
-      <KnowhereIcon className="hidden size-4 group-data-[state=checked]:block" name="theme-light" />
+      <ZiruIcon className="size-4 group-data-[state=checked]:hidden" name="theme-dark" />
+      <ZiruIcon className="hidden size-4 group-data-[state=checked]:block" name="theme-light" />
     </SwitchPrimitive.Thumb>
   </SwitchPrimitive.Root>
 ));

@@ -21,12 +21,12 @@ Docker Compose 会先读取 `.env.defaults`，再读取 `.env`。`.env.defaults`
 | `REDIS_HOST_PORT` | Redis 映射到宿主机的端口。 | `6379` |
 | `LOCALSTACK_HOST_BIND` | LocalStack 端口绑定的宿主机网卡地址。除非外部 S3 兼容工具必须直连，否则保持默认值。 | `127.0.0.1`、`0.0.0.0` |
 | `LOCALSTACK_HOST_PORT` | LocalStack S3 兼容存储映射到宿主机的端口。 | `4566` |
-| `KNOWHERE_IMAGE` | Ziru 自托管镜像。 | `ghcr.io/ontos-ai/knowhere:latest` |
+| `ZIRU_IMAGE` | Ziru 自托管镜像。 | `ghcr.io/gdccyuen/ziru:latest` |
 
 国内网络可使用阿里云镜像：
 
 ```bash
-KNOWHERE_IMAGE=knowhere-registry.cn-shenzhen.cr.aliyuncs.com/knowhere/knowhere:latest
+ZIRU_IMAGE=ghcr.io/gdccyuen/ziru:latest
 ```
 
 ## 必填外部服务
@@ -149,8 +149,8 @@ EMBEDDING_MODEL=text-embedding-v4
 | 变量 | 用途 | 示例值 |
 | --- | --- | --- |
 | `POSTGRES_PASSWORD` | 内置 PostgreSQL 的 root 密码。 | `root123` |
-| `API_DATABASE_URL` | API 使用的 PostgreSQL async URL；默认由内置 PostgreSQL 配置派生。 | `postgresql+asyncpg://root:root123@postgres:5432/Knowhere` |
-| `DASHBOARD_DATABASE_URL` | Dashboard 使用的 PostgreSQL URL；默认由内置 PostgreSQL 配置派生。 | `postgresql://root:root123@postgres:5432/Knowhere` |
+| `API_DATABASE_URL` | API 使用的 PostgreSQL async URL；默认由内置 PostgreSQL 配置派生。 | `postgresql+asyncpg://root:root123@postgres:5432/ziru` |
+| `DASHBOARD_DATABASE_URL` | Dashboard 使用的 PostgreSQL URL；默认由内置 PostgreSQL 配置派生。 | `postgresql://root:root123@postgres:5432/ziru` |
 | `DATABASE_URL` | 上游 API/Dashboard 开发模式使用；自托管通常不用直接设置。 | `postgresql+asyncpg://...` |
 | `DB_SSL_MODE` | PostgreSQL SSL 模式。 | `disable`、`require`、`verify-full` |
 | `DB_SSL_CERT` | PostgreSQL 客户端证书路径。 | `/path/to/client-cert.pem` |
@@ -180,7 +180,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `REDIS_SOCKET_CONNECT_TIMEOUT` | Redis 连接超时，单位秒。 | `5.0` |
 | `REDIS_MAX_RETRIES` | Redis 最大重试次数。 | `3` |
 | `REDIS_RETRY_DELAY` | Redis 重试间隔，单位秒。 | `1.0` |
-| `REDIS_KEY_PREFIX` | Redis key 前缀。 | `knowhere-api` |
+| `REDIS_KEY_PREFIX` | Redis key 前缀。 | `ziru-api` |
 | `REDIS_DEFAULT_TTL` | Redis 默认 TTL，单位秒。 | `86400` |
 | `REDIS_SYNC_MAX_CONNECTIONS` | Worker 同步 Redis 连接池最大连接数。 | `50` |
 | `REDIS_SYNC_POOL_TIMEOUT` | Worker 同步 Redis 连接池等待超时，单位秒。 | `5` |
@@ -190,7 +190,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `KB_TASK_MAX_RETRIES` | 知识库任务最大重试次数。 | `2` |
 | `KB_TASK_RETRY_COUNTDOWN` | 知识库任务重试间隔，单位秒。 | `120` |
 | `PYMUPDF_MAX_CONCURRENT` | 单个 Pod 内 PyMuPDF 子进程并发上限。 | `2` |
-| `WORKER_HEARTBEAT_FILE` | Worker heartbeat 文件路径。 | `/tmp/knowhere-worker-heartbeat.json` |
+| `WORKER_HEARTBEAT_FILE` | Worker heartbeat 文件路径。 | `/tmp/ziru-worker-heartbeat.json` |
 | `WORKER_HEARTBEAT_INTERVAL_SECONDS` | Worker heartbeat 写入间隔。 | `5` |
 | `WORKER_HEARTBEAT_STALE_AFTER_SECONDS` | Worker heartbeat 判定过期时间。 | `45` |
 
@@ -199,9 +199,9 @@ EMBEDDING_MODEL=text-embedding-v4
 | 变量 | 用途 | 示例值 |
 | --- | --- | --- |
 | `S3_TYPE` | 存储后端类型。 | `s3`、`oss`、`minio` |
-| `S3_BUCKET_NAME` | 默认上传 bucket。 | `knowhere-uploads` |
-| `S3_UPLOADS_BUCKET` | 上传文件 bucket；未设置时由 `S3_BUCKET_NAME` 派生。 | `knowhere-uploads` |
-| `S3_RESULTS_BUCKET` | 处理结果 bucket。 | `knowhere-results` |
+| `S3_BUCKET_NAME` | 默认上传 bucket。 | `ziru-uploads` |
+| `S3_UPLOADS_BUCKET` | 上传文件 bucket；未设置时由 `S3_BUCKET_NAME` 派生。 | `ziru-uploads` |
+| `S3_RESULTS_BUCKET` | 处理结果 bucket。 | `ziru-results` |
 | `S3_ACCESS_KEY_ID` | S3/OSS/MinIO access key。LocalStack 默认 `test`。 | `test` |
 | `S3_SECRET_ACCESS_KEY` | S3/OSS/MinIO secret key。LocalStack 默认 `test`。 | `test` |
 | `S3_ENDPOINT_URL` | S3 兼容服务 endpoint。 | `http://localhost.localstack.cloud:4566` |
@@ -209,7 +209,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `S3_REGION` | S3 region。 | `us-west-1` |
 | `S3_USE_SSL` | 是否用 SSL 连接存储服务。 | `false` |
 | `S3_ADDRESSING_STYLE` | S3 地址风格。 | `path`、`virtual`、`auto` |
-| `S3_TEMP_PATH` | S3 临时文件路径。 | `/tmp/knowhere` |
+| `S3_TEMP_PATH` | S3 临时文件路径。 | `/tmp/ziru` |
 | `S3_WEBHOOK_AUTH_TOKEN` | S3 事件 webhook 鉴权 token。 | `change-me-storage-webhook-token` |
 | `SNS_SIGNATURE_VERIFICATION` | 是否校验 SNS 签名。LocalStack 默认关闭。 | `false` |
 | `OSS_ENDPOINT` | 阿里云 OSS endpoint；`S3_TYPE=oss` 时需要。 | `oss-cn-hangzhou.aliyuncs.com` |
@@ -217,7 +217,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `OSS_EVENT_VERIFY_SIGNATURE` | 是否校验 OSS 事件签名。 | `true` |
 | `SELF_HOSTED_CREATE_STORAGE_BUCKETS` | 启动时自动创建 bucket。 | `true` |
 | `SELF_HOSTED_CONFIGURE_STORAGE_EVENTS` | 启动时自动配置上传事件。 | `true` |
-| `SELF_HOSTED_S3_EVENT_TOPIC_NAME` | LocalStack SNS topic 名称。 | `knowhere-s3-upload-events` |
+| `SELF_HOSTED_S3_EVENT_TOPIC_NAME` | LocalStack SNS topic 名称。 | `ziru-s3-upload-events` |
 | `SELF_HOSTED_S3_EVENT_WEBHOOK_URL` | S3 上传事件回调到 API 的 URL。 | `http://app:5005/v1/internal/s3-events` |
 | `SELF_HOSTED_STORAGE_CORS_ALLOWED_ORIGINS` | Bucket CORS 允许来源，逗号分隔；为空时自动包含本地 Dashboard/API 地址。 | `https://ziru.example.com` |
 | `SELF_HOSTED_AWS_ENDPOINT_URL` | 自托管存储初始化脚本使用的 AWS endpoint；为空时使用 `S3_ENDPOINT_URL`。 | `http://localstack:4566` |
@@ -231,7 +231,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `MAX_IMAGE_SIZE` | 最大图片大小，单位字节。 | `10485760` |
 | `PDF_PROFILE_TOC_ENABLED` | 是否在文档画像阶段启用 PDF 目录抽取。 | `false` |
 | `USERS_DATA_PATH` | API 和 Worker 共享用户数据目录，必须是绝对路径。 | `/data/users` |
-| `TMP_PATH` | 应用临时目录。 | `/tmp/knowhere` |
+| `TMP_PATH` | 应用临时目录。 | `/tmp/ziru` |
 | `FONT_PATH` | 字体文件路径。 | `/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf` |
 | `CHROMEDRIVER_PATH` | ChromeDriver 路径。 | `/usr/bin/chromedriver` |
 | `MIN_CONFIDENCE_THRESHOLD` | 解析置信度阈值。 | `0.05` |
@@ -253,8 +253,8 @@ EMBEDDING_MODEL=text-embedding-v4
 | `RETRIEVAL_WALLET_PER_RETRIEVE_STEP_BUDGET` | 每个 retrieve step 默认分配的 token 预算。 | `40000` |
 | `RETRIEVAL_WORKFLOW_PARALLEL_MAX` | 同一 DAG 批次中最大并行 workflow step 数。 | `3` |
 | `LOCAL_DEBUG` | 本地调试开关；部分解析流程会保存中间文件或跳过 Redis 状态写入。 | `0`、`1` |
-| `KNOWHERE_HOME` | 旧版知识图谱和 MCP 自动注册使用的本地根目录。 | `~/.knowhere` |
-| `KNOWHERE_API_KEY` | 自动注册 MCP server 时写入客户端配置的 Knowhere API Key。 | `kh_...` |
+| `ZIRU_HOME` | 旧版知识图谱和 MCP 自动注册使用的本地根目录。 | `~/.ziru` |
+| `ZIRU_API_KEY` | 自动注册 MCP server 时写入客户端配置的 Ziru API Key。 | `kh_...` |
 
 ## Webhook、QStash 和异步回调
 
@@ -313,7 +313,7 @@ EMBEDDING_MODEL=text-embedding-v4
 
 ### 匿名产品遥测
 
-自托管 API 实例默认会发送匿名产品遥测（`TELEMETRY_ENABLED=true`），用于了解开源/自托管采用情况、版本分布和基础集群健康。遥测使用保存在 `knowhere_secrets` Docker volume 中的随机安装 ID。遥测目标由 Ziru 管理，不作为运维方需要配置的参数暴露。
+在 Ziru fork 中，自托管 API 实例默认**不**发送匿名产品遥测（`TELEMETRY_ENABLED=false`）。如启用，事件用于了解开源/自托管采用情况、版本分布和基础集群健康。遥测使用保存在 `ziru_secrets` Docker volume 中的随机安装 ID。遥测目标由 Ziru 管理，不作为运维方需要配置的参数暴露。
 
 **关闭遥测。** 在 `.env` 中设置以下变量并重启：
 

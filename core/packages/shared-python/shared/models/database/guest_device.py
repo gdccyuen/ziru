@@ -1,4 +1,4 @@
-"""Guest Device Model — tracks device-to-guest-user pairings for Knowhere Hub."""
+"""Guest Device Model — tracks device-to-guest-user pairings for Ziru Hub."""
 
 from __future__ import annotations
 

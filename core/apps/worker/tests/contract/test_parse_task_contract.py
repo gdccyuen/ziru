@@ -177,7 +177,7 @@ def test_parse_task_result_zip_includes_page_citation_assets(
                                     "page_num": 1,
                                     "artifact_ref": "page_citation_assets/page-1.png",
                                     "content_type": "image/png",
-                                    "source": "knowhere-rendered-page-citation-source",
+                                    "source": "ziru-rendered-page-citation-source",
                                     "width": 1200,
                                     "height": 1800,
                                 }
@@ -216,7 +216,7 @@ def test_parse_task_result_zip_includes_page_citation_assets(
             "page_num": 1,
             "artifact_ref": "page_citation_assets/page-1.png",
             "content_type": "image/png",
-            "source": "knowhere-rendered-page-citation-source",
+            "source": "ziru-rendered-page-citation-source",
             "width": 1200,
             "height": 1800,
         }

@@ -5,10 +5,10 @@ import { Effect } from "effect"
 
 import { databaseRuntime } from "@/domains/workspace/database-runtime"
 import { sessionsRepository } from "./sessions-repository"
-import { notebookSessionCookieName } from "./session-cookie-constants"
+import { ziruSessionCookieName } from "./session-cookie-constants"
 
 /** Cookie holding the DB session id. */
-export const sessionCookieName = notebookSessionCookieName
+export const sessionCookieName = ziruSessionCookieName
 
 /** Session lifetime: 30 days. */
 const sessionLifetimeMs = 30 * 24 * 60 * 60 * 1000
@@ -35,7 +35,7 @@ function getCookieOptions(): {
 }
 
 /**
- * Create a DB session row for the user and set the `notebook-session`
+ * Create a DB session row for the user and set the `ziru-session`
  * cookie. Server Action / Route Handler only (Next 16 constraint: cookies
  * cannot be set from Server Components).
  */
@@ -50,7 +50,7 @@ export async function createSession(userId: string): Promise<string> {
 }
 
 /**
- * Delete the session row behind the current `notebook-session` cookie and
+ * Delete the session row behind the current `ziru-session` cookie and
  * clear the cookie. Safe to call when no session exists.
  */
 export async function deleteSession(): Promise<void> {

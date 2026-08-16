@@ -26,7 +26,7 @@ from bs4 import BeautifulSoup
 from loguru import logger
 
 from shared.core.exceptions.domain_exceptions import TableParsingException
-from shared.core.exceptions.knowhere_exception import KnowhereException
+from shared.core.exceptions.ziru_exception import ZiruException
 from shared.services.chunks.path_segments import join_document_path
 from app.services.common.file_loading import load_file_bytes
 from app.services.common.file_utils import path_handle
@@ -184,7 +184,7 @@ def _parse_excel_sheet(
             )
         )
         return parsed_rows
-    except KnowhereException:
+    except ZiruException:
         raise
     except Exception as exc:
         logger.error(f"Table parsing failed: {exc}")

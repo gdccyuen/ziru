@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import type { JobResult } from "@ontos-ai/knowhere-sdk"
+import type { JobResult } from "@/integrations/ziru-sdk-types"
 
 import type { Source, Workspace } from "@/infrastructure/db/schema"
 import {
@@ -10,8 +10,8 @@ import {
 const workspace: Workspace = {
   id: "workspace_1",
   userId: "user_1",
-  activeKnowhereApiKeyId: null,
-  namespace: "notebook-workspace_1",
+  activeZiruApiKeyId: null,
+  namespace: "webui-workspace_1",
   createdAt: new Date("2026-05-06T00:00:00Z"),
 }
 
@@ -24,8 +24,8 @@ function makeSource(overrides: Partial<Source> = {}): Source {
     sizeBytes: 1,
     status: "parsing",
     failureReason: null,
-    knowhereJobId: "job_1",
-    knowhereDocumentId: null,
+    ziruJobId: "job_1",
+    ziruDocumentId: null,
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,
@@ -44,7 +44,7 @@ function makeDoneJob(overrides: Partial<JobResult> = {}): JobResult {
     sourceType: "file",
     namespace: workspace.namespace,
     documentId: "doc_1",
-    resultUrl: "https://knowhere.example/result.zip",
+    resultUrl: "https://ziru.example/result.zip",
     createdAt: new Date("2026-05-06T00:00:00Z"),
     isDone: true,
     isFailed: false,
@@ -65,7 +65,7 @@ function createRepository(source: Source | null = makeSource()) {
 }
 
 describe("pollSourceReconciliation", () => {
-  it("leaves a completed Knowhere job parsing until artifacts can be prepared", async () => {
+  it("leaves a completed Ziru job parsing until artifacts can be prepared", async () => {
     const repository = createRepository()
     const client = {
       jobs: {
@@ -89,7 +89,7 @@ describe("pollSourceReconciliation", () => {
     expect(repository.markFailed).not.toHaveBeenCalled()
   })
 
-  it("marks failed Knowhere jobs failed and cleans staged uploads", async () => {
+  it("marks failed Ziru jobs failed and cleans staged uploads", async () => {
     const source = makeSource({
       stagedBlobPathname: "source-uploads/upload_1/document.pdf",
     })
@@ -165,7 +165,7 @@ describe("pollSourceReconciliation", () => {
 })
 
 describe("markSourceReadyAfterReconciliation", () => {
-  it("marks ready after Knowhere publishes a document id and cleans staged uploads", async () => {
+  it("marks ready after Ziru publishes a document id and cleans staged uploads", async () => {
     const source = makeSource({
       stagedBlobPathname: "source-uploads/upload_1/document.pdf",
     })

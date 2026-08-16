@@ -28,7 +28,7 @@ export function toSourceView(
     title: source.title,
     mimeType: source.mimeType,
     status,
-    documentId: source.knowhereDocumentId ?? undefined,
+    documentId: source.ziruDocumentId ?? undefined,
     ...(failureMessage ? { failureMessage } : {}),
     ...(originalFile ? { originalFile } : {}),
     ...(options.chunkCount !== undefined

@@ -1,9 +1,9 @@
-import { KnowhereIcon, type KnowhereIconName } from "@components/ui/knowhere-icon";
+import { ZiruIcon, type ZiruIconName } from "@components/ui/ziru-icon";
 import { cn } from "@lib/utils";
 import * as React from "react";
 
 export type MessageButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  icon?: KnowhereIconName;
+  icon?: ZiruIconName;
 };
 
 export const MessageButton = React.forwardRef<HTMLButtonElement, MessageButtonProps>(
@@ -20,7 +20,7 @@ export const MessageButton = React.forwardRef<HTMLButtonElement, MessageButtonPr
       <span className="font-mono-display font-medium tracking-normal whitespace-nowrap">
         {children}
       </span>
-      <KnowhereIcon className="size-6 text-current" name={icon} />
+      <ZiruIcon className="size-6 text-current" name={icon} />
     </button>
   )
 );

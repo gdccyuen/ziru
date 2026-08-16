@@ -33,14 +33,14 @@ export function VersusPageClient({ data }: VersusPageClientProps) {
             itemListElement: [
               {
                 "@type": "Product",
-                name: "Knowhere",
-                url: "https://knowhere.com",
+                name: "Ziru",
+                url: "https://ziru.com",
                 description: "Advanced document parsing API",
               },
               {
                 "@type": "Product",
                 name: data.productName,
-                url: `https://knowhere.com/versus/${data.productId}`,
+                url: `https://ziru.com/versus/${data.productId}`,
                 description: data.hero.subtitle,
               },
             ],

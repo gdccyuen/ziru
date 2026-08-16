@@ -20,7 +20,7 @@ describe("landing contracts", () => {
     );
 
     expect(landingHeaderSource).toContain(
-      '{ href: "https://docs.knowhereto.ai/", labelKey: "docs", external: true }'
+      '{ href: "https://docs.ziru.app/", labelKey: "docs", external: true }'
     );
     expect(landingHeaderSource).toContain('{ href: "/github", labelKey: "github" }');
     expect(landingHeaderSource).not.toContain('labelKey: "playground"');

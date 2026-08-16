@@ -4,7 +4,7 @@ import { Effect } from "effect"
 import { Client } from "@upstash/workflow"
 
 import { logger } from "@/lib/logger"
-import { makeKnowhereClient } from "@/integrations/knowhere"
+import { makeZiruClient } from "@/integrations/ziru"
 import {
   markSourceReadyAfterReconciliation,
   pollSourceReconciliation,
@@ -20,7 +20,7 @@ const triggerCooldownMs: number = 5 * 60_000
 const lastTriggeredAtBySourceId: Map<string, number> = new Map()
 
 function resolveBaseURL(): string {
-  return process.env.NOTEBOOK_PUBLIC_URL ?? "http://localhost:3000"
+  return process.env.WEBUI_PUBLIC_URL ?? "http://localhost:3000"
 }
 
 // ---------------------------------------------------------------------------
@@ -29,7 +29,7 @@ function resolveBaseURL(): string {
 //
 // Self-hosted deployments usually have no QSTASH_TOKEN, so the Upstash
 // workflow trigger is skipped and parsing sources would stay "parsing"
-// forever. When QStash is unavailable, poll the Knowhere job from this
+// forever. When QStash is unavailable, poll the Ziru job from this
 // process with backoff (mirroring the workflow's poll-and-ready loop) and
 // mark the source ready once the job is done.
 
@@ -47,7 +47,7 @@ function runLocalReconciliation(
   if (activeLocalPollersBySourceId.has(sourceId)) return
   activeLocalPollersBySourceId.set(sourceId, true)
 
-  const client = makeKnowhereClient(apiKey)
+  const client = makeZiruClient(apiKey)
   let delayMs = localPollInitialDelayMs
   let finished = false
 

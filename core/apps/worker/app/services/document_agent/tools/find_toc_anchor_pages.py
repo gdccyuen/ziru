@@ -278,7 +278,7 @@ def find_toc_anchor_pages(ctx: ToolContext, _args: dict[str, Any]) -> ToolResult
     # Render candidate pages as PNGs for downstream VLM confirmation
     sorted_pages = sorted(anchor_pages)
     output_dir = str(
-        Path(ctx.output_dir or os.path.expanduser("~/.knowhere/_debug_profile"))
+        Path(ctx.output_dir or os.path.expanduser("~/.ziru/_debug_profile"))
         / "toc_pages"
     )
     os.makedirs(output_dir, exist_ok=True)

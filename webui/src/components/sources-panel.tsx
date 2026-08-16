@@ -39,7 +39,7 @@ export type SourcesPanelProps = {
     readonly namespace: string;
     readonly activeKeyLabel?: string | null;
   }[];
-  knowhereKeyLabels?: readonly {
+  ziruKeyLabels?: readonly {
     readonly id: string
     readonly label: string
     readonly mask: string
@@ -71,7 +71,7 @@ export function SourcesPanel({
   sources = [],
   activeWorkspace,
   workspaces = [],
-  knowhereKeyLabels = [],
+  ziruKeyLabels = [],
   isBlobConfigured = true,
   userName,
   onSourceUploaded,
@@ -129,8 +129,8 @@ export function SourcesPanel({
             <AlertDialogTitle>Delete document</AlertDialogTitle>
             <AlertDialogDescription>
               {confirmSource
-                ? `Delete "${confirmSource.title}"? This removes the document from your notebook.`
-                : "Delete this document? This removes the document from your notebook."}
+                ? `Delete "${confirmSource.title}"? This removes the document from your webui.`
+                : "Delete this document? This removes the document from your webui."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -173,7 +173,7 @@ export function SourcesPanel({
             isBlobConfigured={isBlobConfigured}
             activeWorkspace={activeWorkspace}
             workspaces={workspaces}
-            knowhereKeyLabels={knowhereKeyLabels}
+            ziruKeyLabels={ziruKeyLabels}
             renderTrigger={({ isUploading, onClick, onDragOver, onDrop }) => (
               <Button
                 type="button"
@@ -202,7 +202,7 @@ export function SourcesPanel({
             isBlobConfigured={isBlobConfigured}
             activeWorkspace={activeWorkspace}
             workspaces={workspaces}
-            knowhereKeyLabels={knowhereKeyLabels}
+            ziruKeyLabels={ziruKeyLabels}
           />
         )}
       </div>
@@ -212,7 +212,7 @@ export function SourcesPanel({
             <div className="mb-3">
               <WorkspaceSwitcher
                 activeWorkspace={activeWorkspace}
-                knowhereKeyLabels={knowhereKeyLabels}
+                ziruKeyLabels={ziruKeyLabels}
                 userName={userName}
                 workspaces={workspaces}
               />
@@ -226,7 +226,7 @@ export function SourcesPanel({
 
           {!activeWorkspace ? (
             <EmptySetupState
-              hasApiKeys={knowhereKeyLabels.length > 0}
+              hasApiKeys={ziruKeyLabels.length > 0}
               userName={userName}
             />
           ) : workspaceSources.length === 0 ? (
@@ -329,7 +329,7 @@ function EmptySetupState({
       <p className="mt-1 max-w-[220px] text-[11px] text-muted-foreground">
         {hasApiKeys
           ? "Choose a namespace from the dropdown above to open its documents."
-          : "Your API key connects a Knowhere domain. A default workspace is created automatically."}
+          : "Your API key connects a Ziru domain. A default workspace is created automatically."}
       </p>
     </div>
   );

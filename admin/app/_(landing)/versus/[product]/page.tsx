@@ -41,8 +41,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: data.seo.title,
       description: data.seo.description,
-      url: `https://knowhere.com/versus/${product}`,
-      siteName: "Knowhere",
+      url: `https://ziru.com/versus/${product}`,
+      siteName: "Ziru",
       images: data.seo.ogImage
         ? [
             {
@@ -87,7 +87,7 @@ export default async function VersusPage({ params }: PageProps) {
       {data.liveDemo.demos.map((demo) => (
         <Fragment key={demo.label}>
           {demo.originalFile && <link rel="preload" as="fetch" href={demo.originalFile} />}
-          <link rel="preload" as="fetch" href={demo.knowhereOutput} />
+          <link rel="preload" as="fetch" href={demo.ziruOutput} />
           <link rel="preload" as="fetch" href={demo.competitorOutput} />
         </Fragment>
       ))}

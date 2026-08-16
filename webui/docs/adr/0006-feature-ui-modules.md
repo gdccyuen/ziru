@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Notebook UI panels had accumulated row rendering, dialog state, message lists,
+WebUI UI panels had accumulated row rendering, dialog state, message lists,
 history sheets, chunk cards, preview adapters, and orchestration in a small
 number of large components. That made visual changes risky because local UI
 behavior was coupled to parent panel state.

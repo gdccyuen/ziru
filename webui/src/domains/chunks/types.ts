@@ -12,15 +12,15 @@ export type ParsedChunkConnection = {
 }
 
 /**
- * Parsed Content panel row. Mirrors the Knowhere document-chunk shape.
+ * Parsed Content panel row. Mirrors the Ziru document-chunk shape.
  */
 export type ParsedChunkView = {
   readonly chunkId: string
   /** Parser-provided chunk_id. Connection metadata targets this id. */
   readonly parserChunkId?: string
-  /** Knowhere document ID. Present when loaded through a Notebook source. */
+  /** Ziru document ID. Present when loaded through a WebUI source. */
   readonly documentId?: string
-  /** Human-readable section path from Knowhere, used to focus citations. */
+  /** Human-readable section path from Ziru, used to focus citations. */
   readonly sectionPath?: string | null
   readonly type: ChunkType
   readonly contentSource?: string
@@ -28,7 +28,7 @@ export type ParsedChunkView = {
   readonly readableContent?: string
   /** ZIP-relative parsed artifact path, e.g. images/image-1.jpg. */
   readonly filePath?: string
-  /** Public Blob URL for parsed media/table artifacts when Notebook stored it. */
+  /** Public Blob URL for parsed media/table artifacts when WebUI stored it. */
   readonly assetUrl?: string
   readonly summary?: string
   readonly keywords?: readonly string[]

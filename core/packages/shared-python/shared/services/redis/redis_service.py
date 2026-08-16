@@ -29,7 +29,7 @@ async def _await_redis_result(
 class RedisService:
     """Async Redis service abstraction."""
 
-    _KEY_PREFIX: str = "knowhere-api"
+    _KEY_PREFIX: str = "ziru-api"
 
     def __init__(self, config_manager: Optional[RedisConfigManager] = None):
         if config_manager is None:

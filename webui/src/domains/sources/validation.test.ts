@@ -23,7 +23,7 @@ describe("validateUploadFile", () => {
     });
   });
 
-  it("accepts the Knowhere-supported preview source extensions", () => {
+  it("accepts the Ziru-supported preview source extensions", () => {
     const wordResult = validateUploadFile({
       name: "brief.doc",
       type: "",
@@ -58,7 +58,7 @@ describe("validateUploadFile", () => {
     });
   });
 
-  it("rejects unsupported file types before Knowhere handoff", () => {
+  it("rejects unsupported file types before Ziru handoff", () => {
     const result = validateUploadFile({
       name: "deck.ppt",
       type: "application/vnd.ms-powerpoint",

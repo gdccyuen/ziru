@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => {
     findByUserIdAndNamespaceEffect: vi.fn(),
     insertForUserNamespaceEffect: vi.fn(),
     setActiveEffect: vi.fn(),
-    validateKnowhereApiKey: vi.fn(),
+    validateZiruApiKey: vi.fn(),
     findByIdAndUserEffect: vi.fn(),
     softDeleteEffect: vi.fn(),
     clearActiveForKeyEffect: vi.fn(),
@@ -35,8 +35,8 @@ vi.mock("@/domains/workspace/repository", () => ({
   },
 }));
 
-vi.mock("@/infrastructure/auth/knowhere-api-keys-repository", () => ({
-  knowhereApiKeysRepository: {
+vi.mock("@/infrastructure/auth/ziru-api-keys-repository", () => ({
+  ziruApiKeysRepository: {
     listByUserEffect: mocks.listByUserEffect,
     createForUserEffect: mocks.createForUserEffect,
     findByUserIdAndNamespaceEffect: mocks.findByUserIdAndNamespaceEffect,
@@ -48,8 +48,8 @@ vi.mock("@/infrastructure/auth/knowhere-api-keys-repository", () => ({
   },
 }));
 
-vi.mock("@/integrations/knowhere", () => ({
-  validateKnowhereApiKey: mocks.validateKnowhereApiKey,
+vi.mock("@/integrations/ziru", () => ({
+  validateZiruApiKey: mocks.validateZiruApiKey,
 }));
 
 import { GET as listKeys, POST as addKey } from "./route";
@@ -67,7 +67,7 @@ const homeWorkspace = {
   id: "ws_default",
   userId: "user_1",
   namespace: "default",
-  activeKnowhereApiKeyId: null,
+  activeZiruApiKeyId: null,
   createdAt: new Date(),
 };
 
@@ -85,7 +85,7 @@ describe("api-keys routes", () => {
       Effect.succeed(homeWorkspace),
     );
     mocks.setActiveEffect.mockReturnValue(Effect.succeed(undefined));
-    mocks.validateKnowhereApiKey.mockResolvedValue(true);
+    mocks.validateZiruApiKey.mockResolvedValue(true);
   });
 
   describe("GET /api/api-keys", () => {
@@ -117,7 +117,7 @@ describe("api-keys routes", () => {
 
   describe("POST /api/api-keys", () => {
     it("rejects an invalid key with 422 without storing anything", async () => {
-      mocks.validateKnowhereApiKey.mockResolvedValue(false);
+      mocks.validateZiruApiKey.mockResolvedValue(false);
       const request = new NextRequest("http://localhost/api/api-keys", {
         method: "POST",
         body: JSON.stringify({ label: "domainA", apiKey: "sk_bad" }),
@@ -152,14 +152,14 @@ describe("api-keys routes", () => {
       const body = await response.json();
 
       expect(response.status).toBe(200);
-      expect(mocks.validateKnowhereApiKey).toHaveBeenCalledWith("sk_valid");
+      expect(mocks.validateZiruApiKey).toHaveBeenCalledWith("sk_valid");
       expect(mocks.createForUserEffect).toHaveBeenCalledWith({
         userId: "user_1",
         label: "domainA",
         apiKey: "sk_valid",
       });
       expect(mocks.setActiveEffect).toHaveBeenCalledWith("ws_default", "key_new");
-      expect(response.cookies.get("notebook-ws")?.value).toBe("ws_default");
+      expect(response.cookies.get("ziru-ws")?.value).toBe("ws_default");
       expect(body.workspace).toEqual({
         id: "ws_default",
         namespace: "default",
@@ -176,7 +176,7 @@ describe("api-keys routes", () => {
       const response = await addKey(request);
 
       expect(response.status).toBe(409);
-      expect(mocks.validateKnowhereApiKey).not.toHaveBeenCalled();
+      expect(mocks.validateZiruApiKey).not.toHaveBeenCalled();
     });
   });
 

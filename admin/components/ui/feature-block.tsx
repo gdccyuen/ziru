@@ -1,4 +1,4 @@
-import type { KnowhereIconName } from "@components/ui/knowhere-icon";
+import type { ZiruIconName } from "@components/ui/ziru-icon";
 import { Tag } from "@components/ui/tag";
 import { cn } from "@lib/utils";
 import type { ComponentProps } from "react";
@@ -23,7 +23,7 @@ const toneClasses = {
 
 export type FeatureBlockProps = ComponentProps<"div"> & {
   description: string;
-  icon?: KnowhereIconName;
+  icon?: ZiruIconName;
   striped?: boolean;
   title: string;
   tone?: keyof typeof toneClasses;

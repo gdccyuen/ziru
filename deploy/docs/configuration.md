@@ -21,12 +21,12 @@ Docker Compose reads `.env.defaults` first, then reads `.env`. `.env.defaults` i
 | `REDIS_HOST_PORT` | Host port mapped to Redis. | `6379` |
 | `LOCALSTACK_HOST_BIND` | Host interface bound by the LocalStack port. Keep the default unless external S3-compatible tooling must connect directly. | `127.0.0.1`, `0.0.0.0` |
 | `LOCALSTACK_HOST_PORT` | Host port mapped to the LocalStack S3-compatible service. | `4566` |
-| `KNOWHERE_IMAGE` | Ziru self-hosted Docker image. | `ghcr.io/ontos-ai/knowhere:latest` |
+| `ZIRU_IMAGE` | Ziru self-hosted Docker image. | `ghcr.io/gdccyuen/ziru:latest` |
 
 For networks where GHCR is slow or unavailable, use the Aliyun registry image:
 
 ```bash
-KNOWHERE_IMAGE=knowhere-registry.cn-shenzhen.cr.aliyuncs.com/knowhere/knowhere:latest
+ZIRU_IMAGE=ghcr.io/gdccyuen/ziru:latest
 ```
 
 ## Required External Services
@@ -149,8 +149,8 @@ EMBEDDING_MODEL=text-embedding-v4
 | Variable | Usage | Example values |
 | --- | --- | --- |
 | `POSTGRES_PASSWORD` | Root password for the bundled PostgreSQL service. | `root123` |
-| `API_DATABASE_URL` | PostgreSQL async URL used by the API. Derived from bundled PostgreSQL settings by default. | `postgresql+asyncpg://root:root123@postgres:5432/Knowhere` |
-| `DASHBOARD_DATABASE_URL` | PostgreSQL URL used by the Dashboard. Derived from bundled PostgreSQL settings by default. | `postgresql://root:root123@postgres:5432/Knowhere` |
+| `API_DATABASE_URL` | PostgreSQL async URL used by the API. Derived from bundled PostgreSQL settings by default. | `postgresql+asyncpg://root:root123@postgres:5432/ziru` |
+| `DASHBOARD_DATABASE_URL` | PostgreSQL URL used by the Dashboard. Derived from bundled PostgreSQL settings by default. | `postgresql://root:root123@postgres:5432/ziru` |
 | `DATABASE_URL` | Used by upstream API/Dashboard development paths. Self-hosted deployments usually do not set it directly. | `postgresql+asyncpg://...` |
 | `DB_SSL_MODE` | PostgreSQL SSL mode. | `disable`, `require`, `verify-full` |
 | `DB_SSL_CERT` | PostgreSQL client certificate path. | `/path/to/client-cert.pem` |
@@ -180,7 +180,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `REDIS_SOCKET_CONNECT_TIMEOUT` | Redis connection timeout, in seconds. | `5.0` |
 | `REDIS_MAX_RETRIES` | Maximum Redis retry count. | `3` |
 | `REDIS_RETRY_DELAY` | Redis retry delay, in seconds. | `1.0` |
-| `REDIS_KEY_PREFIX` | Redis key prefix. | `knowhere-api` |
+| `REDIS_KEY_PREFIX` | Redis key prefix. | `ziru-api` |
 | `REDIS_DEFAULT_TTL` | Default Redis TTL, in seconds. | `86400` |
 | `REDIS_SYNC_MAX_CONNECTIONS` | Maximum Worker synchronous Redis connections. | `50` |
 | `REDIS_SYNC_POOL_TIMEOUT` | Worker synchronous Redis pool wait timeout, in seconds. | `5` |
@@ -190,7 +190,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `KB_TASK_MAX_RETRIES` | Maximum retry count for knowledge base tasks. | `2` |
 | `KB_TASK_RETRY_COUNTDOWN` | Retry interval for knowledge base tasks, in seconds. | `120` |
 | `PYMUPDF_MAX_CONCURRENT` | Maximum concurrent PyMuPDF subprocesses in one pod. | `2` |
-| `WORKER_HEARTBEAT_FILE` | Worker heartbeat file path. | `/tmp/knowhere-worker-heartbeat.json` |
+| `WORKER_HEARTBEAT_FILE` | Worker heartbeat file path. | `/tmp/ziru-worker-heartbeat.json` |
 | `WORKER_HEARTBEAT_INTERVAL_SECONDS` | Worker heartbeat write interval, in seconds. | `5` |
 | `WORKER_HEARTBEAT_STALE_AFTER_SECONDS` | Age after which the Worker heartbeat is considered stale. | `45` |
 
@@ -199,9 +199,9 @@ EMBEDDING_MODEL=text-embedding-v4
 | Variable | Usage | Example values |
 | --- | --- | --- |
 | `S3_TYPE` | Storage backend type. | `s3`, `oss`, `minio` |
-| `S3_BUCKET_NAME` | Default upload bucket. | `knowhere-uploads` |
-| `S3_UPLOADS_BUCKET` | Uploaded files bucket. Derived from `S3_BUCKET_NAME` when unset. | `knowhere-uploads` |
-| `S3_RESULTS_BUCKET` | Processing results bucket. | `knowhere-results` |
+| `S3_BUCKET_NAME` | Default upload bucket. | `ziru-uploads` |
+| `S3_UPLOADS_BUCKET` | Uploaded files bucket. Derived from `S3_BUCKET_NAME` when unset. | `ziru-uploads` |
+| `S3_RESULTS_BUCKET` | Processing results bucket. | `ziru-results` |
 | `S3_ACCESS_KEY_ID` | S3/OSS/MinIO access key. LocalStack default is `test`. | `test` |
 | `S3_SECRET_ACCESS_KEY` | S3/OSS/MinIO secret key. LocalStack default is `test`. | `test` |
 | `S3_ENDPOINT_URL` | S3-compatible service endpoint. | `http://localhost.localstack.cloud:4566` |
@@ -209,7 +209,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `S3_REGION` | S3 region. | `us-west-1` |
 | `S3_USE_SSL` | Whether to connect to storage with SSL. | `false` |
 | `S3_ADDRESSING_STYLE` | S3 addressing style. | `path`, `virtual`, `auto` |
-| `S3_TEMP_PATH` | S3 temporary file path. | `/tmp/knowhere` |
+| `S3_TEMP_PATH` | S3 temporary file path. | `/tmp/ziru` |
 | `S3_WEBHOOK_AUTH_TOKEN` | Auth token for S3 event webhooks. | `change-me-storage-webhook-token` |
 | `SNS_SIGNATURE_VERIFICATION` | Whether to verify SNS signatures. Disabled by default for LocalStack. | `false` |
 | `OSS_ENDPOINT` | Alibaba Cloud OSS endpoint. Required when `S3_TYPE=oss`. | `oss-cn-hangzhou.aliyuncs.com` |
@@ -217,7 +217,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `OSS_EVENT_VERIFY_SIGNATURE` | Whether to verify OSS event signatures. | `true` |
 | `SELF_HOSTED_CREATE_STORAGE_BUCKETS` | Whether startup creates buckets automatically. | `true` |
 | `SELF_HOSTED_CONFIGURE_STORAGE_EVENTS` | Whether startup configures upload events automatically. | `true` |
-| `SELF_HOSTED_S3_EVENT_TOPIC_NAME` | LocalStack SNS topic name. | `knowhere-s3-upload-events` |
+| `SELF_HOSTED_S3_EVENT_TOPIC_NAME` | LocalStack SNS topic name. | `ziru-s3-upload-events` |
 | `SELF_HOSTED_S3_EVENT_WEBHOOK_URL` | S3 upload event callback URL to the API. | `http://app:5005/v1/internal/s3-events` |
 | `SELF_HOSTED_STORAGE_CORS_ALLOWED_ORIGINS` | Allowed bucket CORS origins, comma-separated. Empty values automatically include local Dashboard/API URLs. | `https://ziru.example.com` |
 | `SELF_HOSTED_AWS_ENDPOINT_URL` | AWS endpoint used by the self-hosted storage initialization script. Uses `S3_ENDPOINT_URL` when empty. | `http://localstack:4566` |
@@ -231,7 +231,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `MAX_IMAGE_SIZE` | Maximum image size, in bytes. | `10485760` |
 | `PDF_PROFILE_TOC_ENABLED` | Enable PDF table-of-contents extraction during document profiling. | `false` |
 | `USERS_DATA_PATH` | Shared user data directory for API and Worker. Must be an absolute path. | `/data/users` |
-| `TMP_PATH` | Application temporary directory. | `/tmp/knowhere` |
+| `TMP_PATH` | Application temporary directory. | `/tmp/ziru` |
 | `FONT_PATH` | Font file path. | `/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf` |
 | `CHROMEDRIVER_PATH` | ChromeDriver path. | `/usr/bin/chromedriver` |
 | `MIN_CONFIDENCE_THRESHOLD` | Parsing confidence threshold. | `0.05` |
@@ -253,8 +253,8 @@ EMBEDDING_MODEL=text-embedding-v4
 | `RETRIEVAL_WALLET_PER_RETRIEVE_STEP_BUDGET` | Default token budget issued to each retrieve step. | `40000` |
 | `RETRIEVAL_WORKFLOW_PARALLEL_MAX` | Maximum concurrent workflow steps in the same DAG batch. | `3` |
 | `LOCAL_DEBUG` | Local debug switch. Some parsing flows save intermediate files or skip Redis status writes. | `0`, `1` |
-| `KNOWHERE_HOME` | Local root directory used by legacy knowledge graph and MCP auto-registration flows. | `~/.knowhere` |
-| `KNOWHERE_API_KEY` | Knowhere API key written to client config during MCP server auto-registration. | `kh_...` |
+| `ZIRU_HOME` | Local root directory used by legacy knowledge graph and MCP auto-registration flows. | `~/.ziru` |
+| `ZIRU_API_KEY` | Ziru API key written to client config during MCP server auto-registration. | `kh_...` |
 
 ## Webhooks, QStash, and Async Callbacks
 
@@ -313,10 +313,11 @@ Billing is disabled by default for self-hosted deployments: `BILLING_ENABLED=fal
 
 ### Anonymous product telemetry
 
-Self-hosted API instances send anonymous product telemetry by default
-(`TELEMETRY_ENABLED=true`) so the project operators can measure OSS adoption, version mix, and
-basic fleet health. Telemetry uses a random installation id stored in the
-`knowhere_secrets` Docker volume. The telemetry destination is managed by
+Self-hosted API instances do **not** send anonymous product telemetry by
+default in the Ziru fork (`TELEMETRY_ENABLED=false`). If enabled, events help
+the project operators measure OSS adoption, version mix, and basic fleet
+health. Telemetry uses a random installation id stored in the
+`ziru_secrets` Docker volume. The telemetry destination is managed by
 Ziru and is not an operator-facing configuration surface.
 
 **Opt out.** Set the following in `.env` and restart:

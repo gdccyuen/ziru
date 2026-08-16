@@ -750,7 +750,7 @@ describe("ChunksPanel", () => {
     expect(sourcePanel.textContent).toContain("images/image-2.jpg");
   });
 
-  it("hides Knowhere default root prefixes from chunk section titles", () => {
+  it("hides Ziru default root prefixes from chunk section titles", () => {
     mockVisibleVirtualViewport();
 
     render(

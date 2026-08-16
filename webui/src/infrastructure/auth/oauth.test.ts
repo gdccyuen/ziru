@@ -327,7 +327,7 @@ describe("dashboard session handoff", () => {
     )
 
     const destination = await loginWithDashboardSession(
-      "better-auth.session_token=abc; notebook-session=xyz",
+      "better-auth.session_token=abc; ziru-session=xyz",
       dashboardOrigin,
     )
 
@@ -339,7 +339,7 @@ describe("dashboard session handoff", () => {
         body: "{}",
         headers: expect.objectContaining({
           "content-type": "application/json",
-          cookie: "better-auth.session_token=abc; notebook-session=xyz",
+          cookie: "better-auth.session_token=abc; ziru-session=xyz",
         }),
       }),
     )

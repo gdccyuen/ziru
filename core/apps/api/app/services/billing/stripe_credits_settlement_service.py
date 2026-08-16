@@ -9,7 +9,7 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.core.exceptions.domain_exceptions import (
-    KnowhereException,
+    ZiruException,
     StripeServiceException,
 )
 from shared.models.database.payment_record import PaymentRecord
@@ -145,7 +145,7 @@ class StripeCreditsSettlementService:
                 "credits_amount": credits_amount,
                 "payment_type": "credits_package",
             }
-        except KnowhereException:
+        except ZiruException:
             raise
         except Exception as exc:
             logger.error(

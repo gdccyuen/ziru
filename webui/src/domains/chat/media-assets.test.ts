@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import type { RetrievalResult } from "@ontos-ai/knowhere-sdk"
+import type { RetrievalResult } from "@/integrations/ziru-sdk-types"
 
 import {
   enrichRetrievalResultsWithAssetUrls,
@@ -10,7 +10,7 @@ import {
 import type { Source } from "@/infrastructure/db/schema"
 
 describe("chat media assets", () => {
-  it("enriches retrieved image chunks from Notebook parsed asset URLs", async () => {
+  it("enriches retrieved image chunks from WebUI parsed asset URLs", async () => {
     const loadSourceAssetUrls = vi.fn().mockResolvedValue({
       "images/image-9-Night Rocket Launch.jpg":
         "https://blob.example/images/image-9-Night%20Rocket%20Launch.jpg",
@@ -30,7 +30,7 @@ describe("chat media assets", () => {
       sources: [
         makeSource({
           id: "source_spacex",
-          knowhereDocumentId: "doc_spacex",
+          ziruDocumentId: "doc_spacex",
         }),
       ],
       loadSourceAssetUrls,
@@ -42,7 +42,7 @@ describe("chat media assets", () => {
     )
   })
 
-  it("prefers Notebook parsed asset URLs over existing upstream asset URLs", async () => {
+  it("prefers WebUI parsed asset URLs over existing upstream asset URLs", async () => {
     const loadSourceAssetUrls = vi.fn().mockResolvedValue({
       "images/image-6-情感分类模型.jpg":
         "https://blob.example/workspaces/workspace_1/sources/source_doc/parsed-result/images/image-6-model.jpg",
@@ -53,7 +53,7 @@ describe("chat media assets", () => {
         makeRetrievalResult({
           chunkType: "image",
           assetUrl:
-            "https://knowhere-storage.example/results/job_1/images/image-6-%E6%83%85%E6%84%9F%E5%88%86%E7%B1%BB%E6%A8%A1%E5%9E%8B.jpg?AWSAccessKeyId=test",
+            "https://ziru-storage.example/results/job_1/images/image-6-%E6%83%85%E6%84%9F%E5%88%86%E7%B1%BB%E6%A8%A1%E5%9E%8B.jpg?AWSAccessKeyId=test",
           source: {
             documentId: "doc_model",
             sourceFileName: "model.pdf",
@@ -64,7 +64,7 @@ describe("chat media assets", () => {
       sources: [
         makeSource({
           id: "source_doc",
-          knowhereDocumentId: "doc_model",
+          ziruDocumentId: "doc_model",
         }),
       ],
       loadSourceAssetUrls,
@@ -98,7 +98,7 @@ describe("chat media assets", () => {
         makeSource({
           id: "source_identity",
           title: "商务标文件.pdf",
-          knowhereDocumentId: "doc_identity",
+          ziruDocumentId: "doc_identity",
         }),
       ],
       loadSourceAssetUrls,
@@ -173,7 +173,7 @@ describe("chat media assets", () => {
         makeRetrievalResult({
           chunkType: "image",
           assetUrl:
-            "https://knowhere-storage.example/results/job_1/images/id-front.jpg?AWSAccessKeyId=test",
+            "https://ziru-storage.example/results/job_1/images/id-front.jpg?AWSAccessKeyId=test",
           source: {
             documentId: "doc_identity",
             sourceFileName: "商务标文件.pdf",
@@ -298,8 +298,8 @@ function makeSource(overrides: Partial<Source> = {}): Source {
     sizeBytes: 100,
     status: "ready",
     failureReason: null,
-    knowhereJobId: "job_1",
-    knowhereDocumentId: "doc_1",
+    ziruJobId: "job_1",
+    ziruDocumentId: "doc_1",
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,

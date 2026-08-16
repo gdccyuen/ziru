@@ -8,21 +8,21 @@ Accepted (checkpoint marker, not a forward decision)
 
 ## Context
 
-The Notebook currently ships a self-hosted, single-user-capable state:
+The WebUI currently ships a self-hosted, single-user-capable state:
 
-- **Identity:** a single fake dev user (`knowhere-api-key-dev-user`), activated
-  when `KNOWHERE_API_KEY` is set. The Dashboard production path (session-cookie
+- **Identity:** a single fake dev user (`ziru-api-key-dev-user`), activated
+  when `ZIRU_API_KEY` is set. The Dashboard production path (session-cookie
   forwarding + `issueServiceJwt`) still exists but is not used by self-hosted
   deployments.
-- **Knowhere access:** one global API key from `KNOWHERE_API_KEY` env, used as
-  the bearer for all Knowhere SDK calls.
+- **Ziru access:** one global API key from `ZIRU_API_KEY` env, used as
+  the bearer for all Ziru SDK calls.
 - **Workspaces:** one workspace per user (`workspaces.user_id` unique), each
-  with an auto-generated `notebook-<uuid>` namespace.
+  with an auto-generated `ziru-<uuid>` namespace.
 - **Chat:** answers work against localized sources, with retrieval tuning
   controls, foldable Sources/Retrieval blocks, and an answer-stats trace.
 
 The next planned overhaul introduces multi-domain workspaces mapped to
-Knowhere namespaces, then Notebook-owned authentication (users, DB sessions,
+Ziru namespaces, then WebUI-owned authentication (users, DB sessions,
 password login, Dashboard hard-cut), then DB-backed encrypted API keys.
 
 This checkpoint exists so we can return to a known-good, single-user state if
@@ -44,7 +44,7 @@ quality of answers"
 
 ### What the checkpoint guarantees
 
-- `KNOWHERE_API_KEY` dev-mode works end-to-end (proxy bypass, fake user,
+- `ZIRU_API_KEY` dev-mode works end-to-end (proxy bypass, fake user,
   single global key).
 - Chat retrieval is tuned for BM25 (rerank, multi-query, query expansion)
   with UI override controls.
@@ -72,7 +72,7 @@ git checkout checkpoint/single-user-workable-pre-overhaul
    admin-provisioned users, Dashboard hard-cut) vs. Better Auth vs. Auth.js —
    see ADR 0010 (planned).
 3. **Dashboard dependency:** whether to hard-cut Dashboard entirely in favor
-   of Notebook-owned auth, or keep it as an optional fallback.
+   of WebUI-owned auth, or keep it as an optional fallback.
 4. **Focus shift:** document input quality and answer quality improvements
    before or instead of multi-user auth work.
 

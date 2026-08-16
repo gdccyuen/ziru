@@ -4,7 +4,7 @@ import { Effect } from "effect"
 const mocks = vi.hoisted(() => ({
   findByIdEffect: vi.fn(),
   runPromise: vi.fn(),
-  getDefaultKnowhereKey: vi.fn(),
+  getDefaultZiruKey: vi.fn(),
   getActiveForWorkspaceEffect: vi.fn(),
   firstForUserEffect: vi.fn(),
   decryptStoredEffect: vi.fn(),
@@ -22,19 +22,19 @@ vi.mock("@/domains/workspace/database-runtime", () => ({
   },
 }))
 
-vi.mock("@/infrastructure/auth/knowhere-api-keys-repository", () => ({
-  knowhereApiKeysRepository: {
+vi.mock("@/infrastructure/auth/ziru-api-keys-repository", () => ({
+  ziruApiKeysRepository: {
     getActiveForWorkspaceEffect: mocks.getActiveForWorkspaceEffect,
     firstForUserEffect: mocks.firstForUserEffect,
     decryptStoredEffect: mocks.decryptStoredEffect,
   },
 }))
 
-vi.mock("@/integrations/knowhere-keys", () => ({
-  getDefaultKnowhereKey: mocks.getDefaultKnowhereKey,
+vi.mock("@/integrations/ziru-keys", () => ({
+  getDefaultZiruKey: mocks.getDefaultZiruKey,
 }))
 
-import { ensureApiKeyForWorkspace, isAuthError } from "./knowhere-credentials"
+import { ensureApiKeyForWorkspace, isAuthError } from "./ziru-credentials"
 
 describe("ensureApiKeyForWorkspace", () => {
   beforeEach(() => {
@@ -42,7 +42,7 @@ describe("ensureApiKeyForWorkspace", () => {
     mocks.runPromise.mockImplementation((effect: Effect.Effect<unknown, never, never>) =>
       Effect.runPromise(effect),
     )
-    mocks.getDefaultKnowhereKey.mockResolvedValue(null)
+    mocks.getDefaultZiruKey.mockResolvedValue(null)
     mocks.getActiveForWorkspaceEffect.mockReturnValue(Effect.succeed(null))
     mocks.firstForUserEffect.mockReturnValue(Effect.succeed(null))
     mocks.decryptStoredEffect.mockReturnValue(
@@ -59,7 +59,7 @@ describe("ensureApiKeyForWorkspace", () => {
       Effect.succeed({
         id: "workspace_db",
         userId: "user_1",
-        activeKnowhereApiKeyId: "key_1",
+        activeZiruApiKeyId: "key_1",
         namespace: "adobe",
         createdAt: new Date(),
       }),
@@ -85,7 +85,7 @@ describe("ensureApiKeyForWorkspace", () => {
       Effect.succeed({
         id: "workspace_1",
         userId: "user_1",
-        activeKnowhereApiKeyId: null,
+        activeZiruApiKeyId: null,
         namespace: "adobe",
         createdAt: new Date(),
       }),
@@ -112,14 +112,14 @@ describe("ensureApiKeyForWorkspace", () => {
       Effect.succeed({
         id: "workspace_3",
         userId: "user_1",
-        activeKnowhereApiKeyId: null,
+        activeZiruApiKeyId: null,
         namespace: "adobe",
         createdAt: new Date(),
       }),
     )
     mocks.getActiveForWorkspaceEffect.mockReturnValue(Effect.succeed(null))
     mocks.firstForUserEffect.mockReturnValue(Effect.succeed(null))
-    mocks.getDefaultKnowhereKey.mockResolvedValue({
+    mocks.getDefaultZiruKey.mockResolvedValue({
       label: "default",
       apiKey: "sk_file_key",
     })
@@ -133,7 +133,7 @@ describe("ensureApiKeyForWorkspace", () => {
     mocks.findByIdEffect.mockReturnValue(Effect.succeed(null))
 
     await expect(ensureApiKeyForWorkspace("workspace_4")).rejects.toThrow(
-      /No Knowhere API key configured/,
+      /No Ziru API key configured/,
     )
   })
 })

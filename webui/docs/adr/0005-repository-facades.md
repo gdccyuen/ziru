@@ -21,7 +21,7 @@ normalization rules.
 
 Upload workflows should keep their public `upload.ts` facade while moving
 shared repository/client contracts into a contract module and separating user
-Knowhere uploads from Demo Source seeding.
+Ziru uploads from Demo Source seeding.
 
 ## Consequences
 

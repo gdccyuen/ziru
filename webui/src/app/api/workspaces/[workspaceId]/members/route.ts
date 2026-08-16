@@ -101,7 +101,7 @@ export async function POST(
         return nextRouteResponse.toNextResponse(
           routeResult.error(
             404,
-            "No Notebook user with that email. Users are admin-provisioned.",
+            "No WebUI user with that email. Users are admin-provisioned.",
           ),
         )
       }

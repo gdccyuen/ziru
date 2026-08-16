@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
-  uploadSourceBlobToKnowhere,
-  uploadSourceToKnowhere,
+  uploadSourceBlobToZiru,
+  uploadSourceToZiru,
 } from "./upload";
 import type { Source } from "@/infrastructure/db/schema";
 import type { Workspace } from "@/infrastructure/db/schema";
@@ -10,8 +10,8 @@ import type { Workspace } from "@/infrastructure/db/schema";
 const workspace: Workspace = {
   id: "8fca7b54-c2da-48f4-9668-a4b39fbc4d4c",
   userId: "user_1",
-  activeKnowhereApiKeyId: null,
-  namespace: "notebook-8fca7b54-c2da-48f4-9668-a4b39fbc4d4c",
+  activeZiruApiKeyId: null,
+  namespace: "webui-8fca7b54-c2da-48f4-9668-a4b39fbc4d4c",
   createdAt: new Date("2026-05-06T00:00:00Z"),
 };
 
@@ -24,8 +24,8 @@ function makeSource(overrides: Partial<Source> = {}): Source {
     sizeBytes: 12,
     status: "uploading",
     failureReason: null,
-    knowhereJobId: null,
-    knowhereDocumentId: null,
+    ziruJobId: null,
+    ziruDocumentId: null,
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,
@@ -37,7 +37,7 @@ function makeSource(overrides: Partial<Source> = {}): Source {
   };
 }
 
-describe("uploadSourceToKnowhere", () => {
+describe("uploadSourceToZiru", () => {
   it("validates before creating source rows or temp files", async () => {
     const deps = {
       repository: {
@@ -45,7 +45,7 @@ describe("uploadSourceToKnowhere", () => {
         markSourceParsing: vi.fn(),
         markSourceFailed: vi.fn(),
       },
-      knowhere: {
+      ziru: {
         jobs: {
           create: vi.fn(),
           get: vi.fn(),
@@ -55,7 +55,7 @@ describe("uploadSourceToKnowhere", () => {
     };
 
     await expect(
-      uploadSourceToKnowhere(
+      uploadSourceToZiru(
         workspace,
         new File(["x"], "deck.ppt", { type: "application/vnd.ms-powerpoint" }),
         deps,
@@ -63,15 +63,15 @@ describe("uploadSourceToKnowhere", () => {
     ).rejects.toThrow(/Unsupported file type/);
 
     expect(deps.repository.createUploadingSource).not.toHaveBeenCalled();
-    expect(deps.knowhere.jobs.create).not.toHaveBeenCalled();
+    expect(deps.ziru.jobs.create).not.toHaveBeenCalled();
   });
 
-  it("creates metadata only, uploads a temp file to Knowhere, and cleans the temp file", async () => {
+  it("creates metadata only, uploads a temp file to Ziru, and cleans the temp file", async () => {
     const uploadingSource = makeSource();
     const parsingSource = makeSource({
       status: "parsing",
-      knowhereJobId: "job_123",
-      knowhereDocumentId: "doc_123",
+      ziruJobId: "job_123",
+      ziruDocumentId: "doc_123",
     });
     const deps = {
       repository: {
@@ -79,7 +79,7 @@ describe("uploadSourceToKnowhere", () => {
         markSourceParsing: vi.fn().mockResolvedValue(parsingSource),
         markSourceFailed: vi.fn(),
       },
-      knowhere: {
+      ziru: {
         jobs: {
           create: vi.fn().mockResolvedValue({
             jobId: "job_123",
@@ -96,7 +96,7 @@ describe("uploadSourceToKnowhere", () => {
     };
     const file = new File(["hello"], "notes.pdf", { type: "application/pdf" });
 
-    const result = await uploadSourceToKnowhere(workspace, file, deps);
+    const result = await uploadSourceToZiru(workspace, file, deps);
 
     expect(deps.repository.createUploadingSource).toHaveBeenCalledWith(
       workspace.id,
@@ -106,20 +106,20 @@ describe("uploadSourceToKnowhere", () => {
         sizeBytes: file.size,
       },
     );
-    expect(deps.knowhere.jobs.create).toHaveBeenCalledWith({
+    expect(deps.ziru.jobs.create).toHaveBeenCalledWith({
       sourceType: "file",
       fileName: "notes.pdf",
-      namespace: "notebook-8fca7b54-c2da-48f4-9668-a4b39fbc4d4c",
+      namespace: "webui-8fca7b54-c2da-48f4-9668-a4b39fbc4d4c",
       documentMetadata: {
-        createdByClient: "notebook",
+        createdByClient: "webui",
         sourceFileName: "notes.pdf",
         title: "notes.pdf",
         mimeType: "application/pdf",
         sizeBytes: file.size,
       },
     });
-    expect(deps.knowhere.jobs.upload).toHaveBeenCalled();
-    expect(deps.knowhere.jobs.get).toHaveBeenCalledWith("job_123");
+    expect(deps.ziru.jobs.upload).toHaveBeenCalled();
+    expect(deps.ziru.jobs.get).toHaveBeenCalledWith("job_123");
     expect(deps.repository.markSourceParsing).toHaveBeenCalledWith(
       workspace.id,
       uploadingSource.id,
@@ -133,7 +133,7 @@ describe("uploadSourceToKnowhere", () => {
     });
   });
 
-  it("marks the source failed and still cleans temp files when Knowhere upload fails", async () => {
+  it("marks the source failed and still cleans temp files when Ziru upload fails", async () => {
     const uploadingSource = makeSource();
     const failedSource = makeSource({
       status: "failed",
@@ -145,7 +145,7 @@ describe("uploadSourceToKnowhere", () => {
         markSourceParsing: vi.fn(),
         markSourceFailed: vi.fn().mockResolvedValue(failedSource),
       },
-      knowhere: {
+      ziru: {
         jobs: {
           create: vi.fn().mockResolvedValue({
             jobId: "job_123",
@@ -160,7 +160,7 @@ describe("uploadSourceToKnowhere", () => {
     };
 
     await expect(
-      uploadSourceToKnowhere(
+      uploadSourceToZiru(
         workspace,
         new File(["hello"], "notes.pdf", { type: "application/pdf" }),
         deps,
@@ -172,15 +172,15 @@ describe("uploadSourceToKnowhere", () => {
       uploadingSource.id,
       "network",
     );
-    expect(deps.knowhere.jobs.get).not.toHaveBeenCalled();
+    expect(deps.ziru.jobs.get).not.toHaveBeenCalled();
   });
 
-  it("keeps a queued file upload parsing when Knowhere has not published a document id yet", async () => {
+  it("keeps a queued file upload parsing when Ziru has not published a document id yet", async () => {
     const uploadingSource = makeSource();
     const parsingSource = makeSource({
       status: "parsing",
-      knowhereJobId: "job_123",
-      knowhereDocumentId: null,
+      ziruJobId: "job_123",
+      ziruDocumentId: null,
     });
     const deps = {
       repository: {
@@ -188,7 +188,7 @@ describe("uploadSourceToKnowhere", () => {
         markSourceParsing: vi.fn().mockResolvedValue(parsingSource),
         markSourceFailed: vi.fn(),
       },
-      knowhere: {
+      ziru: {
         jobs: {
           create: vi.fn().mockResolvedValue({
             jobId: "job_123",
@@ -205,7 +205,7 @@ describe("uploadSourceToKnowhere", () => {
     };
     const file = new File(["hello"], "notes.pdf", { type: "application/pdf" });
 
-    const result = await uploadSourceToKnowhere(workspace, file, deps);
+    const result = await uploadSourceToZiru(workspace, file, deps);
 
     expect(deps.repository.markSourceParsing).toHaveBeenCalledWith(
       workspace.id,
@@ -216,7 +216,7 @@ describe("uploadSourceToKnowhere", () => {
     expect(result).toMatchObject({
       id: "source_1",
       status: "parsing",
-      knowhereDocumentId: null,
+      ziruDocumentId: null,
     });
   });
 
@@ -224,8 +224,8 @@ describe("uploadSourceToKnowhere", () => {
     const uploadingSource = makeSource();
     const parsingSource = makeSource({
       status: "parsing",
-      knowhereJobId: "job_123",
-      knowhereDocumentId: "doc_planned",
+      ziruJobId: "job_123",
+      ziruDocumentId: "doc_planned",
     });
     const deps = {
       repository: {
@@ -233,7 +233,7 @@ describe("uploadSourceToKnowhere", () => {
         markSourceParsing: vi.fn().mockResolvedValue(parsingSource),
         markSourceFailed: vi.fn(),
       },
-      knowhere: {
+      ziru: {
         jobs: {
           create: vi.fn().mockResolvedValue({
             jobId: "job_123",
@@ -248,13 +248,13 @@ describe("uploadSourceToKnowhere", () => {
       },
     };
 
-    await uploadSourceToKnowhere(
+    await uploadSourceToZiru(
       workspace,
       new File(["hello"], "notes.pdf", { type: "application/pdf" }),
       deps,
     );
 
-    expect(deps.knowhere.jobs.get).not.toHaveBeenCalled();
+    expect(deps.ziru.jobs.get).not.toHaveBeenCalled();
     expect(deps.repository.markSourceParsing).toHaveBeenCalledWith(
       workspace.id,
       uploadingSource.id,
@@ -268,8 +268,8 @@ describe("uploadSourceToKnowhere", () => {
     const parsingSource = makeSource({
       title: "large.pdf",
       status: "parsing",
-      knowhereJobId: "job_123",
-      knowhereDocumentId: "doc_123",
+      ziruJobId: "job_123",
+      ziruDocumentId: "doc_123",
       sizeBytes: 5,
     });
     const deps = {
@@ -278,7 +278,7 @@ describe("uploadSourceToKnowhere", () => {
         markSourceParsing: vi.fn().mockResolvedValue(parsingSource),
         markSourceFailed: vi.fn(),
       },
-      knowhere: {
+      ziru: {
         jobs: {
           create: vi.fn().mockResolvedValue({
             jobId: "job_123",
@@ -294,7 +294,7 @@ describe("uploadSourceToKnowhere", () => {
       },
     };
 
-    const result = await uploadSourceBlobToKnowhere(
+    const result = await uploadSourceBlobToZiru(
       workspace,
       {
         pathname: "source-uploads/upload_1/document.pdf",
@@ -316,21 +316,21 @@ describe("uploadSourceToKnowhere", () => {
         originalBlobUrl: "https://store.public.blob.vercel-storage.com/source-uploads/upload_1/document.pdf",
       },
     );
-    expect(deps.knowhere.jobs.create).toHaveBeenCalledWith({
+    expect(deps.ziru.jobs.create).toHaveBeenCalledWith({
       sourceType: "url",
       sourceUrl: "https://store.public.blob.vercel-storage.com/source-uploads/upload_1/document.pdf",
       fileName: "large.pdf",
-      namespace: "notebook-8fca7b54-c2da-48f4-9668-a4b39fbc4d4c",
+      namespace: "webui-8fca7b54-c2da-48f4-9668-a4b39fbc4d4c",
       documentMetadata: {
-        createdByClient: "notebook",
+        createdByClient: "webui",
         sourceFileName: "large.pdf",
         title: "large.pdf",
         mimeType: "application/pdf",
         sizeBytes: 5,
       },
     });
-    expect(deps.knowhere.jobs.upload).not.toHaveBeenCalled();
-    expect(deps.knowhere.jobs.get).toHaveBeenCalledWith("job_123");
+    expect(deps.ziru.jobs.upload).not.toHaveBeenCalled();
+    expect(deps.ziru.jobs.get).toHaveBeenCalledWith("job_123");
     expect(deps.repository.markSourceParsing).toHaveBeenCalledWith(
       workspace.id,
       uploadingSource.id,
@@ -344,13 +344,13 @@ describe("uploadSourceToKnowhere", () => {
     });
   });
 
-  it("keeps a URL parse job parsing when Knowhere has not published a document id yet", async () => {
+  it("keeps a URL parse job parsing when Ziru has not published a document id yet", async () => {
     const uploadingSource = makeSource({ title: "large.pdf", sizeBytes: 5 });
     const parsingSource = makeSource({
       title: "large.pdf",
       status: "parsing",
-      knowhereJobId: "job_123",
-      knowhereDocumentId: null,
+      ziruJobId: "job_123",
+      ziruDocumentId: null,
       sizeBytes: 5,
     });
     const deps = {
@@ -359,7 +359,7 @@ describe("uploadSourceToKnowhere", () => {
         markSourceParsing: vi.fn().mockResolvedValue(parsingSource),
         markSourceFailed: vi.fn(),
       },
-      knowhere: {
+      ziru: {
         jobs: {
           create: vi.fn().mockResolvedValue({
             jobId: "job_123",
@@ -375,7 +375,7 @@ describe("uploadSourceToKnowhere", () => {
       },
     };
 
-    const result = await uploadSourceBlobToKnowhere(
+    const result = await uploadSourceBlobToZiru(
       workspace,
       {
         pathname: "source-uploads/upload_1/document.pdf",
@@ -396,7 +396,7 @@ describe("uploadSourceToKnowhere", () => {
     expect(result).toMatchObject({
       id: "source_1",
       status: "parsing",
-      knowhereDocumentId: null,
+      ziruDocumentId: null,
     });
   });
 
@@ -416,7 +416,7 @@ describe("uploadSourceToKnowhere", () => {
         markSourceParsing: vi.fn(),
         markSourceFailed: vi.fn().mockResolvedValue(failedSource),
       },
-      knowhere: {
+      ziru: {
         jobs: {
           create: vi.fn().mockRejectedValue(new Error("network")),
           get: vi.fn(),
@@ -425,7 +425,7 @@ describe("uploadSourceToKnowhere", () => {
       },
     };
 
-    const result = await uploadSourceBlobToKnowhere(
+    const result = await uploadSourceBlobToZiru(
       workspace,
       {
         pathname: "source-uploads/upload_1/document.pdf",

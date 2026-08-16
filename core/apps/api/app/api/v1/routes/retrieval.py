@@ -113,7 +113,7 @@ class RetrievalQueryResponse(BaseModel):
     answer_text: str = Field(
         default="",
         description=(
-            "DEPRECATED. Always empty; KNOWHERE no longer generates answers. "
+            "DEPRECATED. Always empty; ZIRU no longer generates answers. "
             "Use evidence_text and synthesize answers downstream."
         ),
     )

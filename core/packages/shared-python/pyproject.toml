@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "knowhere-shared"
+name = "ziru-shared"
 version = "0.1.0"
-description = "Knowhere Shared Python Package - Core Infrastructure: Models, Config, Database, Redis Services, Storage Adapters, and Utils"
+description = "Ziru Shared Python Package - Core Infrastructure: Models, Config, Database, Redis Services, Storage Adapters, and Utils"
 requires-python = ">=3.11"
 dependencies = [
     # Database

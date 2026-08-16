@@ -213,10 +213,11 @@ usage aggregates, client/document mix). Events never include filenames,
 prompts, emails, IPs, or geo. Schema and allowlists are locked in
 [ADR-0004](docs/adr/0004-anonymous-self-hosted-telemetry.md).
 
-Telemetry is **default-on**. To opt out, set:
+Telemetry is **off by default** in the Ziru fork (`TELEMETRY_ENABLED=false`).
+If you operate your own analytics endpoint, you can opt in:
 
 ```bash
-TELEMETRY_ENABLED=false
+TELEMETRY_ENABLED=true
 ```
 
 Related settings live in `apps/api/.env.example` under `TELEMETRY_*`. Private

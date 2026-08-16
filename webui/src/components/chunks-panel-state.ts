@@ -48,8 +48,8 @@ type ChunksPanelStateModule = {
   ) => RenderableReference[]
 }
 
-const knowhereArrowSectionSeparator = /--!?>/
-const knowhereSectionSegmentSeparator = /--!?>|\/+/
+const ziruArrowSectionSeparator = /--!?>/
+const ziruSectionSegmentSeparator = /--!?>|\/+/
 
 function getChunksWithFocusedFirst(
   chunks: readonly ParsedChunkView[],
@@ -216,7 +216,7 @@ function getChunkSectionSegments(
   if (isAssetPath(sectionPath) && chunk.type !== "text") return []
 
   const segments = sectionPath
-    .split(knowhereSectionSegmentSeparator)
+    .split(ziruSectionSegmentSeparator)
     .map((segment) => segment.trim())
     .filter((segment) => segment.length > 0)
 
@@ -336,9 +336,9 @@ function formatChunkSectionPath(
   const trimmedSectionPath = sectionPath?.trim() ?? ""
   if (!trimmedSectionPath) return null
 
-  const userVisiblePath = removeKnowhereDefaultRootPrefix(trimmedSectionPath)
+  const userVisiblePath = removeZiruDefaultRootPrefix(trimmedSectionPath)
   const readablePath = userVisiblePath
-    .split(knowhereArrowSectionSeparator)
+    .split(ziruArrowSectionSeparator)
     .map((segment) => segment.trim())
     .filter((segment) => segment.length > 0)
     .join(" / ")
@@ -346,13 +346,13 @@ function formatChunkSectionPath(
   return readablePath.length > 0 ? readablePath : null
 }
 
-function removeKnowhereDefaultRootPrefix(sectionPath: string): string {
-  const knowhereDefaultRootPrefix = "Default_Root/" as const
-  if (!sectionPath.startsWith(knowhereDefaultRootPrefix)) return sectionPath
+function removeZiruDefaultRootPrefix(sectionPath: string): string {
+  const ziruDefaultRootPrefix = "Default_Root/" as const
+  if (!sectionPath.startsWith(ziruDefaultRootPrefix)) return sectionPath
 
-  const sectionSegments = sectionPath.split(knowhereArrowSectionSeparator)
+  const sectionSegments = sectionPath.split(ziruArrowSectionSeparator)
   if (sectionSegments.length <= 1) {
-    return sectionPath.slice(knowhereDefaultRootPrefix.length)
+    return sectionPath.slice(ziruDefaultRootPrefix.length)
   }
 
   return sectionSegments.slice(1).join("-->")

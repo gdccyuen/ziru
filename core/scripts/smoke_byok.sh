@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Local BYOK smoke checks against a running KNOWHERE API on :5005.
+# Local BYOK smoke checks against a running ZIRU API on :5005.
 # Usage:
-#   export KNOWHERE_API_KEY=kh_...
+#   export ZIRU_API_KEY=kh_...
 #   ./scripts/smoke_byok.sh
 set -euo pipefail
 
-BASE_URL="${KNOWHERE_BASE_URL:-http://localhost:5005}"
-API_KEY="${KNOWHERE_API_KEY:?Set KNOWHERE_API_KEY to a local API key}"
+BASE_URL="${ZIRU_BASE_URL:-http://localhost:5005}"
+API_KEY="${ZIRU_API_KEY:?Set ZIRU_API_KEY to a local API key}"
 
 auth_hdr=(-H "Authorization: Bearer ${API_KEY}" -H "Content-Type: application/json")
 
@@ -16,7 +16,7 @@ curl -fsS "${BASE_URL}/health" | head -c 200; echo
 echo "== OpenAPI: v2 jobs has llm_config, v1 does not =="
 python3 - <<'PY'
 import json, os, urllib.request
-base = os.environ.get("KNOWHERE_BASE_URL", "http://localhost:5005")
+base = os.environ.get("ZIRU_BASE_URL", "http://localhost:5005")
 with urllib.request.urlopen(f"{base}/openapi.json") as resp:
     schema = json.load(resp)
 paths = schema["paths"]

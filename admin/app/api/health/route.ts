@@ -4,7 +4,7 @@ export async function GET() {
   try {
     return NextResponse.json({
       status: "healthy",
-      service: "knowhere-web",
+      service: "ziru-admin",
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
     });
@@ -12,7 +12,7 @@ export async function GET() {
     return NextResponse.json(
       {
         status: "unhealthy",
-        service: "knowhere-web",
+        service: "ziru-admin",
         error: error instanceof Error ? error.message : "Unknown error",
         timestamp: new Date().toISOString(),
       },

@@ -45,7 +45,7 @@ export const generateAgenticOutputManifestEffect = (
       )
     }
 
-    const turn = buildNotebookHarnessTurn(input)
+    const turn = buildWebUIHarnessTurn(input)
     logger.info("chat-agent: harness request", {
       operation: "generateAgenticOutputManifest.initial",
       model: getChatModelLabel(),
@@ -85,13 +85,13 @@ export async function generateAgenticOutputManifest(
   return Effect.runPromise(generateAgenticOutputManifestEffect(input))
 }
 
-function buildNotebookHarnessTurn(
+function buildWebUIHarnessTurn(
   input: GenerateAgenticOutputManifestInput,
 ): AgentTurnInput {
   return {
-    surface: "notebook_chat",
+    surface: "ziru_chat",
     userText: input.question,
-    recentTurns: buildNotebookHarnessRecentTurns(input.messages),
+    recentTurns: buildWebUIHarnessRecentTurns(input.messages),
     sourceContext: formatSourceContext(input.sources, input.excludedSourceIds),
     outputCapabilities: {
       text: true,
@@ -101,7 +101,7 @@ function buildNotebookHarnessTurn(
   }
 }
 
-function buildNotebookHarnessRecentTurns(
+function buildWebUIHarnessRecentTurns(
   messages: readonly ChatHistoryMessage[],
 ): AgentTurn[] {
   return messages.slice(-RECENT_CONTEXT_MESSAGE_LIMIT).map((message, index) => ({
@@ -162,8 +162,8 @@ function formatSourceContext(
     .filter((source): boolean => !excludedSourceIdsSet.has(source.id))
     .slice(0, SOURCE_CONTEXT_LIMIT)
     .map((source): string => {
-      const documentId = source.knowhereDocumentId
-        ? `documentId=${source.knowhereDocumentId}`
+      const documentId = source.ziruDocumentId
+        ? `documentId=${source.ziruDocumentId}`
         : "documentId=unknown"
       return `- ${source.title} (${documentId})`
     })

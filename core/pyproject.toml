@@ -1,7 +1,7 @@
 [project]
-name = "knowhere-api"
+name = "ziru-api"
 version = "0.1.0"
-description = "Knowhere API publication workspace"
+description = "Ziru API publication workspace"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }

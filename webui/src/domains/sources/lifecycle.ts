@@ -1,7 +1,7 @@
 import "server-only"
 
 import { Effect } from "effect"
-import type { JobResult } from "@ontos-ai/knowhere-sdk"
+import type { JobResult } from "@/integrations/ziru-sdk-types"
 
 import type { Source } from "@/infrastructure/db/schema"
 import { logger } from "@/lib/logger"
@@ -25,7 +25,7 @@ type SourceLifecycleBlobStore = {
   deleteStagedSourceBlob(pathname: string): Promise<void>
 }
 
-type ApplyKnowhereJobToSourceInput = {
+type ApplyZiruJobToSourceInput = {
   workspaceId: string
   source: Source
   job: JobResult
@@ -37,8 +37,8 @@ type ApplyKnowhereJobToSourceInput = {
 // Effect core
 // ---------------------------------------------------------------------------
 
-export const applyKnowhereJobToSourceEffect = Effect.fn(
-  "applyKnowhereJobToSource",
+export const applyZiruJobToSourceEffect = Effect.fn(
+  "applyZiruJobToSource",
 )(
   function* ({
     workspaceId,
@@ -46,7 +46,7 @@ export const applyKnowhereJobToSourceEffect = Effect.fn(
     job,
     repository,
     blobStore,
-  }: ApplyKnowhereJobToSourceInput) {
+  }: ApplyZiruJobToSourceInput) {
     // Best-effort early exit: skip duplicate status transitions when the source
     // has already been resolved. The atomic guard is in the DB UPDATE below.
     if (source.status !== "parsing") return
@@ -55,7 +55,7 @@ export const applyKnowhereJobToSourceEffect = Effect.fn(
       if (job.documentId) {
         logger.info("lifecycle: job done — transitioning source to ready", {
           sourceId: source.id,
-          jobId: source.knowhereJobId ?? "",
+          jobId: source.ziruJobId ?? "",
           documentId: job.documentId,
         })
         yield* Effect.tryPromise(() =>
@@ -76,7 +76,7 @@ export const applyKnowhereJobToSourceEffect = Effect.fn(
 
       logger.warn("lifecycle: job done but no documentId — marking failed", {
         sourceId: source.id,
-        jobId: source.knowhereJobId ?? "",
+        jobId: source.ziruJobId ?? "",
       })
       yield* Effect.tryPromise(() =>
         repository.markSourceFailed(
@@ -93,7 +93,7 @@ export const applyKnowhereJobToSourceEffect = Effect.fn(
     if (job.isFailed || job.status === "failed") {
       logger.warn("lifecycle: job failed — marking source failed", {
         sourceId: source.id,
-        jobId: source.knowhereJobId ?? "",
+        jobId: source.ziruJobId ?? "",
         error: job.error?.message ?? "unknown",
       })
       yield* Effect.tryPromise(() =>
@@ -110,7 +110,7 @@ export const applyKnowhereJobToSourceEffect = Effect.fn(
 
     logger.info("lifecycle: job still in progress", {
       sourceId: source.id,
-      jobId: source.knowhereJobId ?? "",
+      jobId: source.ziruJobId ?? "",
       jobStatus: job.status,
     })
   },
@@ -120,15 +120,15 @@ export const applyKnowhereJobToSourceEffect = Effect.fn(
 // Async wrapper (backward-compatible)
 // ---------------------------------------------------------------------------
 
-export async function applyKnowhereJobToSource({
+export async function applyZiruJobToSource({
   workspaceId,
   source,
   job,
   repository,
   blobStore,
-}: ApplyKnowhereJobToSourceInput): Promise<void> {
+}: ApplyZiruJobToSourceInput): Promise<void> {
   return Effect.runPromise(
-    applyKnowhereJobToSourceEffect({
+    applyZiruJobToSourceEffect({
       workspaceId,
       source,
       job,

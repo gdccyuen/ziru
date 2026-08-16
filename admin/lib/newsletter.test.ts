@@ -12,8 +12,8 @@ describe("newsletter helpers", () => {
   });
 
   it("creates auth-free confirmation links under the dashboard origin", () => {
-    expect(createNewsletterConfirmationUrl("https://knowhereto.ai", "abc123")).toBe(
-      "https://knowhereto.ai/newsletter/confirm?token=abc123"
+    expect(createNewsletterConfirmationUrl("https://ziru.app", "abc123")).toBe(
+      "https://ziru.app/newsletter/confirm?token=abc123"
     );
   });
 

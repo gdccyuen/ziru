@@ -22,7 +22,7 @@ type RouteListingDependencies = Pick<
   | "getCurrentUser"
   | "getSourceViewOptionsBySourceId"
   | "listSourcesForWorkspace"
-  | "makeKnowhereClient"
+  | "makeZiruClient"
 > & {
   readonly sourceService: Pick<
     SourceRouteServiceDependencies["sourceService"],
@@ -73,7 +73,7 @@ const listSourcesEffect = (
     const apiKey = yield* Effect.tryPromise(() =>
       deps.ensureApiKeyForWorkspace(workspace.id),
     )
-    const client = deps.makeKnowhereClient(apiKey)
+    const client = deps.makeZiruClient(apiKey)
     const sources = listedSources
     const workspaceSources = sources
     const localizedSources = yield* localizeRemoteLibrarySources({
@@ -91,8 +91,8 @@ const listSourcesEffect = (
           revisionKey: document.revisionKey ?? null,
         }),
     })
-    const sourcesNeedingKnowhereChunkCount =
-      getWorkspaceSourcesNeedingKnowhereChunkCount(localizedSources)
+    const sourcesNeedingZiruChunkCount =
+      getWorkspaceSourcesNeedingZiruChunkCount(localizedSources)
     yield* Effect.sync(() =>
       triggerBackgroundReconciliationForParsingSources({
         workspaceId: workspace.id,
@@ -104,7 +104,7 @@ const listSourcesEffect = (
       }),
     )
     const sourceOptions = yield* deps.getSourceViewOptionsBySourceId(
-      sourcesNeedingKnowhereChunkCount,
+      sourcesNeedingZiruChunkCount,
       client,
     )
 
@@ -117,11 +117,11 @@ const listSourcesEffect = (
 
 export { createRouteListing }
 
-function getWorkspaceSourcesNeedingKnowhereChunkCount(
+function getWorkspaceSourcesNeedingZiruChunkCount(
   sources: readonly Source[],
 ): readonly Source[] {
   return sources.filter(
-    (source) => source.status === "ready" && source.knowhereDocumentId,
+    (source) => source.status === "ready" && source.ziruDocumentId,
   )
 }
 
@@ -132,7 +132,7 @@ function triggerBackgroundReconciliationForParsingSources(input: {
   readonly startBackgroundReconciliation: typeof defaultStartBackgroundReconciliation
 }): void {
   const parsingSources = input.sources.filter(
-    (source) => source.status === "parsing" && source.knowhereJobId,
+    (source) => source.status === "parsing" && source.ziruJobId,
   )
   if (parsingSources.length === 0) return
 

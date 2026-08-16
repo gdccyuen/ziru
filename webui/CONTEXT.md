@@ -7,22 +7,22 @@ terms when naming modules, tests, and route workflows.
 
 A Workspace is the WebUI-owned tenant container that binds one user to one
 document domain: it stores local source metadata, chat threads, and the pair
-`(knowhereKeyLabel, namespace)` — the configured API key (domain) that
+`(ziruKeyLabel, namespace)` — the configured API key (domain) that
 authenticates Ziru API access, and the Ziru namespace under that domain
 whose documents the workspace's sources live in. One workspace per
 (user, keyLabel, namespace) tuple. The active workspace is selected by the
-`notebook-ws` cookie (falls back to the user's first workspace, then a legacy
-`notebook-<uuid>` default). Legacy rows with a null key label use the default
+`ziru-ws` cookie (falls back to the user's first workspace, then a legacy
+`ziru-<uuid>` default). Legacy rows with a null key label use the default
 key and keep working unchanged.
 
 ## Ziru Key Label
 
 A Ziru Key Label identifies one configured Ziru API key (a "domain").
 Since Phase 3, keys are managed per workspace through the "API keys…" dialog:
-stored AES-256-GCM encrypted in the `knowhere_api_keys` table and decrypted
-on demand by `ensureApiKeyForWorkspace`. `workspaces.active_knowhere_api_key_id`
-selects the active key. The `config/knowhere-keys.json` file (or
-`KNOWHERE_API_KEY` env as a single `"default"` key) remains as a bootstrap
+stored AES-256-GCM encrypted in the `ziru_api_keys` table and decrypted
+on demand by `ensureApiKeyForWorkspace`. `workspaces.active_ziru_api_key_id`
+selects the active key. The `config/ziru-keys.json` file (or
+`ZIRU_API_KEY` env as a single `"default"` key) remains as a bootstrap
 fallback for fresh deployments. The API never exposes full keys to the
 browser — only masked labels (`sk_8aB••••GVB8`).
 
@@ -233,20 +233,20 @@ the container without a rebuild.
 WebUI Auth is the WebUI's own identity system (ADR 0010). A `User` is a
 row in the `users` table; login credentials attach via `AccountLink` rows
 (one per provider, `password_hash` for the "password" provider). A `Session`
-is a DB row whose id rides the `notebook-session` cookie (HttpOnly, 30-day
+is a DB row whose id rides the `ziru-session` cookie (HttpOnly, 30-day
 TTL); `getCurrentUser` joins sessions × users on every request. Users are
 admin-provisioned (no public signup); login is the local `/login` Server
-Action and logout deletes the session row. `KNOWHERE_API_KEY` /
-`KNOWHERE_KEYS_FILE` still short-circuit to the development user as a
+Action and logout deletes the session row. `ZIRU_API_KEY` /
+`ZIRU_KEYS_FILE` still short-circuit to the development user as a
 bootstrap.
 
 ## Ziru Credential
 
 A Ziru Credential is the API key used to call the Ziru API. It is resolved
 per workspace by `ensureApiKeyForWorkspace`
-(`src/integrations/knowhere-credentials.ts`): the workspace's
-`knowhereKeyLabel` picks a key from `config/knowhere-keys.json` (falling
-back to `KNOWHERE_API_KEY` env). The Dashboard JWT path was removed in the
+(`src/integrations/ziru-credentials.ts`): the workspace's
+`ziruKeyLabel` picks a key from `config/ziru-keys.json` (falling
+back to `ZIRU_API_KEY` env). The Dashboard JWT path was removed in the
 Phase 2 hard-cut — the WebUI never requests or stores Dashboard tokens.
 
 ## Route Service

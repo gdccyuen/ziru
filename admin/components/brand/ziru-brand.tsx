@@ -2,9 +2,9 @@ import { cn } from "@lib/utils";
 import Image from "next/image";
 import type { JSX } from "react";
 
-type KnowhereBrandVariant = "horizontal" | "mark";
-type ResolvedKnowhereBrandTone = "light" | "dark";
-type KnowhereBrandTone = ResolvedKnowhereBrandTone | "auto";
+type ZiruBrandVariant = "horizontal" | "mark";
+type ResolvedZiruBrandTone = "light" | "dark";
+type ZiruBrandTone = ResolvedZiruBrandTone | "auto";
 
 type BrandAsset = {
   readonly height: number;
@@ -12,13 +12,13 @@ type BrandAsset = {
   readonly width: number;
 };
 
-type KnowhereBrandProps = {
+type ZiruBrandProps = {
   readonly className?: string;
   readonly imageClassName?: string;
   readonly priority?: boolean;
   readonly sizes?: string;
-  readonly tone?: KnowhereBrandTone;
-  readonly variant?: KnowhereBrandVariant;
+  readonly tone?: ZiruBrandTone;
+  readonly variant?: ZiruBrandVariant;
 };
 
 type BrandImageProps = {
@@ -32,33 +32,33 @@ const BRAND_ASSETS = {
   horizontal: {
     light: {
       height: 84,
-      src: "/images/knowhere/logo.png",
+      src: "/images/ziru/logo.png",
       width: 360,
     },
     dark: {
       height: 84,
-      src: "/images/knowhere/logo-dark.png",
+      src: "/images/ziru/logo-dark.png",
       width: 360,
     },
   },
   mark: {
     light: {
       height: 84,
-      src: "/images/knowhere/logo-icon.png",
+      src: "/images/ziru/logo-icon.png",
       width: 92,
     },
     dark: {
       height: 84,
-      src: "/images/knowhere/logo-icon.png",
+      src: "/images/ziru/logo-icon.png",
       width: 92,
     },
   },
-} as const satisfies Record<KnowhereBrandVariant, Record<ResolvedKnowhereBrandTone, BrandAsset>>;
+} as const satisfies Record<ZiruBrandVariant, Record<ResolvedZiruBrandTone, BrandAsset>>;
 
 function renderBrandImage({ asset, className, priority, sizes }: BrandImageProps): JSX.Element {
   return (
     <Image
-      alt="Knowhere"
+      alt="Ziru"
       className={cn("block h-auto w-full object-contain", className)}
       height={asset.height}
       priority={priority}
@@ -69,14 +69,14 @@ function renderBrandImage({ asset, className, priority, sizes }: BrandImageProps
   );
 }
 
-export const KnowhereBrand = ({
+export const ZiruBrand = ({
   className,
   imageClassName,
   priority = false,
   sizes,
   tone = "light",
   variant = "horizontal",
-}: KnowhereBrandProps): JSX.Element => {
+}: ZiruBrandProps): JSX.Element => {
   if (tone === "auto") {
     return (
       <span className={cn("inline-flex shrink-0 items-center", className)}>

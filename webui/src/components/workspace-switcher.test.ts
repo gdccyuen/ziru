@@ -72,7 +72,7 @@ describe("WorkspaceSwitcher", () => {
           activeKeyLabel: "domainA",
         },
         workspaces: [{ id: "ws_a1", namespace: "adobe" }],
-        knowhereKeyLabels: keyLabels,
+        ziruKeyLabels: keyLabels,
       }),
     );
 
@@ -91,7 +91,7 @@ describe("WorkspaceSwitcher", () => {
       React.createElement(C, {
         activeWorkspace: undefined,
         workspaces: [],
-        knowhereKeyLabels: [],
+        ziruKeyLabels: [],
       }),
     );
 
@@ -108,7 +108,7 @@ describe("WorkspaceSwitcher", () => {
           activeKeyLabel: "domainA",
         },
         workspaces: [{ id: "ws_a1", namespace: "adobe" }],
-        knowhereKeyLabels: keyLabels,
+        ziruKeyLabels: keyLabels,
       }),
     );
 
@@ -134,7 +134,7 @@ describe("WorkspaceSwitcher", () => {
           { id: "ws_a1", namespace: "adobe" },
           { id: "ws_a2", namespace: "docx" },
         ],
-        knowhereKeyLabels: keyLabels,
+        ziruKeyLabels: keyLabels,
       }),
     );
 

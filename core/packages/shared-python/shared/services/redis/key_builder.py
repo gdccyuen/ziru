@@ -22,7 +22,7 @@ class RedisKeyType(Enum):
 class RedisKeyBuilder:
     """Redis key builder."""
 
-    def __init__(self, prefix: str = "knowhere-api"):
+    def __init__(self, prefix: str = "ziru-api"):
         self.prefix = prefix
 
     def build_key(self, key_type: RedisKeyType, *parts: str, **kwargs) -> str:

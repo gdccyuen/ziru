@@ -28,7 +28,7 @@ export const LoginPageShell = () => {
       <header className="h-12 border-b border-[#d4d4d8] bg-[#fafafa] px-[30px] lg:h-16 lg:px-8">
         <div className="flex h-full items-center">
           <Link
-            aria-label="Knowhere homepage"
+            aria-label="Ziru homepage"
             className="rounded-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7f22fe]/20 focus-visible:ring-offset-2"
             href="/"
           >

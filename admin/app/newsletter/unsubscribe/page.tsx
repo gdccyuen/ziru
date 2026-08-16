@@ -46,12 +46,12 @@ export default function NewsletterUnsubscribePage() {
         </div>
 
         <h1 className="mt-5 text-2xl font-bold leading-8 text-zinc-950 dark:text-[#fafafa]">
-          {isSuccess ? "Newsletter unsubscribed" : "Unsubscribe from Knowhere newsletter"}
+          {isSuccess ? "Newsletter unsubscribed" : "Unsubscribe from Ziru newsletter"}
         </h1>
         <p className="mt-3 text-base leading-6 text-zinc-600 dark:text-[#a1a1aa]">
           {isSuccess
-            ? "If this email was subscribed, it will no longer receive Knowhere newsletter emails."
-            : "Enter your email address and we will remove it from future Knowhere newsletter emails."}
+            ? "If this email was subscribed, it will no longer receive Ziru newsletter emails."
+            : "Enter your email address and we will remove it from future Ziru newsletter emails."}
         </p>
 
         {isSuccess ? null : (
@@ -83,7 +83,7 @@ export default function NewsletterUnsubscribePage() {
         ) : null}
 
         <Button asChild className="mt-7" variant="secondary">
-          <Link href="/">Back to Knowhere</Link>
+          <Link href="/">Back to Ziru</Link>
         </Button>
       </section>
     </main>

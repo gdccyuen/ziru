@@ -13,9 +13,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   uploadBlob: vi.fn(),
-  trackNotebookUploadButtonClicked: vi.fn(),
-  trackNotebookDocumentUploadCompleted: vi.fn(),
-  trackNotebookDocumentUploadFailed: vi.fn(),
+  trackWebUIUploadButtonClicked: vi.fn(),
+  trackWebUIDocumentUploadCompleted: vi.fn(),
+  trackWebUIDocumentUploadFailed: vi.fn(),
 }));
 
 vi.mock("@vercel/blob/client", () => ({
@@ -23,10 +23,10 @@ vi.mock("@vercel/blob/client", () => ({
 }));
 
 vi.mock("@/lib/posthog", () => ({
-  trackNotebookUploadButtonClicked: mocks.trackNotebookUploadButtonClicked,
-  trackNotebookDocumentUploadCompleted:
-    mocks.trackNotebookDocumentUploadCompleted,
-  trackNotebookDocumentUploadFailed: mocks.trackNotebookDocumentUploadFailed,
+  trackWebUIUploadButtonClicked: mocks.trackWebUIUploadButtonClicked,
+  trackWebUIDocumentUploadCompleted:
+    mocks.trackWebUIDocumentUploadCompleted,
+  trackWebUIDocumentUploadFailed: mocks.trackWebUIDocumentUploadFailed,
 }));
 
 import { SourceUploadDialog } from "./source-upload-dialog";
@@ -70,7 +70,7 @@ describe("SourceUploadDialog", () => {
     render(React.createElement(SourceUploadDialog, { onSourceUploaded }));
 
     await user.click(screen.getByRole("button", { name: "Upload Document" }));
-    expect(mocks.trackNotebookUploadButtonClicked).toHaveBeenCalledOnce();
+    expect(mocks.trackWebUIUploadButtonClicked).toHaveBeenCalledOnce();
     const dialog = screen.getByRole("dialog");
     const file = new File(["hello"], "drop.pdf", { type: "application/pdf" });
     const dropEvent = createFileDropEvent(file);
@@ -138,7 +138,7 @@ describe("SourceUploadDialog", () => {
         onSourceUploaded,
         isBlobConfigured: false,
         activeWorkspace: { id: "workspace_default", namespace: "default" },
-        knowhereKeyLabels: [{ id: "key_1", label: "Key 1" }],
+        ziruKeyLabels: [{ id: "key_1", label: "Key 1" }],
       }),
     );
 

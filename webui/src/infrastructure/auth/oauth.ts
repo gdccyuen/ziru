@@ -250,7 +250,7 @@ type DashboardUser = {
 type DashboardUserInfo = DashboardUser
 
 /**
- * Log the user in via the Knowhere Dashboard's current session.
+ * Log the user in via the Ziru Dashboard's current session.
  *
  * The browser already sends the Dashboard's Better Auth session cookie to
  * this app (cookies are not port-scoped: same host, any port; or a shared
@@ -260,7 +260,7 @@ type DashboardUserInfo = DashboardUser
  *
  * Errors are thrown as `DashboardLoginError` with a machine-readable code:
  * - "no-dashboard-session" — Dashboard has no session for this cookie
- * - "email-collision" — the Dashboard email matches a Notebook user that
+ * - "email-collision" — the Dashboard email matches a WebUI user that
  *   has a password; we never silently adopt a password-protected account
  *
  * Returns the destination app path on success.
@@ -273,7 +273,7 @@ export async function loginWithDashboardSession(
   if (!userInfo) {
     throw new DashboardLoginError(
       "no-dashboard-session",
-      "You are not logged into the Knowhere Dashboard.",
+      "You are not logged into the Ziru Dashboard.",
     )
   }
 
@@ -330,7 +330,7 @@ async function fetchDashboardCurrentUser(
     if (error instanceof DashboardLoginError) throw error
     throw new DashboardLoginError(
       "no-dashboard-session",
-      "Could not reach the Knowhere Dashboard for session check.",
+      "Could not reach the Ziru Dashboard for session check.",
     )
   } finally {
     clearTimeout(timeout)
@@ -369,7 +369,7 @@ async function findOrCreateDashboardUser(userInfo: DashboardUserInfo) {
     if (passwordLink?.passwordHash) {
       throw new DashboardLoginError(
         "email-collision",
-        `A Notebook user with the email "${email}" already has a password. ` +
+        `A WebUI user with the email "${email}" already has a password. ` +
           "Remove that user or log in with the password instead.",
       )
     }

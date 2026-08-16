@@ -88,7 +88,7 @@ export function WorkspaceApiKeysDialog({
         <DialogHeader>
           <DialogTitle>API keys</DialogTitle>
           <DialogDescription>
-            {userName ? `${userName}'s Knowhere credentials. ` : ""}Keys are
+            {userName ? `${userName}'s Ziru credentials. ` : ""}Keys are
             encrypted at rest and never shown again after saving. Adding a key
             creates its `{`label / default`}` workspace.
           </DialogDescription>
@@ -135,7 +135,7 @@ export function WorkspaceApiKeysDialog({
             ))
           ) : (
             <p className="text-xs text-muted-foreground">
-              No API keys yet. Add one to connect to Knowhere — a
+              No API keys yet. Add one to connect to Ziru — a
               `{`label / default`}` workspace is created automatically.
             </p>
           )}

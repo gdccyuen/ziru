@@ -23,7 +23,7 @@ from shared.core.exceptions.domain_exceptions import (
     ImageParsingException,
     LLMServiceException,
 )
-from shared.core.exceptions.knowhere_exception import KnowhereException
+from shared.core.exceptions.ziru_exception import ZiruException
 from shared.services.ai.prompt_service import build_prompt
 from shared.services.ai.response_process_service import eval_response
 from shared.utils.chunk_refs import build_chunk_ref
@@ -315,7 +315,7 @@ def parse_image(
                 final_img_name = filename
         else:
             final_img_name = filename
-    except KnowhereException:
+    except ZiruException:
         raise
     except Exception as e:
         logger.error(f"Failed to save image: {e}...")

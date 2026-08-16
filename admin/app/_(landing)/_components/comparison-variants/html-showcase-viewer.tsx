@@ -7,7 +7,7 @@ import { Maximize2, Minimize2, Minus, Plus, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 type HTMLShowcaseViewerProps = {
-  productId: string; // e.g., "knowhere", "markitdown", "unstructured"
+  productId: string; // e.g., "ziru", "markitdown", "unstructured"
   label?: string;
   className?: string;
   onMaximize?: () => void;

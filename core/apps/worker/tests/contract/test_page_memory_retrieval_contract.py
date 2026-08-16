@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost/test")
-os.environ.setdefault("TMP_PATH", "/tmp/knowhere-test")
+os.environ.setdefault("TMP_PATH", "/tmp/ziru-test")
 os.environ.setdefault("S3_BUCKET_NAME", "test-uploads")
 os.environ.setdefault("S3_ACCESS_KEY_ID", "test")
 os.environ.setdefault("S3_SECRET_ACCESS_KEY", "test")
@@ -285,7 +285,7 @@ async def test_page_citation_asset_precedes_lazy_page_pdf_fallback(monkeypatch) 
                         "content_type": "image/png",
                         "width": 1200,
                         "height": 1800,
-                        "source": "knowhere-rendered-page-citation-source",
+                        "source": "ziru-rendered-page-citation-source",
                     }
                 ],
             },

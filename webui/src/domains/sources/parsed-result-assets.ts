@@ -8,7 +8,7 @@ import {
   uploadPart as uploadVercelPart,
 } from "@vercel/blob"
 import { Effect } from "effect"
-import type { JobResult } from "@ontos-ai/knowhere-sdk"
+import type { JobResult } from "@/integrations/ziru-sdk-types"
 
 import { logger } from "@/lib/logger"
 
@@ -760,7 +760,7 @@ async function getResultZipSize(
   fetchResult: ResultZipFetch,
 ): Promise<number> {
   const headResponse = await fetchWithTimeout({
-    description: "Knowhere result ZIP HEAD request",
+    description: "Ziru result ZIP HEAD request",
     input: resultUrl,
     init: { method: "HEAD" },
     timeoutMs: resultZipMetadataTimeoutMs,
@@ -775,7 +775,7 @@ async function getResultZipSize(
   }
 
   const rangeResponse = await fetchWithTimeout({
-    description: "Knowhere result ZIP size range request",
+    description: "Ziru result ZIP size range request",
     input: resultUrl,
     init: {
       headers: {
@@ -799,7 +799,7 @@ async function getResultZipSize(
     if (contentLength !== null) return contentLength
   }
 
-  throw new Error("Unable to determine Knowhere result ZIP size.")
+  throw new Error("Unable to determine Ziru result ZIP size.")
 }
 
 async function fetchResultZipRange(input: {
@@ -810,7 +810,7 @@ async function fetchResultZipRange(input: {
 }): Promise<Buffer> {
   const expectedByteLength = input.endByte - input.startByte + 1
   const response = await fetchWithTimeout({
-    description: "Knowhere result ZIP range fetch",
+    description: "Ziru result ZIP range fetch",
     input: input.resultUrl,
     init: {
       headers: {
@@ -823,17 +823,17 @@ async function fetchResultZipRange(input: {
 
   if (!response.ok) {
     throw new Error(
-      `Knowhere result ZIP range fetch failed with ${response.status}.`,
+      `Ziru result ZIP range fetch failed with ${response.status}.`,
     )
   }
   if (response.status !== 206 && input.startByte !== 0) {
-    throw new Error("Knowhere result ZIP server ignored a non-initial range.")
+    throw new Error("Ziru result ZIP server ignored a non-initial range.")
   }
 
   const body = Buffer.from(await response.arrayBuffer())
   if (body.byteLength !== expectedByteLength) {
     throw new Error(
-      `Knowhere result ZIP range returned ${body.byteLength} bytes, expected ${expectedByteLength}.`,
+      `Ziru result ZIP range returned ${body.byteLength} bytes, expected ${expectedByteLength}.`,
     )
   }
   return body
@@ -919,7 +919,7 @@ function requireJobResultUrl(
   if (typeof job.resultUrl === "string" && job.resultUrl.length > 0) {
     return job.resultUrl
   }
-  throw new Error(`Knowhere job ${jobId} does not expose a result ZIP URL.`)
+  throw new Error(`Ziru job ${jobId} does not expose a result ZIP URL.`)
 }
 
 const vercelBlobStore: ParsedResultBlobStore = {

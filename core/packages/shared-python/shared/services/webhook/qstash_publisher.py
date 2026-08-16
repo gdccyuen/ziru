@@ -3,7 +3,7 @@ QStash webhook publisher — delivers outbound webhooks via Upstash QStash.
 
 Uses QStash's managed retry and callback infrastructure. Every publish includes:
 
-- Our own HMAC-SHA256 signature (X-Knowhere-Signature) in the forwarded headers
+- Our own HMAC-SHA256 signature (X-Ziru-Signature) in the forwarded headers
 - QStash callback + failure_callback pointing to our API
 - Approximate exponential backoff retry (1m → 10m → ~100m → ~100m → ~100m)
 - SSRF pre-validation before publishing

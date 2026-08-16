@@ -1,14 +1,14 @@
-import { KnowhereIcon, type KnowhereIconName } from "@components/ui/knowhere-icon";
+import { ZiruIcon, type ZiruIconName } from "@components/ui/ziru-icon";
 import { cn } from "@lib/utils";
 import { Slot } from "@radix-ui/react-slot";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 export type HeaderButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   asChild?: boolean;
-  icon?: KnowhereIconName;
+  icon?: ZiruIconName;
   label?: ReactNode;
   selected?: boolean;
-  trailingIcon?: KnowhereIconName | false;
+  trailingIcon?: ZiruIconName | false;
   variant?: "icon" | "text";
 };
 
@@ -39,12 +39,12 @@ export const HeaderButton = ({
       {...props}
     >
       {variant === "icon" ? (
-        <KnowhereIcon className="size-5 text-current" name={icon} />
+        <ZiruIcon className="size-5 text-current" name={icon} />
       ) : (
         <>
           <span>{label}</span>
           {resolvedTrailingIcon ? (
-            <KnowhereIcon className="size-5 text-current" name={resolvedTrailingIcon} />
+            <ZiruIcon className="size-5 text-current" name={resolvedTrailingIcon} />
           ) : null}
         </>
       )}

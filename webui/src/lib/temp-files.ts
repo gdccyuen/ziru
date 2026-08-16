@@ -17,7 +17,7 @@ import { Context, Effect, Layer, Scope } from "effect"
  * Cleanup is guaranteed via `Effect.acquireRelease` — the temp directory is
  * removed when the enclosing `Effect.scoped` completes, even on failure.
  */
-export class TempFile extends Context.Tag("@knowhere/TempFile")<
+export class TempFile extends Context.Tag("@ziru/TempFile")<
   TempFile,
   {
     readonly withFile: (
@@ -35,7 +35,7 @@ export const tempFileLayer = Layer.succeed(TempFile, {
     Effect.acquireRelease(
       Effect.gen(function* () {
         const directory = yield* Effect.promise(() =>
-          mkdtemp(join(tmpdir(), "knowhere-notebook-")),
+          mkdtemp(join(tmpdir(), "ziru-webui-")),
         )
         const path = join(directory, basename(file.name))
         const bytes = new Uint8Array(
@@ -51,7 +51,7 @@ export const tempFileLayer = Layer.succeed(TempFile, {
     Effect.acquireRelease(
       Effect.gen(function* () {
         const directory = yield* Effect.promise(() =>
-          mkdtemp(join(tmpdir(), "knowhere-notebook-")),
+          mkdtemp(join(tmpdir(), "ziru-webui-")),
         )
         const path = join(directory, basename(name))
         yield* Effect.promise(() =>

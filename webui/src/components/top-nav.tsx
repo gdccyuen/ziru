@@ -1,4 +1,4 @@
-import { NotebookLogoMark } from "@/components/notebook-logo-mark";
+import { WebUILogoMark } from "@/components/webui-logo-mark";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogOut } from "lucide-react";
@@ -21,9 +21,9 @@ export function TopNav({
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border/70 bg-background/95 px-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.35)] backdrop-blur-sm lg:px-6">
       <div className="flex min-w-0 items-center gap-3">
-        <NotebookLogoMark width={22} />
+        <WebUILogoMark width={22} />
         <h1 className="truncate text-[18px] font-bold leading-7 text-foreground">
-          Knowhere Notebook
+          Ziru WebUI
         </h1>
         <Separator
           orientation="vertical"

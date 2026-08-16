@@ -67,7 +67,7 @@ export const HeroSection = () => {
               </PixelButton>
 
               <PixelButton variant="secondary" asChild>
-                <Link href="https://docs.knowhereto.ai/" target="_blank">
+                <Link href="https://docs.ziru.app/" target="_blank">
                   View Docs
                 </Link>
               </PixelButton>
@@ -134,7 +134,7 @@ const HeroAnnouncementBar = () => {
     <div className="mx-auto flex justify-center px-2">
       <Link
         href="/claw"
-        aria-label="View Knowhere OpenClaw setup"
+        aria-label="View Ziru OpenClaw setup"
         className="group relative inline-flex max-w-full cursor-pointer overflow-hidden border-2 border-pixel-fg bg-[#f6efe3] text-left shadow-[3px_3px_0_var(--pixel-shadow)] transition-all duration-200 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0_var(--pixel-shadow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pixel-green focus-visible:ring-offset-2 focus-visible:ring-offset-pixel-bg"
       >
         <div className="pointer-events-none absolute inset-0 pixel-grid-bg opacity-15" />

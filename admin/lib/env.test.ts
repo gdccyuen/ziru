@@ -4,11 +4,11 @@ type EnvModule = typeof import("@/lib/env");
 
 const REQUIRED_ENV = {
   BETTER_AUTH_SECRET: "test-auth-secret-with-at-least-32-chars",
-  BETTER_AUTH_URL: "https://knowhereto.ai",
+  BETTER_AUTH_URL: "https://ziru.app",
   DATABASE_URL: "postgres://user:pass@example.com:5432/dashboard",
-  NEXT_PUBLIC_API_URL: "https://api.knowhereto.ai/api",
+  NEXT_PUBLIC_API_URL: "https://api.ziru.app/api",
   NEXT_PUBLIC_AUTH_BASE_URL: "/api/auth",
-  NEXT_PUBLIC_APP_URL: "https://knowhereto.ai",
+  NEXT_PUBLIC_APP_URL: "https://ziru.app",
 } as const;
 
 async function loadEnv(overrides: Record<string, string | undefined> = {}): Promise<EnvModule> {

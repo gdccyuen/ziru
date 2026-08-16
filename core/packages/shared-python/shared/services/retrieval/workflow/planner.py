@@ -51,7 +51,7 @@ Hard constraints:
   - final_strategy must be concat_final_parts.
   - step_kind must be retrieve.
   - output_role must be final_part or intermediate.
-  - KNOWHERE returns evidence only; do not plan answer synthesis steps.
+  - ZIRU returns evidence only; do not plan answer synthesis steps.
 
 Return ONLY a JSON object matching this schema (think first, then answer):
 {schema}

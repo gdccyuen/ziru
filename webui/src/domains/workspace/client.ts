@@ -97,7 +97,7 @@ type NamespacesResponse = {
 }
 
 
-export type KnowhereKeyLabelView = {
+export type ZiruKeyLabelView = {
   id: string
   label: string
   mask: string
@@ -115,7 +115,7 @@ type CreateWorkspaceResponse = {
   message?: string
 }
 
-export type WorkspaceApiKeyView = KnowhereKeyLabelView & {
+export type WorkspaceApiKeyView = ZiruKeyLabelView & {
   createdAt: string
 }
 

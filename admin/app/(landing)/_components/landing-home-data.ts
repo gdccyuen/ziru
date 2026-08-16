@@ -25,11 +25,11 @@ export type ComparisonTab = "All" | ComparisonCategory;
 export type ComparisonRow = {
   category: ComparisonCategory;
   feature: string;
-  knowhere: ComparisonStatus;
+  ziru: ComparisonStatus;
   others: ComparisonStatus;
   description?: string;
   emphasize?: boolean;
-  knowhereStripe?: boolean;
+  ziruStripe?: boolean;
   othersStripe?: boolean;
   callout?: boolean;
 };
@@ -160,69 +160,69 @@ export const getComparisonRows = (t: LandingDataTranslate): ComparisonRow[] => [
   {
     category: "Structures",
     feature: t("comparisonRows.hierarchy.feature"),
-    knowhere: "yes",
+    ziru: "yes",
     others: "bad",
     description: t("comparisonRows.hierarchy.description"),
   },
   {
     category: "Tables",
     feature: t("comparisonRows.mergedCells.feature"),
-    knowhere: "yes",
+    ziru: "yes",
     others: "bad",
     description: t("comparisonRows.mergedCells.description"),
     emphasize: true,
-    knowhereStripe: true,
+    ziruStripe: true,
     othersStripe: true,
   },
   {
     category: "Tables",
     feature: t("comparisonRows.tableBoundaries.feature"),
-    knowhere: "yes",
+    ziru: "yes",
     others: "no",
     description: t("comparisonRows.tableBoundaries.description"),
   },
   {
     category: "Interpretability",
     feature: t("comparisonRows.traceability.feature"),
-    knowhere: "yes",
+    ziru: "yes",
     others: "bad",
     description: t("comparisonRows.traceability.description"),
     emphasize: true,
-    knowhereStripe: true,
+    ziruStripe: true,
     othersStripe: true,
   },
   {
     category: "Downstream",
     feature: t("comparisonRows.memory.feature"),
-    knowhere: "yes",
+    ziru: "yes",
     others: "no",
     description: t("comparisonRows.memory.description"),
   },
   {
     category: "Downstream",
     feature: t("comparisonRows.rag.feature"),
-    knowhere: "yes",
+    ziru: "yes",
     others: "no",
     description: t("comparisonRows.rag.description"),
     emphasize: true,
-    knowhereStripe: true,
+    ziruStripe: true,
     othersStripe: true,
   },
   {
     category: "Downstream",
     feature: t("comparisonRows.topK.feature"),
-    knowhere: "yes",
+    ziru: "yes",
     others: "no",
     description: t("comparisonRows.topK.description"),
   },
   {
     category: "Downstream",
     feature: t("comparisonRows.tokenSavings.feature"),
-    knowhere: "yes",
+    ziru: "yes",
     others: "no",
     description: t("comparisonRows.tokenSavings.description"),
     emphasize: true,
-    knowhereStripe: true,
+    ziruStripe: true,
     othersStripe: true,
   },
 ];
@@ -238,7 +238,7 @@ export const whyChooseProducts: WhyChooseProduct[] = [
       "Basic text extraction for simple documents",
       "Supports multiple common file formats",
     ],
-    headline: "Why Knowhere delivers superior document parsing for complex tables",
+    headline: "Why Ziru delivers superior document parsing for complex tables",
     metrics: [
       {
         value: "90%+",
@@ -260,7 +260,7 @@ export const whyChooseProducts: WhyChooseProduct[] = [
       "Lightweight and easy to integrate",
       "Good for basic text documents",
     ],
-    headline: "Why Knowhere is the superior choice for markdown conversion",
+    headline: "Why Ziru is the superior choice for markdown conversion",
     metrics: [
       {
         value: "95%+",

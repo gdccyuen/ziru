@@ -16,7 +16,7 @@ import { workspaceShellState } from "@/components/workspace-shell-state"
 import {
   identifyUser,
   resetUser,
-  trackNotebookWorkspaceFirstDocumentUploaded,
+  trackWebUIWorkspaceFirstDocumentUploaded,
   trackPageView,
   type AnalyticsContext,
 } from "@/lib/posthog"
@@ -49,7 +49,7 @@ export type WorkspaceShellProps = {
     id: string
     namespace: string
   }[]
-  knowhereKeyLabels?: readonly {
+  ziruKeyLabels?: readonly {
     id: string
     label: string
     mask: string
@@ -91,7 +91,7 @@ function WorkspaceShellContent({
   chunkViewDocumentId,
   workspace,
   workspaces,
-  knowhereKeyLabels,
+  ziruKeyLabels,
   isBlobConfigured,
   initialPrefetchedChunksBySourceId,
 }: WorkspaceShellProps): ReactElement {
@@ -194,7 +194,7 @@ function WorkspaceShellContent({
   function handleSourceUploaded(source: SourceView): void {
     if (!didTrackFirstDocumentRef.current && sourceWorkflow.sources.length === 0) {
       didTrackFirstDocumentRef.current = true
-      void trackNotebookWorkspaceFirstDocumentUploaded({
+      void trackWebUIWorkspaceFirstDocumentUploaded({
         context: analyticsContext,
       })
     }
@@ -211,7 +211,7 @@ function WorkspaceShellContent({
       desktopPanelWidths={desktopPanelWidths}
       activeWorkspace={workspace}
       workspaces={workspaces ?? []}
-      knowhereKeyLabels={knowhereKeyLabels ?? []}
+      ziruKeyLabels={ziruKeyLabels ?? []}
       isBlobConfigured={isBlobConfigured ?? false}
       citationListViewRequestId={citationFocus.citationListViewRequestId}
       focusedChunk={citationFocus.focusedChunk}

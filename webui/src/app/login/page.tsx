@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { NotebookLogoMark } from "@/components/notebook-logo-mark";
+import { WebUILogoMark } from "@/components/webui-logo-mark";
 import { Card, CardContent } from "@/components/ui/card";
 import { connection } from "next/server";
 import { listLoginProviders } from "@/infrastructure/auth/oauth-providers";
@@ -23,13 +23,13 @@ export async function LoginContent() {
       <Card className="m-auto w-full max-w-md rounded-2xl border-none bg-transparent shadow-none">
         <CardContent className="flex flex-col items-center p-8 text-center">
           <div className="mb-6 flex size-12 items-center justify-center">
-            <NotebookLogoMark width={28} />
+            <WebUILogoMark width={28} />
           </div>
           <h1 className="mb-1 text-2xl font-bold tracking-tight">
-            Knowhere Notebook
+            Ziru WebUI
           </h1>
           <p className="mb-8 text-xs text-[#71717b]">
-            Sign in with your Notebook account.
+            Sign in with your WebUI account.
           </p>
           <div className="w-full text-left">
             <LoginForm providers={providers} />

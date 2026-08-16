@@ -2,8 +2,8 @@ import { type ConsentSurface, handleConsentGet, handleConsentPost } from "@serve
 
 const MCP_CONSENT_SURFACE: ConsentSurface = {
   loginPath: "/mcp/login",
-  title: "Authorize Knowhere",
-  summary: "is requesting access to your Knowhere account.",
+  title: "Authorize Ziru",
+  summary: "is requesting access to your Ziru account.",
 };
 
 export async function GET(request: Request): Promise<Response> {

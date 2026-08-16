@@ -517,7 +517,7 @@ async def _insert_document_revision_with_chunks(
 def _upload_page_citation_source(*, job_id: str) -> None:
     from shared.services.storage.result_storage import JobResultStorage
 
-    source_pdf_path = Path("/tmp") / f"knowhere-contract-source-{job_id}.pdf"
+    source_pdf_path = Path("/tmp") / f"ziru-contract-source-{job_id}.pdf"
     source_pdf_path.write_bytes(b"%PDF-1.4\n%contract page citation source\n")
     try:
         JobResultStorage().upload_raw_file(
@@ -532,7 +532,7 @@ def _upload_page_citation_source(*, job_id: str) -> None:
 def _upload_page_citation_asset(*, job_id: str, artifact_ref: str) -> None:
     from shared.services.storage.result_storage import JobResultStorage
 
-    asset_path = Path("/tmp") / f"knowhere-contract-page-asset-{uuid4().hex}.png"
+    asset_path = Path("/tmp") / f"ziru-contract-page-asset-{uuid4().hex}.png"
     asset_path.write_bytes(b"\x89PNG\r\n\x1a\ncontract page citation asset\n")
     try:
         JobResultStorage().upload_raw_file(
@@ -548,7 +548,7 @@ def _upload_chunk_asset(*, job_id: str, artifact_ref: str) -> None:
     from shared.services.storage.result_storage import JobResultStorage
 
     suffix = Path(artifact_ref).suffix or ".bin"
-    asset_path = Path("/tmp") / f"knowhere-contract-chunk-asset-{uuid4().hex}{suffix}"
+    asset_path = Path("/tmp") / f"ziru-contract-chunk-asset-{uuid4().hex}{suffix}"
     asset_path.write_bytes(b"<table><tr><td>contract chunk asset</td></tr></table>")
     try:
         JobResultStorage().upload_raw_file(
@@ -782,7 +782,7 @@ async def test_should_return_page_citation_source_for_page_memory_document(
     assert response_json["file_name"] == "source.pdf"
     assert response_json["content_type"] == "application/pdf"
     assert response_json["url"] == (
-        "filesystem://knowhere-test-results/"
+        "filesystem://ziru-test-results/"
         f"results/{revision['job_id']}/source.pdf"
         "?method=GET&expires_in=3600"
     )
@@ -918,7 +918,7 @@ async def test_should_return_not_found_for_other_users_page_citation_source(
 def _upload_mineru_raw_zip(*, job_id: str) -> None:
     from shared.services.storage.result_storage import JobResultStorage
 
-    raw_zip_path = Path("/tmp") / f"knowhere-contract-mineru-raw-{job_id}.zip"
+    raw_zip_path = Path("/tmp") / f"ziru-contract-mineru-raw-{job_id}.zip"
     raw_zip_path.write_bytes(b"PK\x03\x04contract mineru raw zip\n")
     try:
         JobResultStorage().upload_raw_file(
@@ -968,7 +968,7 @@ async def test_should_return_mineru_raw_zip_for_document(
     assert response_json["file_name"] == "mineru_raw.zip"
     assert response_json["content_type"] == "application/zip"
     assert response_json["url"] == (
-        "filesystem://knowhere-test-results/"
+        "filesystem://ziru-test-results/"
         f"results/{revision['job_id']}/mineru_raw.zip"
         "?method=GET&expires_in=604800"
     )
@@ -1036,10 +1036,10 @@ async def test_should_return_multiple_mineru_raw_urls_for_sharded_document(
     response_json = cast(dict[str, object], response.json())
     assert response_json["job_id"] == revision["job_id"]
     assert response_json["urls"] == [
-        "filesystem://knowhere-test-results/"
+        "filesystem://ziru-test-results/"
         f"results/{revision['job_id']}/mineru_raw_shard0.zip"
         "?method=GET&expires_in=604800",
-        "filesystem://knowhere-test-results/"
+        "filesystem://ziru-test-results/"
         f"results/{revision['job_id']}/mineru_raw_shard1.zip"
         "?method=GET&expires_in=604800",
     ]
@@ -1207,7 +1207,7 @@ async def test_should_include_media_asset_urls_in_document_chunk_list_when_reque
     assert response.status_code == 200
     chunks = cast(list[dict[str, object]], response.json()["chunks"])
     expected_asset_url = (
-        "filesystem://knowhere-test-results/"
+        "filesystem://ziru-test-results/"
         f"results/{revision['job_id']}/tables/table-1.html"
         "?method=GET&expires_in=604800"
     )
@@ -1252,7 +1252,7 @@ async def test_should_include_page_citation_asset_urls_in_document_chunk_metadat
                                 "content_type": "image/png",
                                 "width": 1200,
                                 "height": 1800,
-                                "source": "knowhere-rendered-page-citation-source",
+                                "source": "ziru-rendered-page-citation-source",
                             }
                         ],
                     },
@@ -1288,7 +1288,7 @@ async def test_should_include_page_citation_asset_urls_in_document_chunk_metadat
     metadata_page_assets = cast(list[dict[str, object]], metadata["page_assets"])
 
     expected_asset_url = (
-        "filesystem://knowhere-test-results/"
+        "filesystem://ziru-test-results/"
         f"results/{revision['job_id']}/{page_asset_ref}"
         "?method=GET&expires_in=604800"
     )
@@ -1304,7 +1304,7 @@ async def test_should_include_page_citation_asset_urls_in_document_chunk_metadat
                 "content_type": "image/png",
                 "width": 1200,
                 "height": 1800,
-                "source": "knowhere-rendered-page-citation-source",
+                "source": "ziru-rendered-page-citation-source",
             }
         ],
     }
@@ -1396,7 +1396,7 @@ async def test_should_return_one_document_chunk_by_document_chunk_id(
     assert chunk["source_chunk_path"] == "Chapter 1/Figure"
     assert chunk["file_path"] == "images/figure-1.png"
     assert chunk["asset_url"] == (
-        "filesystem://knowhere-test-results/"
+        "filesystem://ziru-test-results/"
         f"results/{revision['job_id']}/images/figure-1.png"
         "?method=GET&expires_in=604800"
     )

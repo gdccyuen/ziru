@@ -14,7 +14,7 @@ type RouteRetryDependencies = Pick<
   SourceRouteServiceDependencies,
   | "ensureApiKeyForWorkspace"
   | "ensureWorkspace"
-  | "makeKnowhereClient"
+  | "makeZiruClient"
   | "requireUser"
   | "sourceService"
 >
@@ -66,9 +66,9 @@ const retrySourceEffect = (
     const apiKey = yield* Effect.tryPromise(() =>
       deps.ensureApiKeyForWorkspace(workspace.id),
     )
-    const client = deps.makeKnowhereClient(apiKey)
+    const client = deps.makeZiruClient(apiKey)
     const retriedSource = yield* Effect.tryPromise(() =>
-      deps.sourceService.retrySourceToKnowhere(workspace, source, client),
+      deps.sourceService.retrySourceToZiru(workspace, source, client),
     )
 
     if (retriedSource.status === "parsing") {

@@ -48,37 +48,53 @@
 | `admin/LOCALIZATION_GUIDE.md` | Mirrors actual UI strings; redo together with the UI rebrand |
 | `OPENAI_ADS_PIXEL_ID` example value in admin README | Upstream pixel ID — replace with the fork's own if ads are used |
 
-## Phase E — remaining punch list
+## Phase E — completed (August 2026)
 
-### Decisions needed
-- [ ] Dashboard npm package name (`@ziru/dashboard` vs `@ziru/admin`).
-- [ ] Runtime identifier renames (breaking for existing installs) — approved?
-- [ ] Telemetry: currently default-on and sent to the upstream operator's
-      PostHog. Decide: default-off, or point at own PostHog.
-- [ ] `~/.knowhere` → `~/.ziru`: migrate existing corpora or fresh start.
-- [ ] What to do with upstream-deployment workflows (`deploy.yml`,
-      `publish-image.yml`) — disable until repointed at own infra.
+- [x] Packages renamed: `ziru-api` (core), `ziru-api-app`, `ziru-worker-app`,
+      `ziru-shared`, `@ziru/admin` (dashboard), `ziru-webui` (notebook).
+- [x] Runtime identifiers renamed: S3 buckets `ziru-uploads`/`ziru-results`,
+      PostgreSQL DB `ziru`, `REDIS_KEY_PREFIX=ziru-api`, SNS topic
+      `ziru-s3-upload-events`, volumes `ziru_user_data`/`ziru_model_cache`/
+      `ziru_secrets`, `/tmp/ziru`, `/opt/ziru`, `~/.ziru`, `ZIRU_IMAGE`,
+      `APP_TITLE=Ziru API`.
+- [x] Core code identifiers: `ZiruException`, `ziru_exception_handler`,
+      `x-ziru-namespace` / `x-ziru-event-id` headers, MCP tool `ziru-retrieval`,
+      `guest.ziru.local`, `ziru-api:` redis prefix, telemetry **default-off**
+      (`TELEMETRY_ENABLED=false`) — **TODO: remove telemetry entirely**.
+- [x] WebUI: `@ontos-ai/knowhere-sdk` dropped — local fetch client
+      (`src/integrations/ziru.ts`) + local types (`ziru-sdk-types.ts`); API
+      endpoints unchanged (`/v2/...`). Env vars renamed to `ZIRU_API_KEY`,
+      `ZIRU_BASE_URL`, `ZIRU_KEYS_FILE`, `ZIRU_KEY_ENCRYPTION_KEY`; cookies
+      `ziru-session`/`ziru-ws`; PostHog events `ziru_*`; DB schema renamed
+      (`ziru_api_keys`, `active_ziru_api_key_id`, `ziru_job_id`,
+      `ziru_document_id`) with conditional migration `0010_ziru_rename`.
+- [x] Admin: `ZiruIcon*` components, `ZiruServiceJwt`, `ziruOutput`/
+      `ziruAdvantage`/`ziruStripe`, landing/marketing copy + comparison data
+      rebranded, i18n locales, health service `ziru-admin`, public assets
+      (`comparison/tables/ziru.html`, `images/ziru`, `icons/ziru`).
+- [x] Deploy: `prepare-sources.sh` stages from this monorepo (`../core`,
+      `../admin`) instead of upstream sibling checkouts; Dockerfile paths
+      updated; entrypoint/compose/smoke-test renamed.
+- [x] Upstream workflows disabled: `admin/.github/workflows/deploy.yml.disabled`,
+      `deploy/.github/workflows/publish-image.yml.disabled`.
+- [x] Placeholders replaced with `gdccyuen/ziru` (CITATION.cff, issue templates).
 
-### Mechanical (approved items only)
-- [ ] Rename packages: `knowhere-api` → `ziru-api`, `knowhere-shared` →
-      `ziru-shared`, `@knowhere/web` → `@ziru/<dashboard>`, `knowhere-notebook`
-      → `ziru-webui`.
-- [ ] `APP_TITLE` defaults (`core/apps/api/.env.example`,
-      `core/apps/worker/.env.example`, settings code).
-- [ ] `deploy/scripts/prepare-sources.sh`: stage from this monorepo's
-      `core/` + `admin/` instead of upstream sibling checkouts.
-- [ ] Image/ECR/GHCR names in workflows and `compose.yaml`.
-- [ ] Docker volume/container/network names.
-- [ ] S3 bucket names, Redis prefix, SNS topic, DB name (if approved).
-- [ ] WebUI SDK dependency decision (keep upstream SDK vs fork).
-- [ ] Replace `your-org/ziru` placeholders (`core/CITATION.cff`,
-      issue-template `config.yml`) with `gdccyuen/ziru`.
-- [ ] Admin UI strings + `LOCALIZATION_GUIDE.md` redo.
-- [ ] Logo integration into `admin/` and `webui/` public assets + layouts.
+### Still deliberately "Knowhere" (reviewed, keep or revisit)
+
+| Item | Why |
+|---|---|
+| npm package strings `@ontos-ai/knowhere-sdk` / `@ontos-ai/knowhere-claw` / `knowhere-python-sdk` in admin marketing code demos | Real published package names; demo copy needs a content decision (publish Ziru SDKs or rewrite demos) |
+| `admin/LOCALIZATION_GUIDE.md` | Mirrors UI strings; redo together with UI branding pass |
+| ADR bodies + session notes + `deploy/docs/adr/0001-local-mineru-mode.md` etc. | Historical records / personal working notes |
+| `ghcr.io/gdccyuen/ziru:latest` image default | No image published yet — build & publish before public release |
+| `ziru.app` / `docs.ziru.app` / `api.ziru.app` / `staging.ziru.app` placeholders in admin tests + landing copy | Placeholder product domain until the real one exists — replace before launch |
+| Telemetry code (`TELEMETRY_*` settings, PostHog constants) | Default-off now; remove entirely in a later pass |
+| MinerU attribution obligation | Must show "uses MinerU" in product UI (online-service clause) |
+| `webui/docs/session-notes/` | Personal agent working notes |
 
 ## Verification
 
 ```bash
 git grep -i ontos     # should hit only NOTICE + acknowledgements + vendored MinerU
-git grep -i knowhere  # should hit only runtime identifiers + historical docs + MinerU
+git grep -i knowhere  # should hit only the items above + historical docs + MinerU
 ```

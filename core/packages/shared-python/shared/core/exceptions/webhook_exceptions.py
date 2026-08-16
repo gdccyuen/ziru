@@ -7,11 +7,11 @@ are not typically exposed to API clients directly.
 
 from typing import Any, Dict, Optional
 
-from shared.core.exceptions.knowhere_exception import KnowhereException
+from shared.core.exceptions.ziru_exception import ZiruException
 from shared.core.response.ErrorCode import ErrorCode
 
 
-class WebhookException(KnowhereException):
+class WebhookException(ZiruException):
     """Base exception for all webhook-related errors."""
 
     pass

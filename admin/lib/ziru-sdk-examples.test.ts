@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const readWorkspaceFile = (path: string): string => readFileSync(join(process.cwd(), path), "utf8");
 
-describe("Knowhere SDK code examples", () => {
+describe("Ziru SDK code examples", () => {
   it("uses the official Python and Node SDKs in visible examples", () => {
     const files: readonly string[] = [
       "app/(dashboard)/usage/_components/usage-welcome-modal.tsx",
@@ -17,8 +17,8 @@ describe("Knowhere SDK code examples", () => {
 
     expect(source).toContain("knowhere-python-sdk");
     expect(source).toContain("@ontos-ai/knowhere-sdk");
-    expect(source).toContain("import knowhere");
-    expect(source).toContain('import Knowhere from "@ontos-ai/knowhere-sdk"');
+    expect(source).toContain("import ziru");
+    expect(source).toContain('import Ziru from "@ontos-ai/knowhere-sdk"');
     expect(source).toContain("client.parse");
     expect(source).toContain("result = client.parse(url=");
     expect(source).toContain("const result = await client.parse({");

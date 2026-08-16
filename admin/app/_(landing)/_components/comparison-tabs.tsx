@@ -64,10 +64,10 @@ export function ComparisonTabs({ className }: ComparisonTabsProps) {
         {/* Section header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
           <PixelHeading as="h2" className="mb-4">
-            WHY CHOOSE <span className="text-pixel-green">KNOWHERE</span>
+            WHY CHOOSE <span className="text-pixel-green">ZIRU</span>
           </PixelHeading>
           <p className="text-base text-pixel-muted font-sans">
-            Knowhere outperforms major competitors in key metrics
+            Ziru outperforms major competitors in key metrics
           </p>
         </div>
 

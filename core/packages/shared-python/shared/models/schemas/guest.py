@@ -15,7 +15,7 @@ class GuestRegisterRequest(BaseModel):
         ...,
         min_length=1,
         max_length=64,
-        description="Client application name, e.g. knowhere-hub",
+        description="Client application name, e.g. ziru-hub",
     )
     platform: str = Field(
         ..., min_length=1, max_length=64, description="Operating system, e.g. macos"

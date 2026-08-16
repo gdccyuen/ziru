@@ -167,7 +167,7 @@ class WorkerParseContract:
             {
                 "user_id": user_id,
                 "name": f"Worker Contract User {user_id}",
-                "email": f"{user_id}@worker-contract.knowhere.local",
+                "email": f"{user_id}@worker-contract.ziru.local",
             },
         )
 

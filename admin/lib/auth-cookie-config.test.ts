@@ -9,7 +9,7 @@ function loadAuthCookieConfig(
   vi.doMock("@/lib/env", () => ({
     env: {
       AUTH_COOKIE_PREFIX: "better-auth",
-      NEXT_PUBLIC_APP_URL: "https://knowhereto.ai",
+      NEXT_PUBLIC_APP_URL: "https://ziru.app",
       ...env,
     },
   }));
@@ -74,11 +74,11 @@ describe("authCookies", () => {
   it("uses app URL and cookie prefix for the cookie cache version", async () => {
     const { authCookies } = await loadAuthCookieConfig({
       AUTH_COOKIE_PREFIX: "better-auth-staging",
-      NEXT_PUBLIC_APP_URL: "https://staging.knowhereto.ai",
+      NEXT_PUBLIC_APP_URL: "https://staging.ziru.app",
     });
 
     expect(authCookies.getCookieCacheVersion()).toBe(
-      "https://staging.knowhereto.ai:better-auth-staging"
+      "https://staging.ziru.app:better-auth-staging"
     );
   });
 });

@@ -18,7 +18,7 @@ describe("useSourceOriginalTextWorkflow", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn<typeof globalThis.fetch>(() =>
-        Promise.resolve(new Response("Notebook text", { status: 200 })),
+        Promise.resolve(new Response("WebUI text", { status: 200 })),
       ),
     )
 
@@ -31,7 +31,7 @@ describe("useSourceOriginalTextWorkflow", () => {
     await waitFor(() => {
       expect(screen.getByTestId("text-status").textContent).toBe("ready")
     })
-    expect(screen.getByTestId("text-value").textContent).toBe("Notebook text")
+    expect(screen.getByTestId("text-value").textContent).toBe("WebUI text")
   })
 
   it("leaves shared text requests uncancelled on cleanup", async () => {

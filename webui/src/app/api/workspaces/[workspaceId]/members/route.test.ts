@@ -51,7 +51,7 @@ const workspace = {
   id: "ws_1",
   userId: "user_owner",
   namespace: "default",
-  activeKnowhereApiKeyId: null,
+  activeZiruApiKeyId: null,
   createdAt: new Date(),
 }
 

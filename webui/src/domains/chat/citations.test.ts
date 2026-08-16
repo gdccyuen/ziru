@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import type { RetrievalResult } from "@ontos-ai/knowhere-sdk"
+import type { RetrievalResult } from "@/integrations/ziru-sdk-types"
 
 import { toChatCitationViews } from "./citations"
 

@@ -27,7 +27,7 @@ import { env } from "@/lib/env";
 type WelcomeCodeTab = "curl" | "python" | "node" | "go";
 
 const SAMPLE_PDF_URL = "https://arxiv.org/pdf/1706.03762.pdf";
-const DOCUMENTATION_URL = "https://docs.knowhereto.ai/";
+const DOCUMENTATION_URL = "https://docs.ziru.app/";
 
 const codeTabConfig: Array<{
   id: WelcomeCodeTab;
@@ -59,9 +59,9 @@ const buildCodeByTab = ({
     }
   }'`,
   python: `# pip install knowhere-python-sdk
-import knowhere
+import ziru
 
-client = knowhere.Knowhere(
+client = ziru.Ziru(
     api_key="${apiKey}",
     base_url="${apiBaseUrl}",
 )
@@ -71,9 +71,9 @@ result = client.parse(url="${SAMPLE_PDF_URL}")
 print(result.statistics.total_chunks)
 print(result.full_markdown[:200])`,
   node: `// npm install @ontos-ai/knowhere-sdk
-import Knowhere from "@ontos-ai/knowhere-sdk";
+import Ziru from "@ontos-ai/knowhere-sdk";
 
-const client = new Knowhere({
+const client = new Ziru({
   apiKey: "${apiKey}",
   baseURL: "${apiBaseUrl}",
 });

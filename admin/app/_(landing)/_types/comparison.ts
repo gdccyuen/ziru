@@ -3,10 +3,10 @@
  */
 
 // Product IDs
-export type ProductId = "original" | "knowhere" | "unstructured" | "markitdown";
+export type ProductId = "original" | "ziru" | "unstructured" | "markitdown";
 
 // Competitor product IDs (excluding "original")
-export type CompetitorProductId = "knowhere" | "unstructured" | "markitdown";
+export type CompetitorProductId = "ziru" | "unstructured" | "markitdown";
 
 // Metric icon types
 export type MetricIcon = "arrow-up" | "zap" | "check";
@@ -32,12 +32,12 @@ export type ProductAdvantage = {
   isOurProduct?: boolean;
 };
 
-export const PRODUCT_IDS = ["original", "knowhere", "unstructured", "markitdown"] as const;
+export const PRODUCT_IDS = ["original", "ziru", "unstructured", "markitdown"] as const;
 
 // Map productId to image index (for navigation)
 export const PRODUCT_INDEX_MAP: Record<ProductId, number> = {
   original: 0,
-  knowhere: 1,
+  ziru: 1,
   unstructured: 2,
   markitdown: 3,
 };
@@ -45,7 +45,7 @@ export const PRODUCT_INDEX_MAP: Record<ProductId, number> = {
 // Map index to productId (for reverse lookup)
 export const INDEX_PRODUCT_MAP: Record<number, ProductId> = {
   0: "original",
-  1: "knowhere",
+  1: "ziru",
   2: "unstructured",
   3: "markitdown",
 };
@@ -59,16 +59,16 @@ export type ComparisonMetadata = {
 
 export const COMPARISON_METADATA: Record<ProductId, ComparisonMetadata> = {
   original: {
-    title: "Original Document - Labor Cost Calculation | Knowhere Comparison",
+    title: "Original Document - Labor Cost Calculation | Ziru Comparison",
     description:
       "View the original Excel document converted to HTML - Complex table with merged cells for labor cost calculation.",
     keywords: ["original document", "excel", "labor cost", "complex table"],
   },
-  knowhere: {
-    title: "Knowhere Document Parsing Results | Performance Comparison",
+  ziru: {
+    title: "Ziru Document Parsing Results | Performance Comparison",
     description:
-      "Knowhere achieves 99.8% accuracy with 187ms processing time and excellent table support for document parsing.",
-    keywords: ["knowhere", "document parsing", "high accuracy", "fast processing"],
+      "Ziru achieves 99.8% accuracy with 187ms processing time and excellent table support for document parsing.",
+    keywords: ["ziru", "document parsing", "high accuracy", "fast processing"],
   },
   unstructured: {
     title: "Unstructured Document Processing Results | Performance Comparison",

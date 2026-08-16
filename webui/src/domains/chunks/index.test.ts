@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import type { DocumentChunk } from "@ontos-ai/knowhere-sdk"
+import type { DocumentChunk } from "@/integrations/ziru-sdk-types"
 import { Effect } from "effect"
 
 import type { Source } from "@/infrastructure/db/schema"
@@ -15,12 +15,12 @@ import {
 import type { ChatCitationView } from "@/domains/chat/types"
 
 describe("toParsedChunkView", () => {
-  it("maps Knowhere document chunks to the parsed-content view shape", () => {
+  it("maps Ziru document chunks to the parsed-content view shape", () => {
     const chunk: DocumentChunk = {
       id: "document_chunk_1",
       chunkId: "parser_chunk_1",
       chunkType: "text",
-      content: "Notebook should show parsed text from Knowhere only on demand.",
+      content: "WebUI should show parsed text from Ziru only on demand.",
       sectionId: "section_1",
       sectionPath: "Introduction",
       sourceChunkPath: null,
@@ -28,7 +28,7 @@ describe("toParsedChunkView", () => {
       sortOrder: 1,
       metadata: {
         summary: "Intro summary",
-        keywords: ["notebook", "parsed"],
+        keywords: ["webui", "parsed"],
         page_nums: [1, 2],
         connectTo: [
           {
@@ -54,9 +54,9 @@ describe("toParsedChunkView", () => {
       parserChunkId: "parser_chunk_1",
       sectionPath: "Introduction",
       type: "text",
-      content: "Notebook should show parsed text from Knowhere only on demand.",
+      content: "WebUI should show parsed text from Ziru only on demand.",
       summary: "Intro summary",
-      keywords: ["notebook", "parsed"],
+      keywords: ["webui", "parsed"],
       pageNums: [1, 2],
       sourceTitle: "notes.txt",
       connections: [
@@ -211,20 +211,20 @@ describe("loadChunksForSource", () => {
     vi.restoreAllMocks();
   });
 
-  it("fetches parsed chunks only through the Knowhere document chunks API", async () => {
+  it("fetches parsed chunks only through the Ziru document chunks API", async () => {
     const listChunks = vi.fn().mockResolvedValue({
       chunks: [
         makeDocumentChunk({
           id: "document_chunk_1",
           chunkId: "parser_chunk_1",
-          content: "Source text from Knowhere",
+          content: "Source text from Ziru",
         }),
       ],
       pagination: { total: 1 },
     });
     const source = makeSource({
       title: "notes.txt",
-      knowhereDocumentId: "doc_123",
+      ziruDocumentId: "doc_123",
     });
 
     const chunks = await Effect.runPromise(
@@ -245,7 +245,7 @@ describe("loadChunksForSource", () => {
         parserChunkId: "parser_chunk_1",
         sectionPath: null,
         type: "text",
-        content: "Source text from Knowhere",
+        content: "Source text from Ziru",
         sourceTitle: "notes.txt",
       },
     ]);
@@ -255,7 +255,7 @@ describe("loadChunksForSource", () => {
     const listChunks = vi.fn();
     const source = makeSource({
       status: "parsing",
-      knowhereDocumentId: null,
+      ziruDocumentId: null,
     });
 
     await expect(
@@ -305,7 +305,7 @@ describe("loadChunksForSource", () => {
         ],
         pagination: { page: 2, pageSize: 1, total: 2, totalPages: 2 },
       });
-    const source = makeSource({ knowhereDocumentId: "doc_123" });
+    const source = makeSource({ ziruDocumentId: "doc_123" });
 
     const chunks = await Effect.runPromise(
       loadChunksForSource(
@@ -365,7 +365,7 @@ describe("loadChunkPageForSource", () => {
     });
     const source = makeSource({
       title: "notes.txt",
-      knowhereDocumentId: "doc_123",
+      ziruDocumentId: "doc_123",
     });
 
     const page = await Effect.runPromise(
@@ -667,8 +667,8 @@ function makeSource(overrides: Partial<Source> = {}): Source {
     sizeBytes: 100,
     status: "ready",
     failureReason: null,
-    knowhereJobId: "job_123",
-    knowhereDocumentId: "doc_123",
+    ziruJobId: "job_123",
+    ziruDocumentId: "doc_123",
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,

@@ -21,15 +21,15 @@ const primaryCapability: PrimaryCapability = {
   tags: ["preview", "chunks", "raw files"],
 };
 
-const KNOWHERE_CLAW_PACKAGE_NAME = "@ontos-ai/knowhere-claw";
-const KNOWHERE_CLAW_PACKAGE_URL = "https://www.npmjs.com/package/@ontos-ai/knowhere-claw";
-const KNOWHERE_CLAWHUB_SKILL_NAME = "Knowhere";
-const KNOWHERE_CLAWHUB_SKILL_URL = "https://clawhub.ai/ErickThoughts/clawhub-knowhere";
+const ZIRU_CLAW_PACKAGE_NAME = "@ontos-ai/knowhere-claw";
+const ZIRU_CLAW_PACKAGE_URL = "https://www.npmjs.com/package/@ontos-ai/knowhere-claw";
+const ZIRU_CLAWHUB_SKILL_NAME = "Ziru";
+const ZIRU_CLAWHUB_SKILL_URL = "https://clawhub.ai/ErickThoughts/clawhub-ziru";
 
 const installSteps = [
-  `openclaw plugins install ${KNOWHERE_CLAW_PACKAGE_NAME}`,
-  'openclaw config set plugins.entries.knowhere.config.apiKey "sk_..."',
-  "openclaw plugins enable knowhere",
+  `openclaw plugins install ${ZIRU_CLAW_PACKAGE_NAME}`,
+  'openclaw config set plugins.entries.ziru.config.apiKey "sk_..."',
+  "openclaw plugins enable ziru",
 ] as const;
 
 export function OpenClawPluginSection() {
@@ -45,7 +45,7 @@ export function OpenClawPluginSection() {
                 New
               </span>
               <span className="border-2 border-pixel-border bg-pixel-bg px-2.5 py-1 font-pixel text-[9px] uppercase tracking-[0.16em] text-pixel-muted sm:px-3 sm:text-[10px] sm:tracking-[0.18em]">
-                Knowhere x OpenClaw
+                Ziru x OpenClaw
               </span>
             </div>
 
@@ -66,19 +66,19 @@ export function OpenClawPluginSection() {
                 OPENCLAW
               </span>{" "}
               <span className="block sm:inline">
-                WITH <span className="text-pixel-green">KNOWHERE</span>
+                WITH <span className="text-pixel-green">ZIRU</span>
               </span>
             </PixelHeading>
 
             <p className="mb-6 max-w-2xl font-sans text-sm leading-7 text-pixel-muted sm:text-base md:text-lg">
               We added a page for the{" "}
               <Link
-                href={KNOWHERE_CLAW_PACKAGE_URL}
+                href={ZIRU_CLAW_PACKAGE_URL}
                 target="_blank"
                 rel="noreferrer"
                 className="break-all font-mono underline decoration-current underline-offset-4 transition-colors hover:text-pixel-fg sm:break-normal"
               >
-                {KNOWHERE_CLAW_PACKAGE_NAME}
+                {ZIRU_CLAW_PACKAGE_NAME}
               </Link>{" "}
               package: install it, ground OpenClaw, and inspect evidence before answering.
             </p>
@@ -86,12 +86,12 @@ export function OpenClawPluginSection() {
             <p className="mb-6 max-w-2xl font-sans text-sm leading-7 text-pixel-muted md:text-base">
               Also live on ClawHub as{" "}
               <Link
-                href={KNOWHERE_CLAWHUB_SKILL_URL}
+                href={ZIRU_CLAWHUB_SKILL_URL}
                 target="_blank"
                 rel="noreferrer"
                 className="font-mono underline decoration-current underline-offset-4 transition-colors hover:text-pixel-fg"
               >
-                {KNOWHERE_CLAWHUB_SKILL_NAME}
+                {ZIRU_CLAWHUB_SKILL_NAME}
               </Link>
               .
             </p>
@@ -114,12 +114,12 @@ export function OpenClawPluginSection() {
                   <span className="h-3 w-3 rounded-full border border-white/10 bg-[#28c840]" />
                 </div>
                 <Link
-                  href={KNOWHERE_CLAW_PACKAGE_URL}
+                  href={ZIRU_CLAW_PACKAGE_URL}
                   target="_blank"
                   rel="noreferrer"
                   className="font-pixel text-[10px] uppercase tracking-[0.14em] text-[#f6efe3] underline decoration-current underline-offset-4 transition-opacity hover:opacity-80 break-all sm:ml-3 sm:break-normal"
                 >
-                  {KNOWHERE_CLAW_PACKAGE_NAME}
+                  {ZIRU_CLAW_PACKAGE_NAME}
                 </Link>
               </div>
             </div>
@@ -151,7 +151,7 @@ export function OpenClawPluginSection() {
                   Why it matters
                 </p>
                 <p className="text-sm leading-6 text-[#d7d2c7] font-sans">
-                  OpenClaw keeps the agent loop. Knowhere adds high-fidelity parsing, chunk
+                  OpenClaw keeps the agent loop. Ziru adds high-fidelity parsing, chunk
                   structure, preview paths, and raw result files that agents can inspect when the
                   answer depends on tables, images, or layout-heavy PDFs.
                 </p>

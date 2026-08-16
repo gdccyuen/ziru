@@ -3,7 +3,7 @@ import {
   ClawStripedOverlay,
   OpenClawMark,
 } from "@app/(landing)/claw/_components/claw-primitives";
-import { KnowhereIcon } from "@components/ui/knowhere-icon";
+import { ZiruIcon } from "@components/ui/ziru-icon";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import Image from "next/image";
 import { useId } from "react";
@@ -181,7 +181,7 @@ const UserBubble = ({ count, isCompact = false, text }: UserBubbleProps) => {
       </div>
       <div className="mt-2 flex justify-end">
         <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[#71717b] bg-[#3f3f46] py-1.5 pl-3 pr-3.5 font-sans text-[14px] leading-5 text-[#fafafa] min-[640px]:gap-2 min-[640px]:px-3.5 min-[640px]:py-2">
-          <KnowhereIcon className="h-4 w-4 text-current" name="search" />
+          <ZiruIcon className="h-4 w-4 text-current" name="search" />
           {count}
         </span>
       </div>
@@ -233,7 +233,7 @@ export const ClawWorkflowSection = () => {
     <section className="bg-white scroll-mt-20 shadow-[inset_0_0_0_1px_#e4e4e7]" id="workflow">
       <div className="flex flex-col gap-8 py-10 min-[640px]:gap-12 min-[640px]:py-20 min-[640px]:max-[767px]:gap-9 min-[640px]:max-[767px]:py-14 min-[768px]:max-[768px]:gap-9 min-[768px]:max-[768px]:py-14 min-[769px]:gap-9 min-[769px]:py-14">
         <ClawSectionHeading
-          description="This is the interaction model the plugin is built for: Knowhere extracts structure, OpenClaw stores the package, and the agent answers only after it has previewed or reopened the right evidence."
+          description="This is the interaction model the plugin is built for: Ziru extracts structure, OpenClaw stores the package, and the agent answers only after it has previewed or reopened the right evidence."
           eyebrow="Grounded Answer Flow"
           title={
             <>
@@ -283,7 +283,7 @@ export const ClawWorkflowSection = () => {
                   </div>
                   <div className="relative flex h-10 items-center justify-center gap-[10px] border-t border-[#52525c] bg-[#52525c] px-4 font-sans text-sm leading-5 text-[#c4b4ff]">
                     <SkillLoadedCheckIcon />
-                    knowhere skill loaded
+                    ziru skill loaded
                   </div>
                 </div>
               </div>
@@ -307,7 +307,7 @@ export const ClawWorkflowSection = () => {
                 </div>
                 <div className="relative inline-flex h-full items-center gap-[10px] border-l border-[#52525c] bg-[#52525b] px-5 py-[10px] font-sans text-sm leading-7 text-[#c4b4ff]">
                   <SkillLoadedCheckIcon />
-                  knowhere skill loaded
+                  ziru skill loaded
                 </div>
               </div>
             </div>
@@ -333,9 +333,9 @@ export const ClawWorkflowSection = () => {
                     emphasis="preview → grep → read_result_file"
                     isLongEmphasis
                     tags={[
-                      "knowhere_preview_document",
-                      "knowhere_grep",
-                      "knowhere_read_result_file",
+                      "ziru_preview_document",
+                      "ziru_grep",
+                      "ziru_read_result_file",
                     ]}
                     text="Open the preview first, grep for the metric, then read the exact result file behind that chunk. The plugin keeps the path surface intact."
                   />

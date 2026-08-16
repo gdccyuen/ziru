@@ -17,20 +17,20 @@ const statusContent = {
   confirmed: {
     icon: CheckCircle2,
     title: "Newsletter subscription confirmed",
-    description: "Thanks for subscribing. You will receive Knowhere product updates at this email.",
+    description: "Thanks for subscribing. You will receive Ziru product updates at this email.",
     toneClassName: "text-emerald-500",
   },
   expired: {
     icon: MailWarning,
     title: "Confirmation link expired",
-    description: "Please subscribe again from the Knowhere landing page to receive a new link.",
+    description: "Please subscribe again from the Ziru landing page to receive a new link.",
     toneClassName: "text-amber-500",
   },
   invalid: {
     icon: XCircle,
     title: "Confirmation link is invalid",
     description:
-      "This link is no longer valid. Please subscribe again from the Knowhere landing page.",
+      "This link is no longer valid. Please subscribe again from the Ziru landing page.",
     toneClassName: "text-red-500",
   },
 } as const;
@@ -77,7 +77,7 @@ export function NewsletterConfirmClient({ token }: NewsletterConfirmClientProps)
             {content.description}
           </p>
           <Button asChild className="mt-7">
-            <Link href="/">Back to Knowhere</Link>
+            <Link href="/">Back to Ziru</Link>
           </Button>
         </section>
       </main>

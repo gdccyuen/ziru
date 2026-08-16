@@ -286,7 +286,7 @@ def test_self_hosted_telemetry_defaults_to_enabled(
     monkeypatch.delenv("TELEMETRY_POSTHOG_PROJECT_KEY", raising=False)
     monkeypatch.delenv("NEXT_PUBLIC_POSTHOG_KEY", raising=False)
 
-    config = BaseConfig(_env_file=None, TMP_PATH="/tmp/knowhere")
+    config = BaseConfig(_env_file=None, TMP_PATH="/tmp/ziru")
 
     assert config.TELEMETRY_ENABLED is True
     assert config.TELEMETRY_POSTHOG_HOST == "https://us.i.posthog.com"
@@ -300,7 +300,7 @@ def test_self_hosted_telemetry_env_can_disable_and_override_key(
     monkeypatch.setenv("TELEMETRY_POSTHOG_PROJECT_KEY", "phc_test_override")
     monkeypatch.setenv("NEXT_PUBLIC_POSTHOG_KEY", "phc_next_public_should_not_win")
 
-    config = BaseConfig(_env_file=None, TMP_PATH="/tmp/knowhere")
+    config = BaseConfig(_env_file=None, TMP_PATH="/tmp/ziru")
 
     assert config.TELEMETRY_ENABLED is False
     assert config.TELEMETRY_POSTHOG_PROJECT_KEY == "phc_test_override"
@@ -699,6 +699,6 @@ def _build_config(
         app_version="1.2.3",
         environment="production",
         app_env="production",
-        service_name="knowhere-api",
+        service_name="ziru-api",
         schema_version=SCHEMA_VERSION,
     )

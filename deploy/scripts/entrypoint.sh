@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-apiRoot="/opt/knowhere/source/api"
-dashboardRoot="/opt/knowhere/dashboard"
-apiVenv="/opt/knowhere/venvs/api"
-workerVenv="/opt/knowhere/venvs/worker"
+apiRoot="/opt/ziru/source/api"
+dashboardRoot="/opt/ziru/dashboard"
+apiVenv="/opt/ziru/venvs/api"
+workerVenv="/opt/ziru/venvs/worker"
 
 apiPid=""
 workerPid=""
@@ -98,15 +98,15 @@ waitForApi() {
 
   for ((attempt = 1; attempt <= attempts; attempt++)); do
     if curl -fsS "$apiHealthUrl" >/dev/null 2>&1; then
-      echo "Knowhere API is ready"
+      echo "Ziru API is ready"
       return
     fi
 
-    echo "Waiting for Knowhere API (${attempt}/${attempts})..."
+    echo "Waiting for Ziru API (${attempt}/${attempts})..."
     sleep "$delaySeconds"
   done
 
-  echo "Knowhere API did not become ready" >&2
+  echo "Ziru API did not become ready" >&2
   exit 1
 }
 
@@ -138,7 +138,7 @@ createStorageBuckets() {
   DATABASE_URL="${API_DATABASE_URL}" \
     PYTHONPATH="${apiRoot}/apps/api:${apiRoot}/packages/shared-python" \
     PATH="${apiVenv}/bin:${PATH}" \
-    "${apiVenv}/bin/python" /usr/local/bin/knowhere-create-storage-buckets
+    "${apiVenv}/bin/python" /usr/local/bin/ziru-create-storage-buckets
 }
 
 configureStorageEvents() {
@@ -151,7 +151,7 @@ configureStorageEvents() {
   DATABASE_URL="${API_DATABASE_URL}" \
     PYTHONPATH="${apiRoot}/apps/api:${apiRoot}/packages/shared-python" \
     PATH="${apiVenv}/bin:${PATH}" \
-    "${apiVenv}/bin/python" /usr/local/bin/knowhere-configure-storage-events
+    "${apiVenv}/bin/python" /usr/local/bin/ziru-configure-storage-events
 }
 
 runDashboardMigrations() {
@@ -172,7 +172,7 @@ runDashboardMigrations() {
 }
 
 startApi() {
-  echo "Starting Knowhere API on port ${API_PORT}"
+  echo "Starting Ziru API on port ${API_PORT}"
   (
     cd "${apiRoot}/apps/api"
     DATABASE_URL="${API_DATABASE_URL}" \
@@ -184,7 +184,7 @@ startApi() {
 }
 
 startWorker() {
-  echo "Starting Knowhere worker"
+  echo "Starting Ziru worker"
   (
     cd "${apiRoot}/apps/worker"
     DATABASE_URL="${API_DATABASE_URL}" \
@@ -196,7 +196,7 @@ startWorker() {
 }
 
 startDashboard() {
-  echo "Starting Knowhere dashboard on port ${DASHBOARD_PORT}"
+  echo "Starting Ziru dashboard on port ${DASHBOARD_PORT}"
   (
     cd "$dashboardRoot"
     DATABASE_URL="${DASHBOARD_DATABASE_URL}" \
@@ -237,7 +237,7 @@ handleSignal() {
 
 setDefault POSTGRES_HOST postgres
 setDefault POSTGRES_PORT 5432
-setDefault POSTGRES_DB Knowhere
+setDefault POSTGRES_DB Ziru
 setDefault POSTGRES_USER root
 setDefault POSTGRES_PASSWORD root123
 setDefault API_DATABASE_URL "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
@@ -274,15 +274,15 @@ setDefault PASSWORD_LOGIN_ENABLED true
 setDefault ENVIRONMENT production
 setDefault APP_ENV production
 setDefault LOG_LEVEL INFO
-setDefault TMP_PATH /tmp/knowhere
+setDefault TMP_PATH /tmp/ziru
 setDefault USERS_DATA_PATH /data/users
 setDefault FONT_PATH /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
 setDefault CHROMEDRIVER_PATH /usr/bin/chromedriver
 
 setDefault S3_TYPE s3
-setDefault S3_BUCKET_NAME knowhere-uploads
+setDefault S3_BUCKET_NAME ziru-uploads
 setDefault S3_UPLOADS_BUCKET "${S3_BUCKET_NAME}"
-setDefault S3_RESULTS_BUCKET knowhere-results
+setDefault S3_RESULTS_BUCKET ziru-results
 setDefault S3_ACCESS_KEY_ID test
 setDefault S3_SECRET_ACCESS_KEY test
 setDefault S3_ENDPOINT_URL http://localstack:4566
@@ -290,12 +290,12 @@ setDefault S3_PRIVATE_DOMAIN http://localhost:4566
 setDefault S3_REGION us-west-1
 setDefault S3_USE_SSL false
 setDefault S3_ADDRESSING_STYLE path
-setDefault S3_TEMP_PATH /tmp/knowhere
+setDefault S3_TEMP_PATH /tmp/ziru
 setDefault S3_WEBHOOK_AUTH_TOKEN "change-me-storage-webhook-token"
 setDefault SNS_SIGNATURE_VERIFICATION false
 setDefault SELF_HOSTED_CREATE_STORAGE_BUCKETS true
 setDefault SELF_HOSTED_CONFIGURE_STORAGE_EVENTS true
-setDefault SELF_HOSTED_S3_EVENT_TOPIC_NAME knowhere-s3-upload-events
+setDefault SELF_HOSTED_S3_EVENT_TOPIC_NAME ziru-s3-upload-events
 setDefault SELF_HOSTED_S3_EVENT_WEBHOOK_URL "http://app:${API_PORT}/v1/internal/s3-events"
 setDefault SELF_HOSTED_STORAGE_CORS_ALLOWED_ORIGINS ""
 
@@ -342,6 +342,6 @@ startDashboard
 
 wait -n "$apiPid" "$workerPid" "$dashboardPid"
 exitCode="$?"
-echo "A Knowhere self-hosted process exited with code ${exitCode}; stopping remaining processes"
+echo "A Ziru self-hosted process exited with code ${exitCode}; stopping remaining processes"
 stopChildren TERM
 exit "$exitCode"

@@ -39,7 +39,7 @@ const C = SourcesPanel as React.FC<Record<string, unknown>>;
 const originalResizeObserver = globalThis.ResizeObserver;
 const fileTooLargeMessage =
   "File is too large. Upload a document up to 300 MB. " +
-  "For larger files, contact team@knowhereto.ai or open an issue at https://github.com/Ontos-AI/knowhere/issues.";
+  "For larger files, contact team@ziruto.ai or open an issue at https://github.com/Ontos-AI/ziru/issues.";
 
 describe("SourcesPanel", () => {
   beforeEach(() => {
@@ -67,7 +67,7 @@ describe("SourcesPanel", () => {
     return React.createElement(C, {
       activeWorkspace: { id: "ws_1", namespace: "adobe" },
       workspaces: [{ id: "ws_1", namespace: "adobe" }],
-      knowhereKeyLabels: [],
+      ziruKeyLabels: [],
       ...overrides,
     });
   }
@@ -137,11 +137,11 @@ describe("SourcesPanel", () => {
 
     expect(
       screen.getByText(
-        /Notebook accepts PDF, DOC, DOCX, TXT, MD, XLS, XLSX, PPTX, images, and more files up to 300 MB/,
+        /WebUI accepts PDF, DOC, DOCX, TXT, MD, XLS, XLSX, PPTX, images, and more files up to 300 MB/,
       ),
     ).toBeTruthy();
     expect(screen.getByText("Max size: 300 MB")).toBeTruthy();
-    expect(opened.container.textContent).not.toMatch(/Knowhere|parsing|indexing/i);
+    expect(opened.container.textContent).not.toMatch(/Ziru|parsing|indexing/i);
   });
 
   it("separates source opening from query include toggles", async () => {

@@ -399,7 +399,7 @@ export default function UsagePage() {
                   onClick={() => trackBuyCreditsClicked("usage_summary")}
                   className="text-[#ff6900] transition-opacity hover:opacity-80"
                 >
-                  Buy Knowhere API Credit &gt;&gt;
+                  Buy Ziru API Credit &gt;&gt;
                 </Link>
               }
             />

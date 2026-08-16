@@ -1,9 +1,9 @@
 import type {
   RetrievalQueryParams,
   RetrievalQueryResponse,
-} from "@ontos-ai/knowhere-sdk"
+} from "@/integrations/ziru-sdk-types"
 
-export type AgentSurface = "notebook_chat" | "typing_compose" | "typing_quick_ask"
+export type AgentSurface = "ziru_chat" | "typing_compose" | "typing_quick_ask"
 
 export type AgentTask =
   | "answer"

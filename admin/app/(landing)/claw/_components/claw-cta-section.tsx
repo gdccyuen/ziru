@@ -2,7 +2,7 @@ import { ClawActionButton } from "@app/(landing)/claw/_components/claw-action-bu
 import { changeItems } from "@app/(landing)/claw/_components/claw-content";
 import {
   ClawStripedOverlay,
-  KnowhereWordmark,
+  ZiruWordmark,
   OpenClawWordmark,
 } from "@app/(landing)/claw/_components/claw-primitives";
 import { cn } from "@lib/utils";
@@ -18,7 +18,7 @@ export const ClawCtaSection = () => {
               <span className="font-sans text-[22px] font-bold leading-none text-[#09090b]">
                 Bring
               </span>
-              <KnowhereWordmark compact />
+              <ZiruWordmark compact />
               <span className="font-sans text-[22px] font-bold leading-none text-[#09090b]">
                 into
               </span>
@@ -33,10 +33,10 @@ export const ClawCtaSection = () => {
             </span>
             <span className="inline-flex w-[200px] items-center">
               <Image
-                alt="Knowhere"
+                alt="Ziru"
                 className="h-auto w-full object-contain"
                 height={84}
-                src="/images/knowhere/logo.png"
+                src="/images/ziru/logo.png"
                 width={360}
               />
             </span>

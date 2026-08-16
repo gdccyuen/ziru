@@ -1,13 +1,13 @@
 "use client";
 
-import { KnowhereBrand } from "@components/brand/knowhere-brand";
+import { ZiruBrand } from "@components/brand/ziru-brand";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@components/ui/dropdown-menu";
-import { KnowhereIcon } from "@components/ui/knowhere-icon";
+import { ZiruIcon } from "@components/ui/ziru-icon";
 import {
   Sheet,
   SheetContent,
@@ -110,8 +110,8 @@ const getNavigation = (labels: {
 
 const SidebarBrand = ({ onNavigate }: { onNavigate?: () => void }) => {
   return (
-    <Link href="/" aria-label="Knowhere" className="inline-flex items-center" onClick={onNavigate}>
-      <KnowhereBrand className="w-[120px]" priority sizes={SIDEBAR_BRAND_WIDTH} tone="auto" />
+    <Link href="/" aria-label="Ziru" className="inline-flex items-center" onClick={onNavigate}>
+      <ZiruBrand className="w-[120px]" priority sizes={SIDEBAR_BRAND_WIDTH} tone="auto" />
     </Link>
   );
 };
@@ -120,12 +120,12 @@ const MobileSidebarBrand = ({ onNavigate }: { onNavigate?: () => void }) => {
   return (
     <Link
       href="/"
-      aria-label="Knowhere"
+      aria-label="Ziru"
       className="inline-flex items-center gap-3"
       onClick={onNavigate}
     >
       <Image
-        src="/images/knowhere/logo-icon.png"
+        src="/images/ziru/logo-icon.png"
         alt=""
         aria-hidden
         width={92}
@@ -134,7 +134,7 @@ const MobileSidebarBrand = ({ onNavigate }: { onNavigate?: () => void }) => {
         className="h-[20.36px] w-[22.4px] shrink-0 object-contain opacity-80"
       />
       <span className="font-[family-name:var(--font-brand)] text-base font-medium leading-[21px] text-[#09090b] dark:text-[#fafafa]">
-        Knowhere
+        Ziru
       </span>
     </Link>
   );
@@ -366,7 +366,7 @@ const MobileSidebarContent = ({
             <span className="text-[14px] font-medium leading-5 text-black dark:text-[#fafafa]">
               {localeLabels[localeKey]}
             </span>
-            <KnowhereIcon
+            <ZiruIcon
               name="check"
               className={cn(
                 "size-[19px] text-[#00c950] transition-opacity",

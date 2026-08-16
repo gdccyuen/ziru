@@ -36,7 +36,7 @@ describe("loadWorkspaceShellInitialState", () => {
     expect(state).toEqual({
       sources: [],
       workspaces: [],
-      knowhereKeyLabels: [],
+      ziruKeyLabels: [],
     })
     expect(deps.listSourcesForWorkspace).not.toHaveBeenCalled()
   })
@@ -47,11 +47,11 @@ describe("loadWorkspaceShellInitialState", () => {
     expect(state.user?.id).toBe("user_1")
     expect(state.workspace).toEqual({
       id: "workspace_1",
-      namespace: "notebook-workspace_1",
+      namespace: "webui-workspace_1",
       activeKeyLabel: null,
     })
     expect(state.workspaces).toHaveLength(1)
-    expect(state.knowhereKeyLabels).toEqual([
+    expect(state.ziruKeyLabels).toEqual([
       { id: "key_1", label: "default", mask: "sk_te••••st" },
     ])
   })
@@ -60,7 +60,7 @@ describe("loadWorkspaceShellInitialState", () => {
     const workspace = makeWorkspace()
     const readySource = makeSource(workspace.id, {
       status: "ready",
-      knowhereDocumentId: "document_1",
+      ziruDocumentId: "document_1",
     })
     const listSourcesForWorkspace = vi.fn(async () => [readySource])
     const deps = {
@@ -93,15 +93,15 @@ describe("loadWorkspaceShellInitialState", () => {
     ])
   })
 
-  it("keeps matching Notebook uploads parsing while background reconciliation prepares artifacts", async () => {
+  it("keeps matching WebUI uploads parsing while background reconciliation prepares artifacts", async () => {
     const workspace = makeWorkspace()
     const parsingSource = makeSource(workspace.id, {
       title: "uploaded.pdf",
       mimeType: "application/pdf",
       sizeBytes: 100,
       status: "parsing",
-      knowhereJobId: "job_123",
-      knowhereDocumentId: null,
+      ziruJobId: "job_123",
+      ziruDocumentId: null,
     })
     const client = {
       documents: {
@@ -115,7 +115,7 @@ describe("loadWorkspaceShellInitialState", () => {
                 status: "active",
                 sourceFileName: "uploaded.pdf",
                 documentMetadata: {
-                  createdByClient: "notebook",
+                  createdByClient: "webui",
                   title: "uploaded.pdf",
                   mimeType: "application/pdf",
                   sizeBytes: 100,
@@ -198,7 +198,7 @@ describe("loadWorkspaceShellInitialState", () => {
     const deps = createDependencies({
       listSourcesForWorkspace: vi.fn(async () => [makeSource("workspace_1")]),
       sourceViewOptionsBySourceId: vi.fn(() =>
-        Effect.die(new Error("Knowhere document list timed out")),
+        Effect.die(new Error("Ziru document list timed out")),
       ),
     })
 
@@ -211,7 +211,7 @@ describe("loadWorkspaceShellInitialState", () => {
       expect(formatted).toContain(
         "Workspace initial state sourceViewOptionsBySourceId failed",
       )
-      expect(formatted).toContain("Knowhere document list timed out")
+      expect(formatted).toContain("Ziru document list timed out")
     }
   })
 })
@@ -235,7 +235,7 @@ function createDependencies(
     listMessages: vi.fn(async () => []),
     listSourcesForWorkspace: vi.fn(async () => []),
     listWorkspacesForUser: vi.fn(async () => [workspace]),
-    listMaskedKnowhereKeys: vi.fn(async () => [
+    listMaskedZiruKeys: vi.fn(async () => [
       { id: "key_1", label: "default", mask: "sk_te••••st" },
     ]),
     localizeRemoteDocument: vi.fn(async () => makeSource("workspace_1")),
@@ -249,8 +249,8 @@ function makeWorkspace(): Workspace {
   return {
     id: "workspace_1",
     userId: "user_1",
-    activeKnowhereApiKeyId: null,
-    namespace: "notebook-workspace_1",
+    activeZiruApiKeyId: null,
+    namespace: "webui-workspace_1",
     createdAt: new Date("2026-05-10T00:00:00.000Z"),
   }
 }
@@ -267,8 +267,8 @@ function makeSource(
     sizeBytes: 1024,
     status: "ready",
     failureReason: null,
-    knowhereJobId: "job_1",
-    knowhereDocumentId: "document_1",
+    ziruJobId: "job_1",
+    ziruDocumentId: "document_1",
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,

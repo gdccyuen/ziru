@@ -1,8 +1,8 @@
 import {
-  KNOWHERE_ICON_NAMES,
-  KnowhereIcon,
-  type KnowhereIconName,
-} from "@components/ui/knowhere-icon";
+  ZIRU_ICON_NAMES,
+  ZiruIcon,
+  type ZiruIconName,
+} from "@components/ui/ziru-icon";
 import { cn } from "@lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps, ReactNode } from "react";
@@ -47,14 +47,14 @@ const textVariants: Record<TagVariant, string> = {
 
 export type TagProps = ComponentProps<"div"> &
   VariantProps<typeof tagVariants> & {
-    icon?: KnowhereIconName | ReactNode;
+    icon?: ZiruIconName | ReactNode;
     value?: ReactNode;
   };
 
 const cornerClassName = "absolute size-[9px] border-l-2 border-t-2 border-stone-300";
 
-const isKnowhereIconName = (value: ReactNode): value is KnowhereIconName =>
-  typeof value === "string" && KNOWHERE_ICON_NAMES.includes(value as KnowhereIconName);
+const isZiruIconName = (value: ReactNode): value is ZiruIconName =>
+  typeof value === "string" && ZIRU_ICON_NAMES.includes(value as ZiruIconName);
 
 export const Tag = ({ children, className, icon, value, variant = "text", ...props }: TagProps) => {
   const resolvedVariant: TagVariant = variant ?? "text";
@@ -70,14 +70,14 @@ export const Tag = ({ children, className, icon, value, variant = "text", ...pro
             ? ".text"
             : children);
 
-  const fallbackIcon: KnowhereIconName =
+  const fallbackIcon: ZiruIconName =
     resolvedVariant === "status" ? "check" : resolvedVariant === "block" ? "mind" : "download";
 
-  const resolvedIcon = isKnowhereIconName(icon) ? (
-    <KnowhereIcon className="size-6" name={icon} />
+  const resolvedIcon = isZiruIconName(icon) ? (
+    <ZiruIcon className="size-6" name={icon} />
   ) : (
     (icon ?? (
-      <KnowhereIcon
+      <ZiruIcon
         className={cn(
           resolvedVariant === "status"
             ? "size-8"

@@ -4,17 +4,17 @@ import { Effect } from "effect"
 
 import { databaseRuntime } from "@/domains/workspace/database-runtime"
 import { workspaceRepository } from "@/domains/workspace/repository"
-import { knowhereApiKeysRepository } from "@/infrastructure/auth/knowhere-api-keys-repository"
-import { getDefaultKnowhereKey } from "@/integrations/knowhere-keys"
+import { ziruApiKeysRepository } from "@/infrastructure/auth/ziru-api-keys-repository"
+import { getDefaultZiruKey } from "@/integrations/ziru-keys"
 
 /**
- * Resolve the credential used for Knowhere SDK calls.
+ * Resolve the credential used for Ziru SDK calls.
  *
  * Order (key-agnostic, user-scoped keys):
- * 1. Active DB key for the workspace (workspaces.active_knowhere_api_key_id)
+ * 1. Active DB key for the workspace (workspaces.active_ziru_api_key_id)
  *    — decrypted on demand, never logged or sent to the browser.
  * 2. The user's first non-deleted key.
- * 3. File/env fallback (`config/knowhere-keys.json`, then KNOWHERE_API_KEY)
+ * 3. File/env fallback (`config/ziru-keys.json`, then ZIRU_API_KEY)
  *    — kept as the bootstrap for fresh deployments before any UI key is
  *    added.
  */
@@ -27,12 +27,12 @@ export async function ensureApiKeyForWorkspace(
         const workspace = yield* workspaceRepository.findByIdEffect(workspaceId)
         if (!workspace) return null
 
-        const active = yield* knowhereApiKeysRepository.getActiveForWorkspaceEffect(
+        const active = yield* ziruApiKeysRepository.getActiveForWorkspaceEffect(
           workspaceId,
         )
         if (active) return active
 
-        return yield* knowhereApiKeysRepository.firstForUserEffect(
+        return yield* ziruApiKeysRepository.firstForUserEffect(
           workspace.userId,
         )
       }),
@@ -41,22 +41,22 @@ export async function ensureApiKeyForWorkspace(
 
   if (dbKey) {
     const apiKey = await databaseRuntime
-      .runPromise(knowhereApiKeysRepository.decryptStoredEffect(dbKey))
+      .runPromise(ziruApiKeysRepository.decryptStoredEffect(dbKey))
       .catch(() => null)
     if (apiKey) return apiKey
   }
 
-  const defaultKey = await getDefaultKnowhereKey()
+  const defaultKey = await getDefaultZiruKey()
   if (defaultKey) return defaultKey.apiKey
 
   throw new Error(
-    "No Knowhere API key configured. Add one via the API keys dialog, " +
-      "set KNOWHERE_API_KEY, or provide config/knowhere-keys.json.",
+    "No Ziru API key configured. Add one via the API keys dialog, " +
+      "set ZIRU_API_KEY, or provide config/ziru-keys.json.",
   )
 }
 
 /**
- * Heuristic: classify an error thrown by the Knowhere SDK or fetch as
+ * Heuristic: classify an error thrown by the Ziru SDK or fetch as
  * auth-related (401/403). Covers the SDK's error shape and raw fetch
  * Response objects.
  */

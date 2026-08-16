@@ -1,14 +1,17 @@
 import { describe, expect, it, vi } from "vitest"
-import type { JobResult } from "@ontos-ai/knowhere-sdk"
+import type {
+  JobResult,
+  ZiruClient,
+} from "@/integrations/ziru-sdk-types"
 
 import type { Source, Workspace } from "@/infrastructure/db/schema"
-import { applyKnowhereJobToSource } from "./lifecycle"
+import { applyZiruJobToSource } from "./lifecycle"
 
 const workspace: Workspace = {
   id: "workspace_1",
   userId: "user_1",
-  activeKnowhereApiKeyId: null,
-  namespace: "notebook-workspace_1",
+  activeZiruApiKeyId: null,
+  namespace: "webui-workspace_1",
   createdAt: new Date("2026-05-06T00:00:00Z"),
 }
 
@@ -21,8 +24,8 @@ function makeSource(overrides: Partial<Source>): Source {
     sizeBytes: 1,
     status: "parsing",
     failureReason: null,
-    knowhereJobId: "job_1",
-    knowhereDocumentId: null,
+    ziruJobId: "job_1",
+    ziruDocumentId: null,
     stagedBlobPathname: null,
     stagedBlobUrl: null,
     originalBlobPathname: null,
@@ -56,12 +59,12 @@ async function loadReconcile({
 }
 
 describe("reconcileSourcesForWorkspace", () => {
-  it("marks completed parsing jobs ready when Knowhere publishes a document id", async () => {
-    const parsing = makeSource({ id: "source_1", knowhereJobId: "job_1" })
+  it("marks completed parsing jobs ready when Ziru publishes a document id", async () => {
+    const parsing = makeSource({ id: "source_1", ziruJobId: "job_1" })
     const ready = makeSource({
       id: "source_1",
       status: "ready",
-      knowhereDocumentId: "doc_1",
+      ziruDocumentId: "doc_1",
     })
     const listSourcesForWorkspace = vi
       .fn()
@@ -80,7 +83,7 @@ describe("reconcileSourcesForWorkspace", () => {
           documentId: "doc_1",
         }),
       },
-    } as unknown as import("@ontos-ai/knowhere-sdk").default
+    } as unknown as ZiruClient
 
     const result = await reconcileSourcesForWorkspace(workspace, mockClient)
 
@@ -93,11 +96,11 @@ describe("reconcileSourcesForWorkspace", () => {
   })
 
   it("does not store parsed result assets before marking a completed source ready", async () => {
-    const parsing = makeSource({ id: "source_1", knowhereJobId: "job_1" })
+    const parsing = makeSource({ id: "source_1", ziruJobId: "job_1" })
     const ready = makeSource({
       id: "source_1",
       status: "ready",
-      knowhereDocumentId: "doc_1",
+      ziruDocumentId: "doc_1",
     })
     const job = {
       status: "done",
@@ -127,7 +130,7 @@ describe("reconcileSourcesForWorkspace", () => {
       jobs: {
         get: vi.fn().mockResolvedValue(job),
       },
-    } as unknown as import("@ontos-ai/knowhere-sdk").default
+    } as unknown as ZiruClient
 
     await reconcileSourcesForWorkspace(workspace, mockClient)
 
@@ -139,7 +142,7 @@ describe("reconcileSourcesForWorkspace", () => {
   it("keeps original public Blob uploads after completed URL parsing jobs", async () => {
     const parsing = makeSource({
       id: "source_1",
-      knowhereJobId: "job_1",
+      ziruJobId: "job_1",
       originalBlobPathname: "source-uploads/upload_1/document.pdf",
       originalBlobUrl:
         "https://store.public.blob.vercel-storage.com/source-uploads/upload_1/document.pdf",
@@ -147,7 +150,7 @@ describe("reconcileSourcesForWorkspace", () => {
     const ready = makeSource({
       id: "source_1",
       status: "ready",
-      knowhereDocumentId: "doc_1",
+      ziruDocumentId: "doc_1",
       originalBlobPathname: "source-uploads/upload_1/document.pdf",
       originalBlobUrl:
         "https://store.public.blob.vercel-storage.com/source-uploads/upload_1/document.pdf",
@@ -170,7 +173,7 @@ describe("reconcileSourcesForWorkspace", () => {
           isDone: true,
         }),
       },
-    } as unknown as import("@ontos-ai/knowhere-sdk").default
+    } as unknown as ZiruClient
 
     await reconcileSourcesForWorkspace(workspace, mockClient, {
       deleteStagedSourceBlob,
@@ -182,7 +185,7 @@ describe("reconcileSourcesForWorkspace", () => {
   })
 
   it("marks failed parsing jobs failed with a user-safe reason", async () => {
-    const parsing = makeSource({ id: "source_1", knowhereJobId: "job_1" })
+    const parsing = makeSource({ id: "source_1", ziruJobId: "job_1" })
     const failed = makeSource({
       id: "source_1",
       status: "failed",
@@ -205,7 +208,7 @@ describe("reconcileSourcesForWorkspace", () => {
           error: { message: "Parser rejected this document." },
         }),
       },
-    } as unknown as import("@ontos-ai/knowhere-sdk").default
+    } as unknown as ZiruClient
 
     await reconcileSourcesForWorkspace(workspace, mockClient)
 
@@ -217,8 +220,8 @@ describe("reconcileSourcesForWorkspace", () => {
     )
   })
 
-  it("leaves parsing rows unchanged on transient Knowhere lookup errors", async () => {
-    const parsing = makeSource({ id: "source_1", knowhereJobId: "job_1" })
+  it("leaves parsing rows unchanged on transient Ziru lookup errors", async () => {
+    const parsing = makeSource({ id: "source_1", ziruJobId: "job_1" })
     const listSourcesForWorkspace = vi
       .fn()
       .mockResolvedValueOnce([parsing])
@@ -235,7 +238,7 @@ describe("reconcileSourcesForWorkspace", () => {
       jobs: {
         get: vi.fn().mockRejectedValue(new Error("temporary outage")),
       },
-    } as unknown as import("@ontos-ai/knowhere-sdk").default
+    } as unknown as ZiruClient
 
     const result = await reconcileSourcesForWorkspace(workspace, mockClient)
 
@@ -245,11 +248,11 @@ describe("reconcileSourcesForWorkspace", () => {
   })
 })
 
-describe("applyKnowhereJobToSource", () => {
+describe("applyZiruJobToSource", () => {
   it("readies completed sources by document id and then cleans staged blobs", async () => {
     const parsing = makeSource({
       id: "source_1",
-      knowhereJobId: "job_1",
+      ziruJobId: "job_1",
       stagedBlobPathname: "source-uploads/upload_1/document.pdf",
     })
     const job: JobResult = {
@@ -281,7 +284,7 @@ describe("applyKnowhereJobToSource", () => {
       }),
     }
 
-    await applyKnowhereJobToSource({
+    await applyZiruJobToSource({
       workspaceId: workspace.id,
       source: parsing,
       job,

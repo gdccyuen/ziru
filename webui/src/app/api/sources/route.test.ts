@@ -7,11 +7,11 @@ const mocks = vi.hoisted(() => {
   return {
     ensureApiKeyForWorkspace: vi.fn(),
     getCurrentUser: vi.fn(),
-    makeKnowhereClient: vi.fn(),
+    makeZiruClient: vi.fn(),
     revalidatePath: vi.fn(),
     requireUser: vi.fn(),
-    uploadSourceBlobToKnowhere: vi.fn(),
-    uploadSourceToKnowhere: vi.fn(),
+    uploadSourceBlobToZiru: vi.fn(),
+    uploadSourceToZiru: vi.fn(),
     ensureWorkspace: vi.fn(),
     findWorkspaceByIdAndUserId: vi.fn(),
     findByIdAndUserIdEffect: vi.fn(),
@@ -27,7 +27,7 @@ vi.mock("next/headers", () => ({
   headers: vi.fn(async () => new Headers({ cookie: "session=abc" })),
 }));
 
-vi.mock("@/integrations/knowhere-credentials", () => ({
+vi.mock("@/integrations/ziru-credentials", () => ({
   ensureApiKeyForWorkspace: mocks.ensureApiKeyForWorkspace,
 }));
 
@@ -36,14 +36,14 @@ vi.mock("@/infrastructure/auth", () => ({
   requireUser: mocks.requireUser,
 }));
 
-vi.mock("@/integrations/knowhere", () => ({
-  makeKnowhereClient: mocks.makeKnowhereClient,
+vi.mock("@/integrations/ziru", () => ({
+  makeZiruClient: mocks.makeZiruClient,
 }));
 
 vi.mock("@/domains/sources/service", () => ({
   sourceService: {
-    uploadSourceBlobToKnowhere: mocks.uploadSourceBlobToKnowhere,
-    uploadSourceToKnowhere: mocks.uploadSourceToKnowhere,
+    uploadSourceBlobToZiru: mocks.uploadSourceBlobToZiru,
+    uploadSourceToZiru: mocks.uploadSourceToZiru,
   },
 }));
 
@@ -70,8 +70,8 @@ import { POST } from "./route";
 const workspace: Workspace = {
   id: "workspace_1",
   userId: "user_1",
-  activeKnowhereApiKeyId: null,
-  namespace: "notebook-workspace_1",
+  activeZiruApiKeyId: null,
+  namespace: "webui-workspace_1",
   createdAt: new Date("2026-05-10T00:00:00Z"),
 };
 
@@ -83,8 +83,8 @@ const source: Source = {
   sizeBytes: 5,
   status: "parsing",
   failureReason: null,
-  knowhereJobId: "job_1",
-  knowhereDocumentId: null,
+  ziruJobId: "job_1",
+  ziruDocumentId: null,
   stagedBlobPathname: null,
   stagedBlobUrl: null,
   originalBlobPathname: null,
@@ -100,9 +100,9 @@ describe("POST /api/sources", () => {
     mocks.getCurrentUser.mockResolvedValue({ id: "user_1" });
     mocks.ensureWorkspace.mockResolvedValue(workspace);
     mocks.ensureApiKeyForWorkspace.mockResolvedValue("jwt_123");
-    mocks.makeKnowhereClient.mockReturnValue({ jobs: {} });
-    mocks.uploadSourceBlobToKnowhere.mockResolvedValue(source);
-    mocks.uploadSourceToKnowhere.mockResolvedValue(source);
+    mocks.makeZiruClient.mockReturnValue({ jobs: {} });
+    mocks.uploadSourceBlobToZiru.mockResolvedValue(source);
+    mocks.uploadSourceToZiru.mockResolvedValue(source);
     mocks.findByIdAndUserIdEffect.mockReturnValue(
       Promise.resolve(workspace),
     );
@@ -138,7 +138,7 @@ describe("POST /api/sources", () => {
     expect(mocks.ensureApiKeyForWorkspace).toHaveBeenCalledWith(
       workspace.id,
     );
-    expect(mocks.uploadSourceToKnowhere).toHaveBeenCalledWith(
+    expect(mocks.uploadSourceToZiru).toHaveBeenCalledWith(
       workspace,
       expect.objectContaining({ name: "notes.pdf" }),
       { jobs: {} },
@@ -150,7 +150,7 @@ describe("POST /api/sources", () => {
     const targetWorkspace: Workspace = {
       id: "workspace_target",
       userId: "user_1",
-      activeKnowhereApiKeyId: null,
+      activeZiruApiKeyId: null,
       namespace: "adobe",
       createdAt: new Date("2026-05-10T00:00:00Z"),
     };
@@ -177,7 +177,7 @@ describe("POST /api/sources", () => {
     expect(mocks.ensureApiKeyForWorkspace).toHaveBeenCalledWith(
       "workspace_target",
     );
-    expect(mocks.uploadSourceToKnowhere).toHaveBeenCalledWith(
+    expect(mocks.uploadSourceToZiru).toHaveBeenCalledWith(
       targetWorkspace,
       expect.objectContaining({ name: "notes.pdf" }),
       { jobs: {} },
@@ -212,7 +212,7 @@ describe("POST /api/sources", () => {
       },
     });
     expect(response.status).toBe(201);
-    expect(mocks.uploadSourceBlobToKnowhere).toHaveBeenCalledWith(
+    expect(mocks.uploadSourceBlobToZiru).toHaveBeenCalledWith(
       workspace,
       {
         pathname: "source-uploads/upload_1/document.pdf",
@@ -223,7 +223,7 @@ describe("POST /api/sources", () => {
       },
       { jobs: {} },
     );
-    expect(mocks.uploadSourceToKnowhere).not.toHaveBeenCalled();
+    expect(mocks.uploadSourceToZiru).not.toHaveBeenCalled();
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/");
   });
 
@@ -239,11 +239,11 @@ describe("POST /api/sources", () => {
       message: "Choose a document to upload.",
     });
     expect(response.status).toBe(400);
-    expect(mocks.uploadSourceToKnowhere).not.toHaveBeenCalled();
+    expect(mocks.uploadSourceToZiru).not.toHaveBeenCalled();
   });
 
   it("returns a friendly error response when upload processing fails", async () => {
-    mocks.uploadSourceToKnowhere.mockRejectedValue(new Error("network down"));
+    mocks.uploadSourceToZiru.mockRejectedValue(new Error("network down"));
     const formData = new FormData();
     formData.set(
       "file",
