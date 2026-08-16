@@ -1,12 +1,12 @@
 # Contributing
 
-Thank you for helping improve Knowhere API Dashboard.
+Thank you for helping improve Ziru Dashboard.
 
 ## Branches and pull requests
 
-- Public repository work should target the public repository `main` branch.
-- Publication cleanup from the private repository must stay on a dedicated cleanup branch and be copied into the public repository as files, not by preserving private Git history.
-- Do not include private infrastructure identifiers, private deployment commands, local artifacts, or secrets in a public pull request.
+- Repository work should target the `main` branch.
+- Do not include private infrastructure identifiers, private deployment
+  commands, local artifacts, or secrets in a pull request.
 
 ## Local workflow
 
@@ -27,4 +27,4 @@ Thank you for helping improve Knowhere API Dashboard.
 
 - Describe user-visible behavior changes and deployment or environment changes.
 - Include the validation commands you ran.
-- Call out any open DevOps decisions, especially image publishing, runtime environment injection, and private production deployment ownership.
+- Call out any open DevOps decisions, especially image publishing and runtime environment injection.

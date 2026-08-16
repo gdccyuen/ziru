@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose an improvement to the Knowhere API or worker.
+description: Propose an improvement to the Ziru API or worker.
 title: "[Feature]: "
 labels:
   - enhancement

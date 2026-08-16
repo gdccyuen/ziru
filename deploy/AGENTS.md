@@ -2,12 +2,12 @@
 
 ## What this repo is (and is not)
 
-This repo **only packages** Knowhere for self-hosted Docker Compose deployment. It contains **no application code**. The API, worker, and dashboard source live in two separate upstream repos and are pulled in at build time:
+This repo **only packages** Ziru for self-hosted Docker Compose deployment. It contains **no application code**. The API, worker, and dashboard source live in this monorepo's `core/` and `admin/` and are staged in at build time:
 
-- `Ontos-AI/knowhere` — Python API + Celery worker (`apps/api`, `apps/worker`, `packages/shared-python`)
-- `Ontos-AI/knowhere-dashboard` — Next.js dashboard
+- `core/` — Python API + Celery worker (`apps/api`, `apps/worker`, `packages/shared-python`)
+- `admin/` — Next.js dashboard
 
-Do not look for or edit app logic here. Changes to API/worker/dashboard behavior must be made upstream. This repo's surface is: `Dockerfile`, `compose.yaml`, `.env.defaults`, `scripts/`, `docs/`, `.github/workflows/`.
+Do not look for or edit app logic here. Changes to API/worker/dashboard behavior must be made in `core/` or `admin/`. This repo's surface is: `Dockerfile`, `compose.yaml`, `.env.defaults`, `scripts/`, `docs/`, `.github/workflows/`.
 
 ## Verification
 

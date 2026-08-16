@@ -1,4 +1,4 @@
-name: "Knowhere CodeQL config"
+name: "Ziru CodeQL config"
 
 paths-ignore:
   - apps/api/scripts/**

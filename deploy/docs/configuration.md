@@ -1,4 +1,4 @@
-# Knowhere Self-Hosted Configuration Reference
+# Ziru Self-Hosted Configuration Reference
 
 English | [中文](configuration.zh-CN.md)
 
@@ -10,7 +10,7 @@ Docker Compose reads `.env.defaults` first, then reads `.env`. `.env.defaults` i
 
 | Variable | Usage | Example values |
 | --- | --- | --- |
-| `DASHBOARD_PUBLIC_URL` | Public Dashboard URL opened by users in their browser. Also used for login, signup, and callback validation. | `http://localhost:3000`, `https://knowhere.example.com` |
+| `DASHBOARD_PUBLIC_URL` | Public Dashboard URL opened by users in their browser. Also used for login, signup, and callback validation. | `http://localhost:3000`, `https://ziru.example.com` |
 | `DASHBOARD_HOST_BIND` | Host interface bound by the Dashboard port. Defaults to localhost. Use `0.0.0.0` only when the Dashboard must be reachable from outside the host. | `127.0.0.1`, `0.0.0.0` |
 | `DASHBOARD_HOST_PORT` | Host port mapped to the Dashboard. | `3000`, `8080` |
 | `API_HOST_BIND` | Host interface bound by the API port. Defaults to localhost. Use `0.0.0.0` only when the API must be reachable from outside the host. | `127.0.0.1`, `0.0.0.0` |
@@ -21,7 +21,7 @@ Docker Compose reads `.env.defaults` first, then reads `.env`. `.env.defaults` i
 | `REDIS_HOST_PORT` | Host port mapped to Redis. | `6379` |
 | `LOCALSTACK_HOST_BIND` | Host interface bound by the LocalStack port. Keep the default unless external S3-compatible tooling must connect directly. | `127.0.0.1`, `0.0.0.0` |
 | `LOCALSTACK_HOST_PORT` | Host port mapped to the LocalStack S3-compatible service. | `4566` |
-| `KNOWHERE_IMAGE` | Knowhere self-hosted Docker image. | `ghcr.io/ontos-ai/knowhere:latest` |
+| `KNOWHERE_IMAGE` | Ziru self-hosted Docker image. | `ghcr.io/ontos-ai/knowhere:latest` |
 
 For networks where GHCR is slow or unavailable, use the Aliyun registry image:
 
@@ -37,7 +37,7 @@ KNOWHERE_IMAGE=knowhere-registry.cn-shenzhen.cr.aliyuncs.com/knowhere/knowhere:l
 | `DS_KEY` | DeepSeek API key. Set this when using DeepSeek as the text model provider. | `sk-...` |
 | `ALI_API_KEYS` | Alibaba Cloud Model Studio DashScope API key pool. Set this when using Qwen models. The format is the same as `MINERU_API_KEYS`. | `sk-...` |
 
-`MINERU_API_KEYS` and `ALI_API_KEYS` support multiple keys so they can form a key pool. When one key reaches provider quota or rate limits, Knowhere can rotate to another key. A single key also works.
+`MINERU_API_KEYS` and `ALI_API_KEYS` support multiple keys so they can form a key pool. When one key reaches provider quota or rate limits, Ziru can rotate to another key. A single key also works.
 
 Get keys from the providers' official websites:
 
@@ -120,8 +120,8 @@ EMBEDDING_MODEL=text-embedding-v4
 
 | Variable | Usage | Example values |
 | --- | --- | --- |
-| `NEXT_PUBLIC_APP_URL` | Public Dashboard URL. Derived from `DASHBOARD_PUBLIC_URL` when unset. | `https://knowhere.example.com` |
-| `BETTER_AUTH_URL` | Better Auth callback and trusted-origin URL. Derived from `NEXT_PUBLIC_APP_URL` when unset. | `https://knowhere.example.com` |
+| `NEXT_PUBLIC_APP_URL` | Public Dashboard URL. Derived from `DASHBOARD_PUBLIC_URL` when unset. | `https://ziru.example.com` |
+| `BETTER_AUTH_URL` | Better Auth callback and trusted-origin URL. Derived from `NEXT_PUBLIC_APP_URL` when unset. | `https://ziru.example.com` |
 | `NEXT_PUBLIC_API_URL` | Dashboard base URL for proxying API requests. The single-container default uses the local API. | `http://127.0.0.1:5005/api` |
 | `NEXT_PUBLIC_AUTH_BASE_URL` | Better Auth route prefix. | `/api/auth` |
 | `PASSWORD_LOGIN_ENABLED` | Whether to show password login on the login page. Enabled by default for self-hosted deployments. | `true` |
@@ -133,13 +133,13 @@ EMBEDDING_MODEL=text-embedding-v4
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth login. | `...` |
 | `APPLE_CLIENT_ID` / `APPLE_CLIENT_SECRET` | Reserved Apple OAuth configuration. | `...` |
 | `RESEND_API_KEY` | Resend API key for magic link and password reset emails. | `re_...` |
-| `RESEND_FROM` | Sender used by Dashboard auth emails. | `Knowhere <noreply@example.com>` |
+| `RESEND_FROM` | Sender used by Dashboard auth emails. | `Ziru <noreply@example.com>` |
 | `RESEND_FROM_EMAIL` | Sender email used by API emails. | `noreply@example.com` |
-| `RESEND_FROM_NAME` | Sender name used by API emails. | `Knowhere` |
+| `RESEND_FROM_NAME` | Sender name used by API emails. | `Ziru` |
 | `RESEND_MAX_RETRIES` | Maximum retry count for sending Resend emails from the API. | `3` |
 | `RESEND_RETRY_DELAY` | Retry delay for sending Resend emails from the API, in seconds. | `1.0` |
-| `COMPANY_NAME` | Runtime brand name shown by the Dashboard. | `Knowhere AI` |
-| `SIMPLE_COMPANY_NAME` | Runtime short brand name shown by the Dashboard. | `Knowhere` |
+| `COMPANY_NAME` | Runtime brand name shown by the Dashboard. | `Ziru AI` |
+| `SIMPLE_COMPANY_NAME` | Runtime short brand name shown by the Dashboard. | `Ziru` |
 | `ICP_NUMBER` | ICP record number shown in the footer when set. | `ICP ...` |
 | `ICP_URL` | ICP record link. | `https://beian.miit.gov.cn/` |
 | `DEV_EXTERNAL_API_AUTHORIZATION` | Fixed `Authorization` header used by Dashboard development proxy requests. Do not set in production. | `Bearer dev-token` |
@@ -219,7 +219,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `SELF_HOSTED_CONFIGURE_STORAGE_EVENTS` | Whether startup configures upload events automatically. | `true` |
 | `SELF_HOSTED_S3_EVENT_TOPIC_NAME` | LocalStack SNS topic name. | `knowhere-s3-upload-events` |
 | `SELF_HOSTED_S3_EVENT_WEBHOOK_URL` | S3 upload event callback URL to the API. | `http://app:5005/v1/internal/s3-events` |
-| `SELF_HOSTED_STORAGE_CORS_ALLOWED_ORIGINS` | Allowed bucket CORS origins, comma-separated. Empty values automatically include local Dashboard/API URLs. | `https://knowhere.example.com` |
+| `SELF_HOSTED_STORAGE_CORS_ALLOWED_ORIGINS` | Allowed bucket CORS origins, comma-separated. Empty values automatically include local Dashboard/API URLs. | `https://ziru.example.com` |
 | `SELF_HOSTED_AWS_ENDPOINT_URL` | AWS endpoint used by the self-hosted storage initialization script. Uses `S3_ENDPOINT_URL` when empty. | `http://localstack:4566` |
 
 ## File Processing and Retrieval
@@ -287,7 +287,7 @@ Billing is disabled by default for self-hosted deployments: `BILLING_ENABLED=fal
 | `CREDITS_VALID_DAYS` | Credit validity period, in days. | `365` |
 | `PLUS_PLAN_PRICE` | Plus plan price, in cents. | `999` |
 | `PRO_PLAN_PRICE` | Pro plan price, in cents. | `2999` |
-| `FRONTEND_URL` | Frontend URL used by Stripe Checkout success/cancel callbacks. | `https://knowhere.example.com` |
+| `FRONTEND_URL` | Frontend URL used by Stripe Checkout success/cancel callbacks. | `https://ziru.example.com` |
 | `RESEND_TEMPLATE_WELCOME` | Resend welcome email template ID. | `tmpl_...` |
 | `RESEND_TEMPLATE_PURCHASE_CONFIRMATION` | Resend purchase confirmation template ID. | `tmpl_...` |
 | `RESEND_TEMPLATE_JOB_COMPLETION` | Resend job completion template ID. | `tmpl_...` |
@@ -314,10 +314,10 @@ Billing is disabled by default for self-hosted deployments: `BILLING_ENABLED=fal
 ### Anonymous product telemetry
 
 Self-hosted API instances send anonymous product telemetry by default
-(`TELEMETRY_ENABLED=true`) so Ontos can measure OSS adoption, version mix, and
+(`TELEMETRY_ENABLED=true`) so the project operators can measure OSS adoption, version mix, and
 basic fleet health. Telemetry uses a random installation id stored in the
 `knowhere_secrets` Docker volume. The telemetry destination is managed by
-Knowhere and is not an operator-facing configuration surface.
+Ziru and is not an operator-facing configuration surface.
 
 **Opt out.** Set the following in `.env` and restart:
 
@@ -370,7 +370,7 @@ flags such as `billing_enabled` and `rate_limit_enabled`.
 | --- | --- | --- |
 | `ENVIRONMENT` | API runtime environment. Allows `development`, `staging`, and `production`. | `production` |
 | `APP_ENV` | Deployment environment marker. Can be empty, `development`, `staging`, or `production`. | `production` |
-| `APP_TITLE` | API title. | `Knowhere API` |
+| `APP_TITLE` | API title. | `Ziru API` |
 | `APP_VERSION` | Application version supplied by the image build. Usually do not set this in `.env`. | image-provided |
 | `APP_DESCRIPTION` | API description. | `Document ingestion, retrieval, and MCP backend` |
 | `ALGORITHM` | JWT signing algorithm. | `HS256` |
@@ -406,7 +406,7 @@ These fields are retained for legacy code paths or internal path conventions. Mo
 ## Example: Public Domain Deployment
 
 ```bash
-DASHBOARD_PUBLIC_URL=https://knowhere.example.com
+DASHBOARD_PUBLIC_URL=https://ziru.example.com
 MINERU_API_KEYS=your-mineru-api-key
 DS_KEY=your-deepseek-api-key
 ```

@@ -1,54 +1,28 @@
-<img width="1000" height="233" alt="20260506-102713" src="https://github.com/user-attachments/assets/896e64d2-e50e-4158-b71c-bc69e11c7c65" />
-
-<h1 align="center">Prepare unstructured data for AI Agents</h1>
+<h1 align="center">Ziru API</h1>
 
 <p align="center">
-  <a href="https://www.python.org/downloads/">
-    <img alt="Python Version" src="https://img.shields.io/badge/Python-%3E%3D%203.11-3776AB.svg?style=for-the-badge&logo=python&logoColor=white&labelColor=000000">
-  </a>
-  <a href="https://github.com/Ontos-AI/knowhere/stargazers">
-    <img alt="GitHub stars" src="https://img.shields.io/github/stars/ontos-ai/knowhere?style=for-the-badge&logo=github&labelColor=000000">
-  </a>
-  <a href="https://github.com/Ontos-AI/knowhere/actions">
-    <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/Ontos-AI/knowhere/pr-ci.yml?style=for-the-badge&labelColor=000000">
-  </a>
-  <br>
-  <a href="https://github.com/Ontos-AI/knowhere/discussions">
-    <img alt="Join the community on GitHub" src="https://img.shields.io/badge/Join%20the%20community-blueviolet.svg?style=for-the-badge&logo=GitHub&labelColor=000000&logoWidth=20">
-  </a>
-  <a href="https://ghcr.io/ontos-ai/knowhere">
-    <img alt="Container Images" src="https://img.shields.io/badge/CONTAINER%20IMAGES-2496ED.svg?style=for-the-badge&logo=docker&logoColor=white&labelColor=000000">
-  </a>
-  <a href="https://github.com/Ontos-AI/knowhere/blob/main/LICENSE">
-    <img alt="License: Apache 2.0" src="https://img.shields.io/badge/APACHE%202.0-D97706.svg?style=for-the-badge&label=LICENSE&labelColor=000000">
-  </a>
-</p>
-
-<p align="center">
-  🔗 <a href="https://knowhereto.ai">Website</a> |
-  📄 <a href="https://docs.knowhereto.ai/">Docs</a> |
-  🏠 <a href="https://github.com/Ontos-AI/knowhere-self-hosted">Self-Host</a> |
-  🖥️ <a href="https://github.com/Ontos-AI/knowhere-dashboard">Dashboard</a>
+  <img alt="License: Apache 2.0" src="https://img.shields.io/badge/APACHE%202.0-D97706.svg?style=for-the-badge&label=LICENSE&labelColor=000000">
 </p>
 
 ## Overview
 
-**Knowhere is the memory layer between complex, dirty documents and AI agents.**
+**Ziru is the memory layer between complex, dirty documents and AI agents.**
 
-It ingests unstructured documents and produces persistent, navigable memory: parsing, hierarchy extraction, multi-modal structuring, and graph construction in a single pipeline. Every chunk retains full semantic context, making the output a natural fit for *Agentic RAG*, *vector-based RAG*, or any LLM workflow.
+This directory contains the API core of the Ziru monorepo: a FastAPI REST API
+(`apps/api`), a Celery worker for async document processing (`apps/worker`),
+and a shared Python library (`packages/shared-python`). The dashboard,
+notebook-style web UI, and self-hosted packaging live in sibling directories —
+see the [root README](../README.md) for the full layout.
 
-> [!NOTE]
-> **Get started in seconds with Knowhere Cloud.**
-> Avoid the complexity of self-deployment. Use our managed API at [knowhereto.ai](https://knowhereto.ai) and enjoy **$5 in free credits** upon registration.
-
-## 📢 News
-
-- **June 1, 2026**: 📚 **Knowhere now supports ultra-long PDFs and atlas-style documents.** The parsing pipeline can process long-form PDFs with hundreds of pages (for example, 300, 500, or more) and route technical atlases or drawing collections through a dedicated layout-aware parser.
-- **May 7, 2026**: 🚀 **Knowhere is now Open Source!** We have open-sourced our entire stack for document ingestion, parsing, and agentic RAG. You can now self-host the full platform using [knowhere-self-hosted](https://github.com/Ontos-AI/knowhere-self-hosted). Check out our [Contribution Guide](CONTRIBUTING.md) to get involved!
+Ziru ingests unstructured documents and produces persistent, navigable
+memory: parsing, hierarchy extraction, multi-modal structuring, and graph
+construction in a single pipeline. Every chunk retains full semantic context,
+making the output a natural fit for *Agentic RAG*, *vector-based RAG*, or any
+LLM workflow.
 
 ## How it Works
 
-Knowhere runs in two steps: build memory from documents, then let agents retrieve from it.
+Ziru runs in two steps: build memory from documents, then let agents retrieve from it.
 
 ### Step 1: Parse and Build Memory
 
@@ -57,7 +31,7 @@ Knowhere runs in two steps: build memory from documents, then let agents retriev
 </p>
 
 - **Parse**: Route PDFs, Office files, images, tables, Markdown, and text to specialized parsers.
-- **Structure**: Our proprietary Tree-like algorithm reconstructs the full document hierarchy instead of flattening it into a sequence, preventing semantic fragmentation across chunks.
+- **Structure**: A tree-based algorithm reconstructs the full document hierarchy instead of flattening it into a sequence, preventing semantic fragmentation across chunks.
 - **Build Memory**: Store chunks, navigation trees, summaries, and graph links as agent-ready context.
 
 ### Step 2: Agentic Retrieval
@@ -72,31 +46,29 @@ Knowhere runs in two steps: build memory from documents, then let agents retriev
 
 ## FAQ
 
-**Q: What is Knowhere's relationship with MinerU?**
+**Q: What is Ziru's relationship with MinerU?**
 
-A: Knowhere uses MinerU as its default parser because it performs best in our tests. Any parser only gets you raw Markdown. Knowhere's value is what comes after: hierarchy reconstruction, multi-modal normalization, and cross-document graph construction. Any Markdown-outputting tool works.
+A: Ziru uses MinerU as its default parser because it performs best in our tests. Any parser only gets you raw Markdown. Ziru's value is what comes after: hierarchy reconstruction, multi-modal normalization, and cross-document graph construction. Any Markdown-outputting tool works.
 
-**Q: What LLM / VLM dependencies does Knowhere have?**
+**Q: What LLM / VLM dependencies does Ziru have?**
 
-A: By default, DeepSeek (`deepseek-chat`) handles text and table summarization, and Qwen-VL (`qwen3.6-flash`) handles image OCR and descriptions. Knowhere is model-agnostic. Swap in OpenAI, DashScope, Zhipu, or Volcengine via environment variables.
+A: By default, DeepSeek (`deepseek-chat`) handles text and table summarization, and Qwen-VL (`qwen3.6-flash`) handles image OCR and descriptions. Ziru is model-agnostic. Swap in OpenAI, DashScope, Zhipu, or Volcengine via environment variables.
 
 **Q: How is Agentic Retrieval different from traditional RAG?**
 
-A: Traditional RAG does a flat vector lookup and returns isolated snippets. Knowhere's agents navigate the document's section tree and cross-document graph, drilling into the most relevant regions the way a human reader would, returning traceable, well-contextualized evidence.
+A: Traditional RAG does a flat vector lookup and returns isolated snippets. Ziru's agents navigate the document's section tree and cross-document graph, drilling into the most relevant regions the way a human reader would, returning traceable, well-contextualized evidence.
 
 **Q: Does it handle images and tables?**
 
-A: Yes. Knowhere extracts them, runs them through VLMs for summarization and feature extraction, and links them back to their source chunks so agents can retrieve and cite multi-modal assets at inference time.
+A: Yes. Ziru extracts them, runs them through VLMs for summarization and feature extraction, and links them back to their source chunks so agents can retrieve and cite multi-modal assets at inference time.
 
 ## Performance Benchmark
 
-Agents using Knowhere outperform those working from raw documents, Markitdown, Unstructured, or MinerU output on real-world tasks: searching, modifying, and answering questions.
+Agents using Ziru outperform those working from raw documents, Markitdown, Unstructured, or MinerU output on real-world tasks: searching, modifying, and answering questions.
 
 <p align="center">
-  <img alt="Benchmark Performance: Agent + Knowhere vs Others" src="docs/assets/benchmark.png" width="900">
+  <img alt="Benchmark Performance: Agent + Ziru vs Others" src="docs/assets/benchmark.png" width="900">
 </p>
-
-> **We're not developing the next MinerU — we're building document memory infrastructure that agents can effectively consume.**
 
 ### Key Advantages
 
@@ -105,19 +77,6 @@ Agents using Knowhere outperform those working from raw documents, Markitdown, U
 - **Efficiency**: Fewer loops, fewer tokens, less time. Agents navigate a structured graph instead of reading monolithic text.
 
 *(Internal evaluation across identical agentic RAG tasks. Baselines: raw documents and parser output fed directly to agents.)*
-
-> [!NOTE]
-> **📊 Benchmarks are actively expanding.** More parsers and retrieval baselines coming soon.
-
-## Ecosystem
-
-| Repository | Description |
-|---|---|
-| [knowhere](https://github.com/Ontos-AI/knowhere) | **This repo.** Backend API and worker: document ingestion, parsing, graph construction, and retrieval. |
-| 🖥️ [knowhere-dashboard](https://github.com/Ontos-AI/knowhere-dashboard) | The web UI. Connects to the API for the full product experience. |
-| 🐳 [knowhere-self-hosted](https://github.com/Ontos-AI/knowhere-self-hosted) | Docker Compose stack for self-hosted deployments. Packages the API, worker, and dashboard together. |
-| 🐍 [knowhere-python-sdk](https://github.com/Ontos-AI/knowhere-python-sdk) | Official Python SDK for the Knowhere Cloud API. |
-| 🦕 [knowhere-node-sdk](https://github.com/Ontos-AI/knowhere-node-sdk) | Official Node.js SDK for the Knowhere Cloud API. |
 
 ## Features
 
@@ -139,8 +98,6 @@ Agents using Knowhere outperform those working from raw documents, Markitdown, U
 - [ ] `.epub` `.html` `.xml`
 - [ ] `.mp4` `.mp3`
 - [ ] `.skills.md`
-
-Want to see a new format supported? Adding a parser is a great first contribution. Check out [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
 
 ## Prerequisites
 
@@ -175,8 +132,8 @@ cp apps/worker/.env.example apps/worker/.env
 Most parser and retrieval tuning values have code defaults. Start with the
 required external services first, then override model names, provider URLs,
 budgets, or concurrency limits only when your deployment needs different
-behavior. See [docs/external-services.md](docs/external-services.md) for the
-full dependency matrix.
+behavior. See [deploy/docs/configuration.md](../deploy/docs/configuration.md)
+for the operator-facing configuration reference.
 
 4. Start the local infrastructure stack:
 
@@ -204,7 +161,9 @@ uv run scripts/init_user.py --email you@example.com
 If you plan to use the dashboard, register through the dashboard instead of
 using `scripts/init_user.py`.
 
-The API is now running at `http://localhost:5005`. If you want the full product experience with a UI, run the [knowhere-dashboard](https://github.com/Ontos-AI/knowhere-dashboard) alongside it; it connects to this API out of the box.
+The API is now running at `http://localhost:5005`. For the full product
+experience with a UI, run the dashboard and web UI from this monorepo
+(`admin/` and `webui/`) alongside it; they connect to this API out of the box.
 
 ## Quality Checks
 
@@ -242,17 +201,16 @@ make check
 
 ## Additional Guides
 
-- External dependency guide:
-  [docs/external-services.md](docs/external-services.md)
+- Deployment configuration reference:
+  [deploy/docs/configuration.md](../deploy/docs/configuration.md)
 - Architecture decisions:
   [docs/adr/README.md](docs/adr/README.md)
 
 ## Telemetry
 
-Self-hosted Knowhere emits **anonymous** product telemetry to PostHog so Ontos
-operators can understand OSS adoption (install liveness, usage aggregates,
-client/document mix). Events never include filenames, prompts, emails, IPs, or
-geo. Schema and allowlists are locked in
+Self-hosted Ziru emits **anonymous** product telemetry (install liveness,
+usage aggregates, client/document mix). Events never include filenames,
+prompts, emails, IPs, or geo. Schema and allowlists are locked in
 [ADR-0004](docs/adr/0004-anonymous-self-hosted-telemetry.md).
 
 Telemetry is **default-on**. To opt out, set:
@@ -261,36 +219,34 @@ Telemetry is **default-on**. To opt out, set:
 TELEMETRY_ENABLED=false
 ```
 
-Related settings live in `apps/api/.env.example` under `TELEMETRY_*`.
+Related settings live in `apps/api/.env.example` under `TELEMETRY_*`. Private
+deployments should review the configured telemetry endpoint before enabling.
 
 ## Citation
 
-If you use Knowhere in your research, please cite it as:
+If you use Ziru in your research, please cite it as:
 
 ```bibtex
-@software{knowhere2026,
-  author       = {Ontos AI},
-  title        = {Knowhere: Prepare Unstructured Data for AI Agents},
+@software{ziru2026,
+  author       = {Gordon Yuen},
+  title        = {Ziru: Prepare Unstructured Data for AI Agents},
   year         = {2026},
   publisher    = {GitHub},
-  url          = {https://github.com/Ontos-AI/knowhere},
-  version      = {2026.04.30.1},
+  version      = {0.1.0},
   license      = {Apache-2.0}
 }
 ```
 
 ## Communication
 
-- [GitHub Discussions](https://github.com/Ontos-AI/knowhere/discussions) for questions, ideas, and general conversation.
-- [GitHub Issues](https://github.com/Ontos-AI/knowhere/issues) for bug reports and feature requests.
+- Open an issue in this repository for bug reports and feature requests.
 
 ## Contribution
 
-Any contributions to Knowhere are more than welcome!
+Any contributions to Ziru are more than welcome!
 
-If you are new to the project, check out the [good first issues](https://github.com/Ontos-AI/knowhere/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). They are well-defined, relatively simple, and a great way to get familiar with the codebase and the contribution workflow.
-
-For general guidelines on branching, commit conventions, and the review process, take a look at [CONTRIBUTING.md](CONTRIBUTING.md).
+For guidelines on branching, commit conventions, and the review process, take
+a look at [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Other useful references:
 
@@ -298,10 +254,10 @@ Other useful references:
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md): community behavior expectations.
 - [LICENSE](LICENSE) and [NOTICE](NOTICE): Apache 2.0.
 
-## 👋 We're Hiring!
+## Acknowledgements
 
-We're building the knowledge layer for the Agent era. If that sounds like work you want to do, reach out. Decode the address below and drop us a line:
-
-```bash
-echo 'dGVhbUBrbm93aGVyZXRvLmFp' | base64 --decode
-```
+Ziru is a fork of [Knowhere](https://github.com/Ontos-AI/knowhere) by
+Ontos-AI, distributed under the Apache License 2.0. The upstream attribution
+notices are preserved in `NOTICE` (this directory) and in the root
+[NOTICE](../NOTICE). Ziru uses [MinerU](https://github.com/opendatalab/MinerU)
+as its default PDF parser (see [MinerU/LICENSE.md](../MinerU/LICENSE.md)).

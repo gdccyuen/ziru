@@ -1,23 +1,23 @@
-# Knowhere Notebook Domain Context
+# Ziru WebUI Domain Context
 
-This file names the product concepts used by the Notebook codebase. Use these
+This file names the product concepts used by the Ziru WebUI codebase. Use these
 terms when naming modules, tests, and route workflows.
 
 ## Workspace
 
-A Workspace is the Notebook-owned tenant container that binds one user to one
+A Workspace is the WebUI-owned tenant container that binds one user to one
 document domain: it stores local source metadata, chat threads, and the pair
 `(knowhereKeyLabel, namespace)` — the configured API key (domain) that
-authenticates Knowhere access, and the Knowhere namespace under that domain
+authenticates Ziru API access, and the Ziru namespace under that domain
 whose documents the workspace's sources live in. One workspace per
 (user, keyLabel, namespace) tuple. The active workspace is selected by the
 `notebook-ws` cookie (falls back to the user's first workspace, then a legacy
 `notebook-<uuid>` default). Legacy rows with a null key label use the default
 key and keep working unchanged.
 
-## Knowhere Key Label
+## Ziru Key Label
 
-A Knowhere Key Label identifies one configured Knowhere API key (a "domain").
+A Ziru Key Label identifies one configured Ziru API key (a "domain").
 Since Phase 3, keys are managed per workspace through the "API keys…" dialog:
 stored AES-256-GCM encrypted in the `knowhere_api_keys` table and decrypted
 on demand by `ensureApiKeyForWorkspace`. `workspaces.active_knowhere_api_key_id`
@@ -28,9 +28,9 @@ browser — only masked labels (`sk_8aB••••GVB8`).
 
 ## Workspace Shell
 
-The Workspace Shell is the client-side orchestrator for the Notebook work
+The Workspace Shell is the client-side orchestrator for the WebUI work
 surface. It composes Source selection, Parsed Chunk pagination, Chat Thread
-state, Citation focus, and panel layout into the visible two-panel notebook
+state, Citation focus, and panel layout into the visible two-panel layout
 (sources | chat) with a full-screen chunks overlay.
 
 ## Workspace Shell Layout
@@ -41,7 +41,7 @@ Workspace Shell and should not own route calls, SWR keys, or workflow state.
 
 ## Workspace Client
 
-The Workspace Client is the browser-side adapter for Notebook route calls and
+The Workspace Client is the browser-side adapter for WebUI route calls and
 SWR keys. UI modules should depend on this adapter instead of constructing
 route paths or mutation request shapes inline.
 
@@ -65,8 +65,8 @@ uses it as derived workflow state instead of owning SWRInfinite details inline.
 
 ## Source
 
-A Source is a document visible in the Notebook sources panel. Notebook persists
-source metadata locally, while parsed content and retrieval live in Knowhere.
+A Source is a document visible in the WebUI sources panel. The WebUI persists
+source metadata locally, while parsed content and retrieval live in the Ziru API.
 Sources are soft-deleted with `deletedAt` rather than removed.
 
 ## Source Repository
@@ -77,8 +77,8 @@ without exposing those internal modules to route services.
 
 ## Source Library Localization
 
-Source Library Localization is the workflow that turns Knowhere-owned library
-documents into Notebook Source rows for a Workspace. Listing and SSR eagerly
+Source Library Localization is the workflow that turns Ziru API-owned library
+documents into WebUI Source rows for a Workspace. Listing and SSR eagerly
 localize compatible-namespace documents (via `localizeRemoteLibrarySources`)
 before chunks, archive, selection, or retrieval flows act on them. Only
 genuinely new documents are upserted — existing DB rows are pre-filtered to
@@ -87,12 +87,12 @@ avoid redundant writes.
 ## Source Upload
 
 A Source Upload is the workflow that turns either a browser `File` or a
-Vercel Blob staged object into a Knowhere parsing job plus local source row.
+Vercel Blob staged object into a Ziru parsing job plus local source row.
 Large files should use the Blob-backed path instead of a Server Action upload.
 
 ## Source Upload Contract
 
-The Source Upload Contract names the repository and Knowhere client shapes used
+The Source Upload Contract names the repository and Ziru API client shapes used
 by upload workflows. Persistence adapters can depend on the contract without
 importing the user-upload workflow implementation.
 
@@ -140,11 +140,11 @@ text requests.
 
 ## Parsed Chunk
 
-A Parsed Chunk is a document chunk returned by the Knowhere document chunks
+A Parsed Chunk is a document chunk returned by the Ziru document chunks
 API. Parsed chunks can have parser chunk IDs, asset paths, page numbers,
 summary, keywords, and connection metadata. Table chunks have their HTML
 fetched server-side from `assetUrl` and set as `content` (via
-`enrichChunksWithAssetUrls`) because the Knowhere list endpoint puts a
+`enrichChunksWithAssetUrls`) because the Ziru list endpoint puts a
 summary string in `content`, not the table HTML.
 
 ## Parsed Chunk Card
@@ -155,7 +155,7 @@ table HTML for that card only.
 
 ## Chat Thread
 
-A Chat Thread is a persisted Notebook conversation within one Workspace. Chat
+A Chat Thread is a persisted WebUI conversation within one Workspace. Chat
 threads are soft-deleted without deleting their messages.
 
 ## Chat Panel Workflow
@@ -195,8 +195,8 @@ enough to focus the answer evidence.
 
 ## Retrieval Query
 
-A Retrieval Query is the text sent to Knowhere retrieval. It can be generated
-from the latest user question plus recent chat context so Knowhere receives a
+A Retrieval Query is the text sent to Ziru retrieval. It can be generated
+from the latest user question plus recent chat context so Ziru receives a
 self-contained query. Retrieval runs with `useAgentic: true`, `rerank: true`,
 and `internalRecallK: 30` so the LLM reranker compensates for BM25 keyword
 ranking. The harness system prompt teaches the agent to craft BM25-friendly
@@ -228,9 +228,9 @@ from `public/data/chat-prompt-templates.json` by `usePromptTemplates`, so
 self-hosted deployments can override them by bind-mounting their own JSON into
 the container without a rebuild.
 
-## Notebook Auth
+## WebUI Auth
 
-Notebook Auth is Notebook's own identity system (ADR 0010). A `User` is a
+WebUI Auth is the WebUI's own identity system (ADR 0010). A `User` is a
 row in the `users` table; login credentials attach via `AccountLink` rows
 (one per provider, `password_hash` for the "password" provider). A `Session`
 is a DB row whose id rides the `notebook-session` cookie (HttpOnly, 30-day
@@ -240,14 +240,14 @@ Action and logout deletes the session row. `KNOWHERE_API_KEY` /
 `KNOWHERE_KEYS_FILE` still short-circuit to the development user as a
 bootstrap.
 
-## Knowhere Credential
+## Ziru Credential
 
-A Knowhere Credential is the API key used to call Knowhere. It is resolved
+A Ziru Credential is the API key used to call the Ziru API. It is resolved
 per workspace by `ensureApiKeyForWorkspace`
 (`src/integrations/knowhere-credentials.ts`): the workspace's
 `knowhereKeyLabel` picks a key from `config/knowhere-keys.json` (falling
 back to `KNOWHERE_API_KEY` env). The Dashboard JWT path was removed in the
-Phase 2 hard-cut — the Notebook never requests or stores Dashboard tokens.
+Phase 2 hard-cut — the WebUI never requests or stores Dashboard tokens.
 
 ## Route Service
 

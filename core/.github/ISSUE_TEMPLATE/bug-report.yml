@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem in the Knowhere API or worker.
+description: Report a reproducible problem in the Ziru API or worker.
 title: "[Bug]: "
 labels:
   - bug
@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping us improve Knowhere. Please include enough detail for maintainers to reproduce the issue safely.
+        Thanks for helping us improve Ziru. Please include enough detail for maintainers to reproduce the issue safely.
   - type: dropdown
     id: affected-area
     attributes:

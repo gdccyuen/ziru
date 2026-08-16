@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Knowhere API turns authenticated requests into document ingestion, document
+Ziru API turns authenticated requests into document ingestion, document
 lifecycle, retrieval, billing, and webhook workflows.
 
 Within this repository, `apps/api` is the coordination layer between HTTP
@@ -246,7 +246,7 @@ delivery.
 
 ### Public URL Policy
 
-The shared URL safety workflow used before Knowhere reaches user-provided or
+The shared URL safety workflow used before Ziru reaches user-provided or
 third-party HTTP targets. It validates public HTTP/HTTPS URLs, pins resolved
 addresses for outbound requests, blocks unsafe redirects, and detects URL file
 types for Document Ingestion.

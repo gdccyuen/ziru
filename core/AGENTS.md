@@ -28,7 +28,7 @@ refactor/chris/extract-chunk-converter
 ## Project Structure
 
 ```text
-knowhereapi-main/
+core/
 ├── apps/
 │   ├── api/          # FastAPI REST API (port 5005)
 │   │   ├── app/
@@ -41,10 +41,10 @@ knowhereapi-main/
 │   │   │   ├── services/document_parser/  # All parser modules
 │   │   │   └── services/workload/         # Celery task handlers
 │   │   └── worker.py                      # Celery entrypoint
-│   ├── web/          # Frontend (separate repo: knowhere-dashboard)
+│   ├── web/          # Frontend (this monorepo's admin/ dashboard)
 │   └── docs/         # Internal documentation
 ├── packages/
-│   └── shared-python/shared/    # Shared library (pip: knowhere-shared)
+│   └── shared-python/shared/    # Shared library (pip: ziru-shared)
 │       ├── models/database/     # SQLAlchemy ORM models
 │       ├── models/schemas/      # Pydantic request/response schemas
 │       ├── services/retrieval/  # Core retrieval engine
@@ -58,8 +58,7 @@ knowhereapi-main/
 ```
 
 > **SDKs live in standalone repos:**
-> - Python SDK → [`Ontos-AI/knowhere-python-sdk`](https://github.com/Ontos-AI/knowhere-python-sdk)
-> - Node SDK → [`Ontos-AI/knowhere-node-sdk`](https://github.com/Ontos-AI/knowhere-node-sdk)
+> - Ziru API SDKs are published separately from this monorepo.
 
 ---
 
@@ -583,13 +582,13 @@ The agentic pipeline uses `WorkflowOrchestrator` to handle complex queries via a
 
 1. **Planning (`PlannerAgent`)**: The query is analyzed and decomposed into a DAG of retrieval steps.
    - Simple queries generate a single `retrieve` step.
-   - Complex queries are broken into multiple `retrieve` steps. KNOWHERE does not plan answer synthesis steps.
+   - Complex queries are broken into multiple `retrieve` steps. Ziru does not plan answer synthesis steps.
 2. **Budget Ledger (`BudgetLedger`)**: A strict token budget mechanism is enforced across the entire DAG execution. If the budget is exhausted, the pipeline halts safely and returns the best-effort evidence collected so far.
 3. **Execution (`RetrievalAgent`)**: For each `retrieve` step, a multi-phase navigation engine runs:
    - **Phase 1 (Discovery)**: 3-channel RRF keyword search and KG document selection.
    - **Phase 2 (Navigation)**: Constrained Breadth-First Search (BFS) over the document's section tree. Discovered orphan leaves are merged into the tree to prevent data loss.
    - **Phase 3 (Evidence Rendering)**: The hydrated document tree is rendered as `evidence_text`.
-4. **Evidence-Only Contract**: Retrieval responses always expose `evidence_text` as the primary output. `answer_text` is retained only as a deprecated empty string. Downstream agents decide whether the evidence is sufficient and synthesize answers outside KNOWHERE.
+4. **Evidence-Only Contract**: Retrieval responses always expose `evidence_text` as the primary output. `answer_text` is retained only as a deprecated empty string. Downstream agents decide whether the evidence is sufficient and synthesize answers outside Ziru.
 
 ### Tree Rendering & Hydration
 

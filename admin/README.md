@@ -1,9 +1,8 @@
-# Knowhere API Dashboard
+# Ziru Dashboard
 
-Knowhere API Dashboard is the Next.js web application for managing Knowhere API usage, API keys, optional billing, webhooks, and document-processing jobs.
+Ziru Dashboard is the Next.js web application for managing Ziru API usage,
+API keys, optional billing, webhooks, and document-processing jobs.
 
-- Product: https://knowhereto.ai/
-- Docs: https://docs.knowhereto.ai/
 - License: Apache-2.0
 
 ## Requirements
@@ -11,7 +10,7 @@ Knowhere API Dashboard is the Next.js web application for managing Knowhere API 
 - Node.js 22
 - pnpm 10
 - PostgreSQL for the dashboard auth and account database
-- A reachable Knowhere API backend
+- A reachable Ziru API backend
 
 ## Local Development
 
@@ -26,7 +25,7 @@ Fill in the required values in `.env.local`. For most local work, the important 
 
 - `DATABASE_URL`: PostgreSQL database used by the dashboard.
 - `NEWSLETTER_DATABASE_URL`: optional PostgreSQL database used by newsletter subscriptions. Defaults to `DATABASE_URL` when unset.
-- `NEXT_PUBLIC_API_URL`: Knowhere API backend URL.
+- `NEXT_PUBLIC_API_URL`: Ziru API backend URL.
 - `NEXT_PUBLIC_APP_URL` and `BETTER_AUTH_URL`: usually `http://localhost:3000`.
 - `BETTER_AUTH_SECRET`: any random secret with at least 32 characters.
 
@@ -40,10 +39,10 @@ The app runs on `http://localhost:3000` by default.
 
 ## Self-hosted
 
-For self-hosted deployment, use the combined stack in the dedicated repository:
-https://github.com/Ontos-AI/knowhere-self-hosted
-
-This dashboard repository is useful when developing the web app directly. The self-hosted repository owns the end-to-end local stack and deployment instructions.
+For self-hosted deployment, use the combined stack in the `deploy/` directory
+of this monorepo. This directory is useful when developing the dashboard
+directly; `deploy/` owns the end-to-end local stack and deployment
+instructions.
 
 ## Environment Variables
 
@@ -52,7 +51,7 @@ Required for startup:
 | Variable | Purpose |
 | --- | --- |
 | `NEXT_PUBLIC_APP_URL` | Public dashboard URL, for example `http://localhost:3000`. |
-| `NEXT_PUBLIC_API_URL` | Knowhere API backend URL, for example `http://localhost:5005/api`. |
+| `NEXT_PUBLIC_API_URL` | Ziru API backend URL, for example `http://localhost:5005/api`. |
 | `NEXT_PUBLIC_AUTH_BASE_URL` | Auth route base path. Use `/api/auth` for the built-in route. |
 | `BETTER_AUTH_URL` | Base URL used by Better Auth callbacks. |
 | `BETTER_AUTH_SECRET` | Random secret with at least 32 characters. |
@@ -76,7 +75,7 @@ Optional:
 | --- | --- |
 | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` | PostHog analytics. |
 | `GA_MEASUREMENT_ID` | Google Analytics measurement ID. |
-| `OPENAI_ADS_PIXEL_ID` | OpenAI Ads Measurement Pixel ID. Set to `JDvSf6KLL8Y3e8QJhCmFF3` for the current pixel. |
+| `OPENAI_ADS_PIXEL_ID` | OpenAI Ads Measurement Pixel ID. |
 | `OPENAI_ADS_CONVERSIONS_API_KEY` | Optional OpenAI Ads Conversions API key for server-side conversion delivery. |
 | `BILLING_ENABLED` | Set to `true` only when the API billing endpoints and payment configuration are available. Defaults to disabled for open-source self-hosted deployments. |
 | `PASSWORD_LOGIN_ENABLED` | Set to `true` to show the login page's password-login button. Defaults to hidden. |
@@ -115,13 +114,13 @@ Production newsletter storage reads `NEWSLETTER_DATABASE_URL` from the optional 
 Build the image:
 
 ```bash
-docker build -t knowhere-dashboard .
+docker build -t ziru-dashboard .
 ```
 
 Run the dashboard:
 
 ```bash
-docker run --rm -p 3000:3000 --env-file .env.local knowhere-dashboard
+docker run --rm -p 3000:3000 --env-file .env.local ziru-dashboard
 ```
 
 The container runs `pnpm db:migrate` and `pnpm newsletter-db:migrate` before starting the Next.js server. If either command fails, the app server is not started.
@@ -132,4 +131,11 @@ The image runs the standard Next.js Node server with `pnpm start`. Runtime confi
 
 The public workflow runs lint, type-check, tests, and build on pull requests and repository pushes.
 
-This repository does not publish standalone public dashboard images. Public self-hosted image publishing is handled by the combined self-hosted repository.
+This repository does not publish standalone public dashboard images. Public self-hosted image publishing is handled by the combined self-hosted `deploy/` directory.
+
+## Acknowledgements
+
+Ziru Dashboard is part of Ziru, a fork of
+[Knowhere](https://github.com/Ontos-AI/knowhere) by Ontos-AI, distributed
+under the Apache License 2.0. The upstream attribution notice is preserved in
+`NOTICE` (this directory) and in the root [NOTICE](../NOTICE).

@@ -1,0 +1,31 @@
+Ziru
+Copyright 2026 Gordon Yuen
+
+Ziru is a fork of the Knowhere project
+(https://github.com/Ontos-AI/knowhere), which includes the Knowhere API,
+Knowhere API Dashboard, Knowhere Notebook, and Knowhere Self-Hosted
+components. The forked code is distributed under the Apache License,
+Version 2.0.
+
+This product includes software developed by Ontos-AI and is distributed
+under the Apache License, Version 2.0.
+
+This product includes MinerU (https://github.com/opendatalab/MinerU),
+licensed under the Apache License, Version 2.0 with additional terms;
+see MinerU/LICENSE.md.
+
+-------------------------------------------------------------------------------
+The following notices are reproduced verbatim from the upstream Knowhere
+project (the files core/NOTICE and admin/NOTICE are preserved in place).
+They must not be removed or modified:
+
+Knowhere API
+Copyright 2026 Ontos-AI
+
+This product includes software developed by Ontos-AI and is distributed
+under the Apache License, Version 2.0.
+
+Knowhere API Dashboard
+Copyright 2026 Ontos AI
+
+This product includes software developed by Ontos AI.

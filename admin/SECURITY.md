@@ -2,7 +2,9 @@
 
 Please do not report vulnerabilities in public issues.
 
-Use GitHub private vulnerability reporting for this repository when available. If that is unavailable, contact the maintainers at `team@knowhereto.ai` and ask for security triage before sharing exploit details.
+Use GitHub private vulnerability reporting for this repository when available.
+If that is unavailable, contact the repository maintainers privately and ask
+for security triage before sharing exploit details.
 
 Include:
 

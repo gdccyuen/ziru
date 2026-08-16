@@ -1,6 +1,6 @@
 # Security Policy
 
-If you discover a security vulnerability in Knowhere API, do not open a public
+If you discover a security vulnerability in Ziru, do not open a public
 issue with exploit details.
 
 Instead:

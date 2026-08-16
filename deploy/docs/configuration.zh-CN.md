@@ -1,4 +1,4 @@
-# Knowhere Self-Hosted 配置参考
+# Ziru Self-Hosted 配置参考
 
 [English](configuration.md) | 中文
 
@@ -10,7 +10,7 @@ Docker Compose 会先读取 `.env.defaults`，再读取 `.env`。`.env.defaults`
 
 | 变量 | 用途 | 示例值 |
 | --- | --- | --- |
-| `DASHBOARD_PUBLIC_URL` | 用户浏览器访问 Dashboard 的公开地址，也用于登录、注册和回调校验。 | `http://localhost:3000`、`https://knowhere.example.com` |
+| `DASHBOARD_PUBLIC_URL` | 用户浏览器访问 Dashboard 的公开地址，也用于登录、注册和回调校验。 | `http://localhost:3000`、`https://ziru.example.com` |
 | `DASHBOARD_HOST_BIND` | Dashboard 端口绑定的宿主机网卡地址。默认只绑定本机；只有需要从宿主机外部直连 Dashboard 时才使用 `0.0.0.0`。 | `127.0.0.1`、`0.0.0.0` |
 | `DASHBOARD_HOST_PORT` | Dashboard 映射到宿主机的端口。 | `3000`、`8080` |
 | `API_HOST_BIND` | API 端口绑定的宿主机网卡地址。默认只绑定本机；只有需要从宿主机外部直连 API 时才使用 `0.0.0.0`。 | `127.0.0.1`、`0.0.0.0` |
@@ -21,7 +21,7 @@ Docker Compose 会先读取 `.env.defaults`，再读取 `.env`。`.env.defaults`
 | `REDIS_HOST_PORT` | Redis 映射到宿主机的端口。 | `6379` |
 | `LOCALSTACK_HOST_BIND` | LocalStack 端口绑定的宿主机网卡地址。除非外部 S3 兼容工具必须直连，否则保持默认值。 | `127.0.0.1`、`0.0.0.0` |
 | `LOCALSTACK_HOST_PORT` | LocalStack S3 兼容存储映射到宿主机的端口。 | `4566` |
-| `KNOWHERE_IMAGE` | Knowhere 自托管镜像。 | `ghcr.io/ontos-ai/knowhere:latest` |
+| `KNOWHERE_IMAGE` | Ziru 自托管镜像。 | `ghcr.io/ontos-ai/knowhere:latest` |
 
 国内网络可使用阿里云镜像：
 
@@ -120,8 +120,8 @@ EMBEDDING_MODEL=text-embedding-v4
 
 | 变量 | 用途 | 示例值 |
 | --- | --- | --- |
-| `NEXT_PUBLIC_APP_URL` | Dashboard 公开地址；未设置时由 `DASHBOARD_PUBLIC_URL` 派生。 | `https://knowhere.example.com` |
-| `BETTER_AUTH_URL` | Better Auth 回调和可信来源地址；未设置时由 `NEXT_PUBLIC_APP_URL` 派生。 | `https://knowhere.example.com` |
+| `NEXT_PUBLIC_APP_URL` | Dashboard 公开地址；未设置时由 `DASHBOARD_PUBLIC_URL` 派生。 | `https://ziru.example.com` |
+| `BETTER_AUTH_URL` | Better Auth 回调和可信来源地址；未设置时由 `NEXT_PUBLIC_APP_URL` 派生。 | `https://ziru.example.com` |
 | `NEXT_PUBLIC_API_URL` | Dashboard 代理到 API 的 base URL。单容器默认用本机 API。 | `http://127.0.0.1:5005/api` |
 | `NEXT_PUBLIC_AUTH_BASE_URL` | Better Auth 路由前缀。 | `/api/auth` |
 | `PASSWORD_LOGIN_ENABLED` | 是否在登录页显示密码登录入口。自托管默认开启。 | `true` |
@@ -133,13 +133,13 @@ EMBEDDING_MODEL=text-embedding-v4
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth 登录。 | `...` |
 | `APPLE_CLIENT_ID` / `APPLE_CLIENT_SECRET` | 预留 Apple OAuth 配置。 | `...` |
 | `RESEND_API_KEY` | Resend 邮件服务 Key，用于 magic link 和重置密码邮件。 | `re_...` |
-| `RESEND_FROM` | Dashboard 认证邮件发件人。 | `Knowhere <noreply@example.com>` |
+| `RESEND_FROM` | Dashboard 认证邮件发件人。 | `Ziru <noreply@example.com>` |
 | `RESEND_FROM_EMAIL` | API 邮件发件邮箱。 | `noreply@example.com` |
-| `RESEND_FROM_NAME` | API 邮件发件名称。 | `Knowhere` |
+| `RESEND_FROM_NAME` | API 邮件发件名称。 | `Ziru` |
 | `RESEND_MAX_RETRIES` | API 发送 Resend 邮件的最大重试次数。 | `3` |
 | `RESEND_RETRY_DELAY` | API 发送 Resend 邮件的重试间隔，单位秒。 | `1.0` |
-| `COMPANY_NAME` | Dashboard 运行时品牌名称。 | `Knowhere AI` |
-| `SIMPLE_COMPANY_NAME` | Dashboard 运行时品牌简称。 | `Knowhere` |
+| `COMPANY_NAME` | Dashboard 运行时品牌名称。 | `Ziru AI` |
+| `SIMPLE_COMPANY_NAME` | Dashboard 运行时品牌简称。 | `Ziru` |
 | `ICP_NUMBER` | ICP 备案号，填写后页脚显示。 | `沪ICP备...号` |
 | `ICP_URL` | ICP 备案链接。 | `https://beian.miit.gov.cn/` |
 | `DEV_EXTERNAL_API_AUTHORIZATION` | Dashboard 开发环境转发 API 请求时使用的固定 `Authorization` 头。生产环境不要设置。 | `Bearer dev-token` |
@@ -219,7 +219,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `SELF_HOSTED_CONFIGURE_STORAGE_EVENTS` | 启动时自动配置上传事件。 | `true` |
 | `SELF_HOSTED_S3_EVENT_TOPIC_NAME` | LocalStack SNS topic 名称。 | `knowhere-s3-upload-events` |
 | `SELF_HOSTED_S3_EVENT_WEBHOOK_URL` | S3 上传事件回调到 API 的 URL。 | `http://app:5005/v1/internal/s3-events` |
-| `SELF_HOSTED_STORAGE_CORS_ALLOWED_ORIGINS` | Bucket CORS 允许来源，逗号分隔；为空时自动包含本地 Dashboard/API 地址。 | `https://knowhere.example.com` |
+| `SELF_HOSTED_STORAGE_CORS_ALLOWED_ORIGINS` | Bucket CORS 允许来源，逗号分隔；为空时自动包含本地 Dashboard/API 地址。 | `https://ziru.example.com` |
 | `SELF_HOSTED_AWS_ENDPOINT_URL` | 自托管存储初始化脚本使用的 AWS endpoint；为空时使用 `S3_ENDPOINT_URL`。 | `http://localstack:4566` |
 
 ## 文件处理和检索
@@ -287,7 +287,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `CREDITS_VALID_DAYS` | credits 有效天数。 | `365` |
 | `PLUS_PLAN_PRICE` | Plus plan 价格，单位美分。 | `999` |
 | `PRO_PLAN_PRICE` | Pro plan 价格，单位美分。 | `2999` |
-| `FRONTEND_URL` | Stripe Checkout 成功/取消回调使用的前端地址。 | `https://knowhere.example.com` |
+| `FRONTEND_URL` | Stripe Checkout 成功/取消回调使用的前端地址。 | `https://ziru.example.com` |
 | `RESEND_TEMPLATE_WELCOME` | Resend 欢迎邮件模板 ID。 | `tmpl_...` |
 | `RESEND_TEMPLATE_PURCHASE_CONFIRMATION` | Resend 购买确认模板 ID。 | `tmpl_...` |
 | `RESEND_TEMPLATE_JOB_COMPLETION` | Resend Job 完成模板 ID。 | `tmpl_...` |
@@ -313,7 +313,7 @@ EMBEDDING_MODEL=text-embedding-v4
 
 ### 匿名产品遥测
 
-自托管 API 实例默认会发送匿名产品遥测（`TELEMETRY_ENABLED=true`），用于了解开源/自托管采用情况、版本分布和基础集群健康。遥测使用保存在 `knowhere_secrets` Docker volume 中的随机安装 ID。遥测目标由 Knowhere 管理，不作为运维方需要配置的参数暴露。
+自托管 API 实例默认会发送匿名产品遥测（`TELEMETRY_ENABLED=true`），用于了解开源/自托管采用情况、版本分布和基础集群健康。遥测使用保存在 `knowhere_secrets` Docker volume 中的随机安装 ID。遥测目标由 Ziru 管理，不作为运维方需要配置的参数暴露。
 
 **关闭遥测。** 在 `.env` 中设置以下变量并重启：
 
@@ -358,7 +358,7 @@ TELEMETRY_ENABLED=false
 | --- | --- | --- |
 | `ENVIRONMENT` | API 运行环境，允许 `development`、`staging`、`production`。 | `production` |
 | `APP_ENV` | 部署环境标识，可为空或 `development`、`staging`、`production`。 | `production` |
-| `APP_TITLE` | API 标题。 | `Knowhere API` |
+| `APP_TITLE` | API 标题。 | `Ziru API` |
 | `APP_VERSION` | 镜像构建提供的应用版本；通常不要在 `.env` 中设置。 | 镜像提供 |
 | `APP_DESCRIPTION` | API 描述。 | `Document ingestion, retrieval, and MCP backend` |
 | `ALGORITHM` | JWT 签名算法。 | `HS256` |
@@ -394,7 +394,7 @@ TELEMETRY_ENABLED=false
 ## 示例：公开域名部署
 
 ```bash
-DASHBOARD_PUBLIC_URL=https://knowhere.example.com
+DASHBOARD_PUBLIC_URL=https://ziru.example.com
 MINERU_API_KEYS=your-mineru-api-key
 DS_KEY=your-deepseek-api-key
 ```

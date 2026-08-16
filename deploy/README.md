@@ -1,8 +1,9 @@
-# Knowhere Self-Hosted
+# Ziru Self-Hosted
 
 English | [中文](README.zh-CN.md)
 
-Knowhere Self-Hosted packages Knowhere for self-hosted deployments. If you want to use the SaaS/API version, see [Ontos-AI/knowhere](https://github.com/Ontos-AI/knowhere).
+Ziru Self-Hosted packages Ziru for self-hosted deployments with Docker
+Compose: the Ziru API, worker, dashboard, and web UI in one stack.
 
 ## Requirements
 
@@ -10,7 +11,7 @@ Knowhere Self-Hosted packages Knowhere for self-hosted deployments. If you want 
 - A MinerU API key for the initial parsing of PDF documents.
 - LLM provider API key: DeepSeek or Alibaba Cloud Model Studio DashScope.
 
-For now, our setup uses MinerU as the default PDF parser. If you customize the parsing pipeline, your own parser can also work as long as it produces Markdown (`.md`) files for Knowhere to process. If you'd like to contribute support for additional PDF parsers, feel free to submit a pull request.
+For now, our setup uses MinerU as the default PDF parser. If you customize the parsing pipeline, your own parser can also work as long as it produces Markdown (`.md`) files for Ziru to process. If you'd like to contribute support for additional PDF parsers, feel free to submit a pull request.
 
 ## 1. Prepare API Keys
 
@@ -40,7 +41,7 @@ IMAGE_MODEL=qwen3.6-flash
 IMAGE_MODEL_MAX=qwen3.6-flash
 ```
 
-`MINERU_API_KEYS` and `ALI_API_KEYS` support multiple keys separated by commas. Multiple keys are optional; they form a key pool so Knowhere can rotate requests across keys when one key reaches provider quota or rate limits.
+`MINERU_API_KEYS` and `ALI_API_KEYS` support multiple keys separated by commas. Multiple keys are optional; they form a key pool so Ziru can rotate requests across keys when one key reaches provider quota or rate limits.
 
 ```bash
 MINERU_API_KEYS=mineru-key-1,mineru-key-2
@@ -52,7 +53,7 @@ For local access, no other settings are required. Host ports bind to `127.0.0.1`
 For external access through a local reverse proxy, keep the default binds and set `DASHBOARD_PUBLIC_URL` to the exact URL users open in their browser:
 
 ```bash
-DASHBOARD_PUBLIC_URL=https://knowhere.example.com
+DASHBOARD_PUBLIC_URL=https://ziru.example.com
 ```
 
 If `DASHBOARD_PUBLIC_URL` does not match the browser URL, login or signup may fail.
@@ -64,12 +65,6 @@ DASHBOARD_HOST_BIND=0.0.0.0
 API_HOST_BIND=0.0.0.0
 ```
 
-If pulling the default image from GHCR is slow or unavailable, use the Aliyun Docker registry:
-
-```bash
-KNOWHERE_IMAGE=knowhere-registry.cn-shenzhen.cr.aliyuncs.com/knowhere/knowhere:latest
-```
-
 Self-hosted deployments send anonymous product telemetry by default
 (`TELEMETRY_ENABLED=true`). It uses a random installation id and aggregate
 metrics only — not prompts, filenames, user identity, or request bodies. To opt
@@ -77,7 +72,7 @@ out, set `TELEMETRY_ENABLED=false`. See
 [Anonymous product telemetry](docs/configuration.md#anonymous-product-telemetry)
 for the event catalog, privacy bounds, and property tables.
 
-## 3. Start Knowhere
+## 3. Start Ziru
 
 ```bash
 docker compose up -d
@@ -97,14 +92,12 @@ http://localhost:5005/health
 
 ## API Usage
 
-Use an official SDK to call the API:
-
-- Node.js SDK: [Ontos-AI/knowhere-node-sdk](https://github.com/Ontos-AI/knowhere-node-sdk)
-- Python SDK: [Ontos-AI/knowhere-python-sdk](https://github.com/Ontos-AI/knowhere-python-sdk)
+The API is REST/JSON and self-documents at `/docs` (OpenAPI). Language SDKs
+for the Ziru API will be published separately.
 
 ### Input Format Recommendation
 
-**Convert Office files to PDF before uploading.** Knowhere parses PDFs with MinerU, which produces
+**Convert Office files to PDF before uploading.** Ziru parses PDFs with MinerU, which produces
 the most complete and structured result (full markdown, table cell structure, footers, and
 footnotes). Word documents (`.docx`) are parsed by a separate, simpler pipeline that:
 
@@ -123,7 +116,7 @@ attribute values to columns.
 
 1. Convert the source `.docx` to PDF with your office suite (e.g. LibreOffice, Microsoft Word,
    or Adobe Acrobat) before uploading.
-2. Upload the **PDF** to Knowhere.
+2. Upload the **PDF** to Ziru.
 3. Keep the original `.docx` as a second reference — if a figure looks suspicious, cross-check it
    against the source document. Do not rely on a single conversion's output for totals rows.
 
@@ -161,3 +154,10 @@ Database data and uploaded files remain in Docker volumes after `docker compose 
 ## More Configuration
 
 There are more configurations like model choices, storage, webhooks, database, and Redis settings are documented in [docs/configuration.md](docs/configuration.md).
+
+## Acknowledgements
+
+Ziru Self-Hosted is part of Ziru, a fork of
+[Knowhere](https://github.com/Ontos-AI/knowhere) by Ontos-AI, distributed
+under the Apache License 2.0. See the root [NOTICE](../NOTICE) for the
+upstream attribution notices.

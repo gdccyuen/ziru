@@ -1,15 +1,17 @@
 cff-version: 1.2.0
-title: "Knowhere: Prepare Unstructured Data for AI Agents"
+title: "Ziru: Prepare Unstructured Data for AI Agents"
 message: "If you use this software in your research, please cite it using the metadata from this file."
 type: software
 authors:
-  - name: "Ontos AI"
-    website: "https://knowhereto.ai"
-repository-code: "https://github.com/Ontos-AI/knowhere"
-url: "https://knowhereto.ai"
+  - family-names: "Yuen"
+    given-names: "Gordon"
+    email: "gdccyuen@alumni.cuhk.net"
+# TODO: replace the repository URL below with the real Ziru repository once it is published.
+repository-code: "https://github.com/your-org/ziru"
+url: "https://github.com/your-org/ziru"
 license: Apache-2.0
-version: "2026.04.30.1"
-date-released: "2026-04-30"
+version: "0.1.0"
+date-released: "2026-08-16"
 keywords:
   - RAG
   - agentic RAG

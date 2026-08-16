@@ -15,4 +15,4 @@ Unacceptable behavior includes harassment, abusive comments, doxxing, sexualized
 
 Maintainers may remove comments, close issues, reject contributions, or restrict participation when behavior harms the project or community.
 
-To report a conduct concern, contact `team@knowhereto.ai`.
+To report a conduct concern, contact the repository maintainers privately (see SECURITY.md for the private contact channels).

@@ -1,16 +1,18 @@
 # Contributing
 
-Thanks for contributing to Knowhere. The project is split across several repositories — make sure you're working in the right one.
+Thanks for contributing to Ziru. This monorepo hosts the API core; the
+dashboard, web UI, and self-hosted packaging live in sibling directories —
+make sure you're working in the right one.
 
-## Ecosystem
+## Repository Layout
 
-| Repository | Description |
+| Directory | Description |
 |---|---|
-| [knowhere](https://github.com/Ontos-AI/knowhere) | **This repo.** Backend API and worker — document ingestion, parsing, graph construction, and retrieval. |
-| 🖥️ [knowhere-dashboard](https://github.com/Ontos-AI/knowhere-dashboard) | The web UI. Connects to the API for the full product experience. |
-| 🐳 [knowhere-self-hosted](https://github.com/Ontos-AI/knowhere-self-hosted) | Docker Compose stack for self-hosted deployments. Packages the API, worker, and dashboard together. |
-| 🐍 [knowhere-python-sdk](https://github.com/Ontos-AI/knowhere-python-sdk) | Official Python SDK for the Knowhere Cloud API. |
-| 🦕 [knowhere-node-sdk](https://github.com/Ontos-AI/knowhere-node-sdk) | Official Node.js SDK for the Knowhere Cloud API. |
+| `core/` | **This directory.** Backend API and worker — document ingestion, parsing, graph construction, and retrieval. |
+| `admin/` | The dashboard. Manages API usage, API keys, billing, webhooks, and document jobs. |
+| `webui/` | The notebook-style web UI. Uploads documents, explores parsed content, and answers questions. |
+| `deploy/` | Docker Compose stack for self-hosted deployments. Packages the API, worker, dashboard, and web UI together. |
+| `MinerU/` | Vendored MinerU document parser dependency. Do not modify; see its license for terms. |
 
 ## Before You Start
 
@@ -31,9 +33,6 @@ Thanks for contributing to Knowhere. The project is split across several reposit
   tool name such as `codex`.
 - Keep `description` short, lowercase, and kebab-case, for example
   `refactor/alice/extract-chunk-converter`.
-- If you are working on publication cleanup, keep migration-only changes on the
-  dedicated migration branch instead of flowing them back into normal private
-  development by default.
 
 ## Development Flow
 
@@ -60,15 +59,12 @@ Internal changes follow the same trunk workflow:
 2. Open a pull request to `main`.
 3. Merge after review and green checks.
 
-Do not ask external contributors to target internal environment branches for
-normal changes. `main` is the public contribution trunk.
-
 ## Development Setup
 
 Sync the Python services and shared package:
 
 ```bash
-cd packages/shared-python && uv sync
+cd core/packages/shared-python && uv sync
 cd ../../apps/api && uv sync
 cd ../worker && uv sync
 ```
@@ -76,7 +72,7 @@ cd ../worker && uv sync
 Start the local services:
 
 ```bash
-cd deploy/local-dev && ./start-dev.sh
+cd core/deploy/local-dev && ./start-dev.sh
 ```
 
 ## Pull Requests
