@@ -237,7 +237,7 @@ handleSignal() {
 
 setDefault POSTGRES_HOST postgres
 setDefault POSTGRES_PORT 5432
-setDefault POSTGRES_DB Ziru
+setDefault POSTGRES_DB ziru
 setDefault POSTGRES_USER root
 setDefault POSTGRES_PASSWORD root123
 setDefault API_DATABASE_URL "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
