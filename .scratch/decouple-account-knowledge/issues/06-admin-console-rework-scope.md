@@ -1,7 +1,8 @@
 # 06 — Admin Console Rework Scope
 
 Type: grilling
-Status: open
+Status: claimed
+Claimed by: agent (charting session, 2026-08-18)
 Blocked by: —
 
 ## Question
