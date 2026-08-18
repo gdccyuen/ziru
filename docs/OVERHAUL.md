@@ -18,12 +18,12 @@ References: map `.scratch/decouple-account-knowledge/map.md` · tickets 01–07 
 
 Rule: no phase merges until its suite is green and the previous phase's checks still pass. The engine test suites are the frozen-contract proof (Q5).
 
-## Kickoff decisions (PM to confirm before P1)
+## Kickoff decisions — **all decided (2026-08-18)**
 
-- **D1 — Branch strategy (recommended):** do the whole overhaul on branch `overhaul`; the live demo stack keeps running on `main` until cutover (P7), then `overhaul` merges to main. Alternative: work on main phase-by-phase (simpler git, but the demo breaks mid-overhaul).
-- **D2 — SSO test target (recommended):** add a local Keycloak (or a mock OIDC server) to the dev compose stack so OIDC flow is testable on-prem; no internet needed.
-- **D3 — Feel-test glitch list:** log it now, fix at P7 (the old WebUI is being reworked anyway; don't fix old screens twice).
-- **D4 — Telemetry:** default-off already; decide separately whether to remove it inside this overhaul (small, isolated — can ride along in P5).
+- **D1 — Branch strategy:** the whole overhaul happens on branch `overhaul`; the live demo stack keeps running on `main` until cutover (P7), then `overhaul` merges to main.
+- **D2 — SSO test target:** a local Keycloak (or mock OIDC server) joins the dev compose stack so OIDC flow is testable on-prem; no internet needed.
+- **D3 — Feel-test glitch list:** logged at kickoff (PM input), fixed at P7 — the old WebUI is being reworked anyway.
+- **D4 — Telemetry:** **removed completely** — not just default-off. Deletion lands with the shared-library cuts in P1 (core), the admin analytics surfaces in P5, and is verified by the P7 residue grep. ADR 0004 (anonymous self-hosted telemetry) is retired with it.
 
 ## Phases
 
@@ -36,7 +36,7 @@ Rule: no phase merges until its suite is green and the previous phase's checks s
 
 ### P1 — New schema baseline & shared library (core)
 - **Schema (clean start, Q12):** new Alembic baseline — account tables (users with grade/profile/must-change-password/disabled, sessions, api_keys, external_identity_links) and knowledge tables (documents without `user_id`/namespace, document_attributes, attribute_dictionary, jobs without billing columns; engine tables — sections, chunks, graph, retrieval stats — unchanged). Billing/guest/tier tables simply don't exist. Old migrations retired (07, step 1).
-- **Shared library:** new models/schemas for users, grades, profiles, attributes; **profile-matching engine** (fail-closed all-match, multi-value); **password-policy module** (configurable: length, case, punctuation); delete billing/credit/tier/guest shared modules (07, step 2); keep engine modules byte-identical.
+- **Shared library:** new models/schemas for users, grades, profiles, attributes; **profile-matching engine** (fail-closed all-match, multi-value); **password-policy module** (configurable: length, case, punctuation); delete billing/credit/tier/guest shared modules (07, step 2); **delete the telemetry module entirely** (shared/services/telemetry: config, events, runtime, aggregates) and retire ADR 0004 (D4); keep engine modules byte-identical.
 - **Tests:** new unit tests (profile matching, attribute validation, password policy, key hashing); delete/adjust billing tests; contract fixtures updated.
 
 **Exit:** core suites green with new schema (contract tests against fresh DB).
@@ -70,7 +70,7 @@ Rule: no phase merges until its suite is green and the previous phase's checks s
 
 ### P5 — Admin console rework
 - Stateless app: login/SSO via core; Users (grades, profiles, disable, reset, SSO pre-link), API keys (all, revoke any), Attribute dictionary (new), Job & document monitoring (default view), Webhooks (kept), Health panel, read-only settings panel, forced-change screen.
-- Delete: marketing/landing pages, newsletter, billing/credits/usage-costs/buy-credits, guest, register/forgot-password, auth callbacks, better-auth + its DB, credits/subscriptions/usage routers and external-api clients (07, step 5).
+- Delete: marketing/landing pages, newsletter, billing/credits/usage-costs/buy-credits, guest, register/forgot-password, auth callbacks, better-auth + its DB, credits/subscriptions/usage routers and external-api clients (07, step 5), and the **analytics/acquisition/attribution surfaces** (D4 telemetry removal).
 - **Tests:** admin suite green on the new pages; type-check/lint clean.
 
 **Exit:** admin console runs stateless against the core API.
@@ -87,7 +87,7 @@ Rule: no phase merges until its suite is green and the previous phase's checks s
 ### P7 — Cutover & verification
 - `deploy`: env defaults updated (add `MAX_CONCURRENT_JOBS`, model defaults; drop billing keys); fresh database per clean start.
 - Re-upload demo documents; smoke the whole story: bootstrap admin → forced change → create librarian/user → dictionary setup → librarian upload with attributes → profile-scoped search by each grade → admin monitoring/health → SSO login (D2 IdP).
-- Zero-residue grep: billing|credit|stripe|tier|guest|namespace across core/admin/webui (07, step 7).
+- Zero-residue grep: billing|credit|stripe|tier|guest|namespace|telemetry across core/admin/webui (07, step 7 + D4).
 - Full suites; MinerU attribution present in the UI; update `core/CONTEXT.md` + `webui/CONTEXT.md` and README to the new vocabulary.
 - Merge `overhaul` → `main`, push, restart the demo stack.
 
@@ -97,6 +97,6 @@ Rule: no phase merges until its suite is green and the previous phase's checks s
 
 1. No billing/credit/tier/guest/namespace residue anywhere (code, schema, config, UI, tests).
 2. Account domain: 3 grades + profiles + SSO (pre-link only) + live-profile API keys, all covered by tests.
-3. Knowledge domain: attribute-based, fail-closed access proven by the access matrix; engine algorithms untouched.
+3. Knowledge domain: attribute-based, fail-closed access proven by the access matrix; engine algorithms untouched; telemetry fully removed (D4).
 4. Dashboard stateless console; WebUI chat-first with filtered document view and per-user threads.
 5. All three suites green; demo documents re-uploaded and searchable per profile; feel-test clean.

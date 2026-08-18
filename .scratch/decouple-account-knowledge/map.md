@@ -60,7 +60,8 @@ The map is done when the route is clear — every decision above "just build it"
 - Build sequence = ticket 07's deletion order: schema/migrations → shared library → core API → worker → admin → webui → contracts/env hygiene.
 - Gate every step on the existing test suites (core pytest, admin ~108, webui ~619; DB-gated tests skip without TEST_DATABASE_URL).
 - Finish by re-uploading the demo documents and re-running the feel-test; keep the MinerU attribution credit in the product UI.
-- Carried items outside this map: GHCR publishing, real domain, CI, GitHub housekeeping, dark logo, telemetry removal decision (map notes), webui Docker image.
+- Carried items outside this map: GHCR publishing, real domain, CI, GitHub housekeeping, dark logo, webui Docker image.
+- Telemetry: **removed completely** within this overhaul (build-plan decision D4).
 
 ## Out of scope
 
