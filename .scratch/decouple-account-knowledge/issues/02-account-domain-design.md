@@ -1,8 +1,8 @@
 # 02 — Account Domain Design
 
 Type: grilling
-Status: claimed
-Claimed by: agent (charting session, 2026-08-18)
+Status: resolved
+Resolved: 2026-08-18 (grilling session with PM, Q22–Q28)
 Blocked by: —
 
 ## Question
@@ -28,3 +28,16 @@ Design the account domain around the settled direction (Q3, Q9, Q10):
 ## Open before resolution
 
 - **Q28 — SSO linking mechanism** (how an external IdP identity becomes attached to an existing local account, given no auto-provision).
+
+## Answer
+
+Resolved with the PM (Q22–Q28):
+
+- **Permissions (Q22):** matrix as recommended, plus librarian authority over accounts they created — change profile (shrink-only, from own), change grade (librarian ↔ user only), disable, reset password. Admin alone: administrator-grade accounts, widening profiles, dictionary management, deletion, any-key revocation.
+- **Bootstrap (Q23):** on empty DB the API auto-creates the admin (default password `P@ss202607`, env-overridable) flagged must-change-password; API only allows change-password + logout until changed. Password rules come from a **configurable password-policy module** (length, capitalization, punctuation, etc.).
+- **Lifecycle (Q24):** disable, never delete (v1). Disabling instantly kills sessions and keys; `createBy` stays an immutable snapshot; admin password reset forces change at next login.
+- **API keys (Q25):** `sk_`, hashed at rest, no default expiry, instant revocation, masked display; every grade manages own keys; admin revokes any.
+- **SSO (Q26 + Q28):** no auto-provision and no email auto-match. Linking = **admin pre-link only**: at account creation the admin records the person's IdP identity (email/UPN/subject); SSO sign-in is rejected for unlinked identities. Accounts still receive an initial policy-compliant password (forced change at first login), so password login remains available alongside SSO.
+- **Sessions (Q27):** core-issued HttpOnly cookie; dashboard and WebUI forward it server-side; no tokens in browser storage.
+
+Build-level details this leaves to implementation: password-policy module choice, session cookie flags/domain config, IdP identity field on the user record, and OIDC/LDAP adapters per ticket 03's findings.
