@@ -55,7 +55,7 @@ The map is done when the route is clear — every decision above "just build it"
 
 ## Map status
 
-**Route complete — 2026-08-18.** All seven tickets (01–07) are resolved; every decision above "just build it" is made. Handoff to implementation:
+**Route complete — 2026-08-18.** All seven tickets (01–07) are resolved; every decision above "just build it" is made. Handoff to implementation: build plan at `docs/OVERHAUL.md`.
 
 - Build sequence = ticket 07's deletion order: schema/migrations → shared library → core API → worker → admin → webui → contracts/env hygiene.
 - Gate every step on the existing test suites (core pytest, admin ~108, webui ~619; DB-gated tests skip without TEST_DATABASE_URL).
