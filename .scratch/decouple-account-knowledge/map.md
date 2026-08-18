@@ -38,6 +38,7 @@ The map is done when the route is clear — every decision above "just build it"
 ## Decisions so far
 
 - [01 — Knowledge Object Attribute Model](issues/01-knowledge-object-attribute-model.md) — Attributes: admin-managed dictionary (keys + optional allowed values); multi-value allowed; every object carries mandatory built-ins `createBy` + `createTime` (auto-set, immutable, searchable); profile = key→allowed-values constraints, fail-closed all-match; docs with no dictionary attributes are admin-only until tagged; librarians may strip all dictionary attributes but never the mandatory pair.
+- [06 — Admin Console Rework Scope](issues/06-admin-console-rework-scope.md) — Dashboard = stateless admin console (own DB disappears): Users (grades/profiles/disable/reset/SSO pre-link), API keys (all, revoke any), Attribute dictionary (new), Job & document monitoring (default view), Webhooks (kept — fog resolved), health panel; read-only env-backed settings panel; marketing/newsletter/billing/credits/usage-costs/guest/self-signup/auth-callbacks deleted. Attributes: admin-managed dictionary (keys + optional allowed values); multi-value allowed; every object carries mandatory built-ins `createBy` + `createTime` (auto-set, immutable, searchable); profile = key→allowed-values constraints, fail-closed all-match; docs with no dictionary attributes are admin-only until tagged; librarians may strip all dictionary attributes but never the mandatory pair.
 - [05 — WebUI Rework Scope](issues/05-webui-rework-scope.md) — WebUI: login via core (password + SSO buttons), all local identity deleted; Account settings page (own password + own API keys; dashboard admin-only); sources panel = profile-scoped filtered document view with attribute chips, active filter bag = chat retrieval scope; workspaces/members/namespace machinery removed; upload gated by grade (admin any values; librarian own-profile values + extra dictionary attributes for specificity); chat/chunks/citations/toggles/templates/traces unchanged; chat threads per user with create/switch/delete, stored in webui DB (chat-only DB). Attributes: admin-managed dictionary (keys + optional allowed values); multi-value allowed; every object carries mandatory built-ins `createBy` + `createTime` (auto-set, immutable, searchable); profile = key→allowed-values constraints, fail-closed all-match; docs with no dictionary attributes are admin-only until tagged; librarians may strip all dictionary attributes but never the mandatory pair.
 - [02 — Account Domain Design](issues/02-account-domain-design.md) — Grades + permissions matrix; librarian manages (shrink profile, grade librarian↔user, disable, reset password) only users they created; bootstrap admin (env-overridable default password, must-change enforced by API); password policy via configurable module; disable-not-delete lifecycle; API keys sk_/hashed/no expiry/instant revoke/masked, any grade manages own; SSO = no auto-provision, no email match, admin pre-link only (IdP identity recorded at account creation), password login remains; sessions = core-issued HttpOnly cookie forwarded by both UIs. Attributes: admin-managed dictionary (keys + optional allowed values); multi-value allowed; every object carries mandatory built-ins `createBy` + `createTime` (auto-set, immutable, searchable); profile = key→allowed-values constraints, fail-closed all-match; docs with no dictionary attributes are admin-only until tagged; librarians may strip all dictionary attributes but never the mandatory pair.
 - [07 — Billing & Credits Removal Inventory](issues/07-billing-removal-inventory.md) — full removal inventory (research/billing-removal-inventory.md): billing/credit/tier/guest code, tables, config keys, error codes, admin UI, webui dead types; system_limits + per-route RPM stay; concurrent-job cap = env `MAX_CONCURRENT_JOBS` (default 4, global, 0/-1 unlimited) enforced in job admission; 7-step deletion order keeping suites green. Attributes: admin-managed dictionary (keys + optional allowed values); multi-value allowed; every object carries mandatory built-ins `createBy` + `createTime` (auto-set, immutable, searchable); profile = key→allowed-values constraints, fail-closed all-match; docs with no dictionary attributes are admin-only until tagged; librarians may strip all dictionary attributes but never the mandatory pair.
@@ -46,9 +47,20 @@ The map is done when the route is clear — every decision above "just build it"
 
 ## Not yet specified
 
+<!-- nothing remains open above "just build it" — see Map status below -->
+
 
 - Execution sequencing: final order of cuts across core/admin/webui with test-suite gates and demo-document re-upload — deletion order supplied by 07; the concrete build sequence is set when implementation starts.
-- Fate of webhooks (keep in the account domain or drop) — revisit with 02 and 06.
+
+
+## Map status
+
+**Route complete — 2026-08-18.** All seven tickets (01–07) are resolved; every decision above "just build it" is made. Handoff to implementation:
+
+- Build sequence = ticket 07's deletion order: schema/migrations → shared library → core API → worker → admin → webui → contracts/env hygiene.
+- Gate every step on the existing test suites (core pytest, admin ~108, webui ~619; DB-gated tests skip without TEST_DATABASE_URL).
+- Finish by re-uploading the demo documents and re-running the feel-test; keep the MinerU attribution credit in the product UI.
+- Carried items outside this map: GHCR publishing, real domain, CI, GitHub housekeeping, dark logo, telemetry removal decision (map notes), webui Docker image.
 
 ## Out of scope
 
