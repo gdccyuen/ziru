@@ -113,14 +113,6 @@ class AIConfig(BaseModel):
         default=3,
         description="Local per-job node OCR and summary concurrency for page-memory.",
     )
-    TOKEN_PRICING_TABLE_JSON: str = Field(
-        default="",
-        description=(
-            "JSON model pricing table for internal token cost estimates. "
-            "Rates are USD per 1M tokens, keyed by model name."
-        ),
-    )
-
     # Compatibility fields retained during migration.
     ARK_API_KEY: str = Field(
         default="", description="ARK API key (compatibility field)"

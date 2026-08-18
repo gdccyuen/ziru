@@ -26,18 +26,14 @@ from shared.utils.utc_now import utc_now_naive
 
 
 class Document(Base):
-    """Durable user document in a retrieval namespace."""
+    """Knowledge object — no owner, no namespace (Q2). Access is governed by
+    attributes through the profile matcher; `createBy`/`createTime` are
+    stored as document attributes (Q16/Q17)."""
 
     __tablename__ = "documents"
 
     document_id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: f"doc_{uuid4().hex[:12]}"
-    )
-    user_id: Mapped[str] = mapped_column(
-        Text, ForeignKey("user.id", ondelete="RESTRICT"), nullable=False
-    )
-    namespace: Mapped[str] = mapped_column(
-        String(255), nullable=False, default="default"
     )
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
     current_job_result_id: Mapped[Optional[str]] = mapped_column(
@@ -75,8 +71,8 @@ class Document(Base):
     )
 
     __table_args__ = (
-        Index("idx_documents_user_namespace_status", "user_id", "namespace", "status"),
         Index("idx_documents_current_job_result", "current_job_result_id"),
+        Index("idx_documents_status", "status"),
     )
 
 

@@ -2,11 +2,11 @@
 
 from typing import Callable, cast
 
+from pydantic import Field
 from pydantic_settings import SettingsConfigDict
 
 from .ai import AIConfig
 from .base import BaseConfig
-from .billing import BillingConfig
 from .celery import CeleryConfig
 from .database import DatabaseConfig
 from .job import JobConfig
@@ -25,10 +25,17 @@ class AppConfig(
     StorageConfig,
     AIConfig,
     MineruConfig,
-    BillingConfig,
     JobConfig,
 ):
     """Application configuration — all config components merged."""
+
+    # Moved here from the retired billing config (07): storage/URL settings
+    # that are NOT billing-only.
+    S3_RESULTS_BUCKET: str = Field(default="", description="S3 results bucket")
+    FRONTEND_URL: str = Field(
+        default="http://localhost:3000",
+        description="Frontend URL for callback redirects",
+    )
 
     def validate_all(self) -> bool:
         """Validate the combined application configuration."""
@@ -36,7 +43,6 @@ class AppConfig(
             self.validate_file_paths(),
             self.validate_database_config(),
             self.validate_redis_config(),
-            self.validate_billing_config(),
         ]
 
         return all(validations)

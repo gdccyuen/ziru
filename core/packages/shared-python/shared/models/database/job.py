@@ -11,7 +11,6 @@ from uuid import uuid4
 
 from sqlalchemy import (
     JSON,
-    BigInteger,
     Boolean,
     DateTime,
     ForeignKey,
@@ -38,8 +37,9 @@ class Job(Base):
     )
 
     # User Association
+    # Operational actor (created_by semantics) — NOT knowledge ownership (Q2).
     user_id: Mapped[str] = mapped_column(
-        Text, ForeignKey("user.id", ondelete="RESTRICT"), nullable=False, index=True
+        Text, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True
     )
 
     # Basic Job Info
@@ -86,21 +86,9 @@ class Job(Base):
         nullable=False,
     )
 
-    # Billing Information (Per-Page Billing)
+    # Workload estimation (feeds oversized-PDF policy; NOT billing)
     page_count: Mapped[Optional[int]] = mapped_column(
-        Integer, nullable=True, comment="Calculated page count for billing"
-    )
-    credits_charged: Mapped[int] = mapped_column(
-        BigInteger,
-        default=0,
-        nullable=False,
-        comment="In micro-dollars: $1.00 = 1,000,000",
-    )
-    billing_status: Mapped[str] = mapped_column(
-        String(50),
-        default="pending",
-        nullable=False,
-        comment="pending, charged, billing_failed, refunded, skipped",
+        Integer, nullable=True, comment="Calculated page count (workload estimation)"
     )
 
     # Relationships — default to noload to prevent implicit SELECTs.

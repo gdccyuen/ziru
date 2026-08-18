@@ -17,3 +17,10 @@ class JobConfig(BaseSettings):
         default=14400,
         description="Max seconds a job can stay in running or converting before auto-failing (default: 4 hours).",
     )
+    MAX_CONCURRENT_JOBS: int = Field(
+        default=4,
+        description=(
+            "Simple concurrent-job cap (Q4, ticket 07). 0 or -1 = unlimited. "
+            "Replaces the retired billing/tier admission limits."
+        ),
+    )

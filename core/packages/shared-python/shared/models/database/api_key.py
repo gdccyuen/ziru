@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import uuid4
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from shared.core.database import Base
@@ -24,7 +24,7 @@ class APIKey(Base):
         String(36), primary_key=True, default=lambda: str(uuid4())
     )
     user_id: Mapped[str] = mapped_column(
-        Text, ForeignKey("user.id", ondelete="RESTRICT"), nullable=False, index=True
+        Text, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     key_hash: Mapped[str] = mapped_column(
         String(255), nullable=False, index=True
@@ -33,9 +33,6 @@ class APIKey(Base):
         String(50), nullable=False
     )  # Masked API Key (for display)
     name: Mapped[str] = mapped_column(String(255), nullable=False)  # API Key Name
-    enabled_modules: Mapped[Optional[List[str]]] = mapped_column(
-        JSON, nullable=True
-    )  # Enabled functional modules
     expires_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime, nullable=True
     )  # Expiration time
