@@ -1,8 +1,9 @@
 # 02 — Account Domain Design
 
 Type: grilling
-Status: open
-Blocked by: 03
+Status: claimed
+Claimed by: agent (charting session, 2026-08-18)
+Blocked by: —
 
 ## Question
 
