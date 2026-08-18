@@ -9,10 +9,9 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class CurrentUser:
-    """Identifies the current authenticated user and their billing tier."""
+    """Identifies the current authenticated user."""
 
     user_id: str
-    user_tier: str
 
 
 @dataclass(frozen=True)
@@ -22,19 +21,6 @@ class RouteAdmissionContext:
     method: str
     path: str
     limit_identifier: str
-
-
-@dataclass(frozen=True)
-class TierLimits:
-    """
-    Rate limits for a specific billing tier.
-
-    A value of -1 means unlimited (no enforcement).
-    """
-
-    rpm_limit: int
-    max_concurrent_jobs: int
-    daily_quota: int
 
 
 @dataclass(frozen=True)

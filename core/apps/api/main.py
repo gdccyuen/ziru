@@ -17,11 +17,9 @@ from loguru import logger
 from contextlib import asynccontextmanager
 from app.api.api_router import api_router
 from app.core.middleware import setup_cors, LoggingMiddleware
-from app.core.middleware.telemetry import ApiTelemetryMiddleware
 from app.core.exception_handlers import setup_exception_handlers
 from app.mcp import create_retrieval_mcp_server
 from app.services.rate_limit.rule_loader import load_rules
-from shared.services.telemetry.api_metrics import ApiRequestTelemetryMetrics
 
 
 @asynccontextmanager
@@ -70,60 +68,6 @@ async def lifespan(app: FastAPI):
         await load_rules(session)
     logger.info("rate limit rules loaded at startup; restart the pod to apply changes")
 
-    import time
-
-    from shared.services.telemetry.aggregates import (
-        start_self_hosted_aggregate_telemetry,
-    )
-    from shared.services.telemetry.runtime import (
-        build_postgres_health_probe,
-        build_redis_health_probe,
-        start_self_hosted_heartbeat_telemetry,
-        start_self_hosted_telemetry,
-    )
-
-    telemetry_started_at = time.monotonic()
-
-    async def _redis_ping() -> bool:
-        redis_service = redis_pool_manager.get_redis_service()
-        return await redis_service.ping()
-
-    telemetry_runtime = await start_self_hosted_telemetry(
-        settings,
-        service_name="ziru-api",
-        api_healthy=True,
-        postgres_healthy=True,
-        redis_healthy=True,
-    )
-    if telemetry_runtime is None:
-        app.state.self_hosted_telemetry_client = None
-        app.state.self_hosted_telemetry_config = None
-        app.state.self_hosted_aggregate_telemetry_runner = None
-        app.state.self_hosted_heartbeat_telemetry_runner = None
-    else:
-        telemetry_client, telemetry_config = telemetry_runtime
-        app.state.self_hosted_telemetry_client = telemetry_client
-        app.state.self_hosted_telemetry_config = telemetry_config
-        app.state.self_hosted_aggregate_telemetry_runner = (
-            await start_self_hosted_aggregate_telemetry(
-                settings,
-                telemetry_client=telemetry_client,
-                config=telemetry_config,
-                db_session_factory=get_db_context,
-                api_metrics=app.state.self_hosted_api_telemetry_metrics,
-            )
-        )
-        app.state.self_hosted_heartbeat_telemetry_runner = (
-            await start_self_hosted_heartbeat_telemetry(
-                settings,
-                telemetry_client=telemetry_client,
-                config=telemetry_config,
-                started_at_monotonic=telemetry_started_at,
-                postgres_probe=build_postgres_health_probe(get_db_context),
-                redis_probe=build_redis_health_probe(_redis_ping),
-            )
-        )
-
     mcp_server = getattr(app.state, "retrieval_mcp_server", None)
     mcp_session_manager = getattr(mcp_server, "session_manager", None)
 
@@ -133,28 +77,6 @@ async def lifespan(app: FastAPI):
             yield
     else:
         yield
-
-    try:
-        from shared.services.telemetry.aggregates import (
-            stop_self_hosted_aggregate_telemetry,
-        )
-        from shared.services.telemetry.runtime import (
-            stop_self_hosted_heartbeat_telemetry,
-            stop_self_hosted_telemetry,
-        )
-
-        await stop_self_hosted_heartbeat_telemetry(
-            getattr(app.state, "self_hosted_heartbeat_telemetry_runner", None)
-        )
-        await stop_self_hosted_aggregate_telemetry(
-            getattr(app.state, "self_hosted_aggregate_telemetry_runner", None)
-        )
-        await stop_self_hosted_telemetry(
-            getattr(app.state, "self_hosted_telemetry_client", None),
-            config=getattr(app.state, "self_hosted_telemetry_config", None),
-        )
-    except Exception as e:
-        logger.error(f"self-hosted telemetry shutdown failed: {e}")
 
     try:
         from shared.services.retrieval.stats.recorder import (
@@ -181,7 +103,6 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     # Setup structured logging BEFORE creating FastAPI app
     # This ensures all logs (including lifespan) use structured format
-    # Note: We pass app=None initially, then instrument FastAPI after app creation
     setup_logging(service_name="ziru-api")
 
     app = FastAPI(
@@ -194,7 +115,7 @@ def create_app() -> FastAPI:
         root_path="/api",
     )
 
-    # Now instrument FastAPI with Logfire (if enabled)
+    # Instrument FastAPI with Logfire (if enabled)
     from shared.core.config import settings as config_settings
 
     if config_settings.LOGFIRE_TOKEN:
@@ -209,9 +130,6 @@ def create_app() -> FastAPI:
 
     # Setup middleware
     setup_cors(app)
-    api_telemetry_metrics = ApiRequestTelemetryMetrics()
-    app.state.self_hosted_api_telemetry_metrics = api_telemetry_metrics
-    app.add_middleware(ApiTelemetryMiddleware, metrics=api_telemetry_metrics)
     app.add_middleware(LoggingMiddleware)
 
     @app.get("/", tags=["Root"])

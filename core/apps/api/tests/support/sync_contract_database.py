@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
@@ -14,13 +16,21 @@ def insert_contract_user(
     connection.execute(
         text(
             """
-            INSERT INTO "user" (id, name, email)
-            VALUES (:user_id, :name, :email)
+            INSERT INTO users (
+                id, email, password_hash, grade, profile,
+                must_change_password, disabled, created_at, updated_at
+            ) VALUES (
+                :user_id, :email, :password_hash, :grade, NULL,
+                false, false, :created_at, :updated_at
+            )
             """
         ),
         {
             "user_id": user_id,
-            "name": name or f"Contract User {user_id}",
             "email": email or f"{user_id}@contract.ziru.local",
+            "password_hash": "contract-placeholder-hash",
+            "grade": "user",
+            "created_at": datetime.now(timezone.utc).replace(tzinfo=None),
+            "updated_at": datetime.now(timezone.utc).replace(tzinfo=None),
         },
     )

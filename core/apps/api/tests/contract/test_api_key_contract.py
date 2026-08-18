@@ -15,7 +15,6 @@ async def test_should_revoke_a_created_api_key_through_http_only(
 ) -> None:
     create_payload: dict[str, object] = {
         "name": "contract-revocable-key",
-        "enabled_modules": ["jobs"],
     }
 
     async with developer_api_client_factory() as api_client:
@@ -27,7 +26,6 @@ async def test_should_revoke_a_created_api_key_through_http_only(
 
         assert created_api_key.startswith("sk_")
         assert create_response_json["name"] == create_payload["name"]
-        assert create_response_json["enabled_modules"] == create_payload["enabled_modules"]
         assert create_response_json["expires_at"] is None
 
         list_response = await api_client.get("/api/v1/auth/list")
@@ -85,7 +83,6 @@ async def test_should_return_owned_api_key_metadata(
 ) -> None:
     create_payload: dict[str, object] = {
         "name": f"contract-detail-{uuid4().hex[:8]}",
-        "enabled_modules": ["jobs"],
     }
 
     async with developer_api_client_factory() as api_client:
@@ -111,7 +108,6 @@ async def test_should_return_owned_api_key_metadata(
 
     assert response_json["id"] == created_api_key_id
     assert response_json["name"] == create_payload["name"]
-    assert response_json["enabled_modules"] == create_payload["enabled_modules"]
     assert response_json["is_active"] is True
     assert response_json["created_at"]
     assert response_json["last_used_at"] is None
@@ -152,7 +148,6 @@ async def test_should_disable_and_then_reenable_an_api_key_via_the_toggle_route(
 ) -> None:
     create_payload: dict[str, object] = {
         "name": f"contract-toggle-{uuid4().hex[:8]}",
-        "enabled_modules": ["jobs"],
     }
 
     async with developer_api_client_factory() as api_client:

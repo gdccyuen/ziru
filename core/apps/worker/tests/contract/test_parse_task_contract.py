@@ -34,7 +34,6 @@ def test_parse_task_should_process_uploaded_file_through_real_contract_boundarie
 ) -> None:
     contract = WorkerParseContract.create()
     contract.use_workspace_root(monkeypatch, tmp_path)
-    contract.use_billing(monkeypatch, is_enabled=False)
 
     job = contract.create_file_job(
         source_file_name="contract-real.xlsx",
@@ -65,7 +64,6 @@ def test_parse_task_should_process_uploaded_file_through_real_contract_boundarie
     document_chunks = observed["document_chunks"]
 
     assert job_row["status"] == "done"
-    assert job_row["billing_status"] == "skipped"
     assert job_row["page_count"] and job_row["page_count"] > 0
     assert job_row["error_message"] is None
 
@@ -128,7 +126,6 @@ def test_parse_task_result_zip_includes_page_citation_assets(
 ) -> None:
     contract = WorkerParseContract.create()
     contract.use_workspace_root(monkeypatch, tmp_path)
-    contract.use_billing(monkeypatch, is_enabled=False)
 
     source_pdf = tmp_path / "page-citation-source.pdf"
     _write_blank_pdf(source_pdf, page_count=1)
@@ -223,51 +220,6 @@ def test_parse_task_result_zip_includes_page_citation_assets(
     ]
 
 
-def test_parse_task_should_charge_user_when_billing_is_enabled(
-    worker_contract_environment: None,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    contract = WorkerParseContract.create()
-    contract.use_workspace_root(monkeypatch, tmp_path)
-    contract.use_billing(monkeypatch, is_enabled=True)
-
-    job = contract.create_file_job(
-        source_file_name="contract-billing.xlsx",
-        job_id_prefix="job_parse_billing",
-    )
-    contract.upload_source_file(
-        local_file_path=_SAMPLE_XLSX_PATH,
-        s3_key=job["s3_key"],
-    )
-
-    celery_result = contract.enqueue_parse_task(
-        job_id=job["job_id"],
-        user_id=job["user_id"],
-    )
-
-    assert celery_result.successful()
-    observed = contract.observe_successful_job(job["job_id"])
-    job_row = observed["job"]
-    expected_charge = job_row["page_count"] * int(
-        contract.settings.MICRO_DOLLARS_PER_PAGE
-    )
-
-    assert job_row["status"] == "done"
-    assert job_row["billing_status"] == "charged"
-    assert job_row["credits_charged"] == expected_charge
-
-    billing = contract.observe_user_billing(job["user_id"])
-    expected_initial_balance = int(contract.settings.FREE_PLAN_INITIAL_CREDITS) * 1_000_000
-    assert billing["balance"] == expected_initial_balance - expected_charge
-    assert billing["transaction_types"] == ["initial_grant", "usage"]
-
-    assert contract.observe_job_state_transitions(job["job_id"]) == [
-        ("start_processing", "running"),
-        ("mark_completed", "done"),
-    ]
-
-
 def test_parse_task_should_export_full_result_when_same_content_was_already_published(
     worker_contract_environment: None,
     monkeypatch: pytest.MonkeyPatch,
@@ -275,7 +227,6 @@ def test_parse_task_should_export_full_result_when_same_content_was_already_publ
 ) -> None:
     contract = WorkerParseContract.create()
     contract.use_workspace_root(monkeypatch, tmp_path)
-    contract.use_billing(monkeypatch, is_enabled=False)
 
     user_id = f"worker-contract-user-{uuid4().hex[:12]}"
     first_job = contract.create_file_job(
@@ -322,58 +273,6 @@ def test_parse_task_should_export_full_result_when_same_content_was_already_publ
     assert "chunk_overlap" not in dict(result_row["document_metadata"] or {})
 
 
-def test_parse_task_should_initialize_billing_once_for_concurrent_parse_tasks(
-    worker_contract_environment: None,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    contract = WorkerParseContract.create()
-    contract.use_workspace_root(monkeypatch, tmp_path)
-    contract.use_billing(monkeypatch, is_enabled=True)
-
-    user_id = f"worker-contract-user-{uuid4().hex[:12]}"
-    jobs = [
-        contract.create_file_job(
-            user_id=user_id,
-            source_file_name=f"contract-concurrent-{index}.xlsx",
-            job_id_prefix=f"job_parse_concurrent_{index}",
-        )
-        for index in range(2)
-    ]
-    for job in jobs:
-        contract.upload_source_file(
-            local_file_path=_SAMPLE_XLSX_PATH,
-            s3_key=job["s3_key"],
-        )
-
-    with ThreadPoolExecutor(max_workers=len(jobs)) as executor:
-        celery_results = list(
-            executor.map(
-                lambda job: contract.enqueue_parse_task(
-                    job_id=job["job_id"],
-                    user_id=user_id,
-                ),
-                jobs,
-            )
-        )
-
-    assert all(result.successful() for result in celery_results)
-    observed_jobs = [
-        contract.observe_successful_job(job["job_id"])["job"] for job in jobs
-    ]
-    assert all(row["billing_status"] == "charged" for row in observed_jobs)
-
-    billing = contract.observe_user_billing(user_id)
-    expected_total_charge = sum(row["credits_charged"] for row in observed_jobs)
-    expected_initial_balance = int(contract.settings.FREE_PLAN_INITIAL_CREDITS) * 1_000_000
-    assert billing["balance"] == expected_initial_balance - expected_total_charge
-    assert billing["transaction_counts"] == {
-        "initial_grant": 1,
-        "usage": len(jobs),
-    }
-    assert billing["system_grant_payment_count"] == 1
-
-
 def test_parse_task_should_skip_terminal_job_without_creating_outputs(
     worker_contract_environment: None,
     monkeypatch: pytest.MonkeyPatch,
@@ -385,7 +284,6 @@ def test_parse_task_should_skip_terminal_job_without_creating_outputs(
     job = contract.create_file_job(
         source_file_name="contract-skip.xlsx",
         status="done",
-        billing_status="charged",
         job_id_prefix="job_skip",
     )
 
@@ -405,7 +303,6 @@ def test_parse_task_should_skip_terminal_job_without_creating_outputs(
 
     job_row = contract.observe_job_status(job["job_id"])
     assert job_row["status"] == "done"
-    assert job_row["billing_status"] == "charged"
     assert contract.count_job_results(job["job_id"]) == 0
 
 
@@ -416,7 +313,6 @@ def test_parse_task_should_mark_failed_and_cleanup_when_uploaded_source_is_missi
 ) -> None:
     contract = WorkerParseContract.create()
     contract.use_workspace_root(monkeypatch, tmp_path)
-    contract.use_billing(monkeypatch, is_enabled=False)
 
     job = contract.create_file_job(
         source_file_name="contract-missing-source.xlsx",
@@ -433,54 +329,9 @@ def test_parse_task_should_mark_failed_and_cleanup_when_uploaded_source_is_missi
 
     job_row = contract.observe_job_status(job["job_id"])
     assert job_row["status"] == "failed"
-    assert job_row["billing_status"] in {"pending", "skipped"}
     assert job_row["error_code"]
     assert job_row["error_message"]
     assert contract.count_job_results(job["job_id"]) == 0
-
-
-def test_parse_task_should_refund_charged_job_when_uploaded_file_cannot_be_parsed(
-    worker_contract_environment: None,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    contract = WorkerParseContract.create()
-    contract.use_workspace_root(monkeypatch, tmp_path)
-    contract.use_billing(monkeypatch, is_enabled=True)
-
-    invalid_xlsx_path = tmp_path / "invalid.xlsx"
-    invalid_xlsx_path.write_bytes(b"this is not an xlsx workbook")
-    job = contract.create_file_job(
-        source_file_name="contract-invalid.xlsx",
-        job_id_prefix="job_invalid_parse",
-    )
-    contract.upload_source_file(
-        local_file_path=invalid_xlsx_path,
-        s3_key=job["s3_key"],
-    )
-
-    celery_result = contract.enqueue_parse_task(
-        job_id=job["job_id"],
-        user_id=job["user_id"],
-    )
-
-    assert celery_result.failed()
-    assert contract.find_task_workspaces(tmp_path, job["job_id"]) == []
-
-    job_row = contract.observe_job_status(job["job_id"])
-    assert job_row["status"] == "failed"
-    assert job_row["billing_status"] == "refunded"
-    assert job_row["credits_charged"] == int(contract.settings.MICRO_DOLLARS_PER_PAGE)
-    assert contract.count_job_results(job["job_id"]) == 0
-
-    billing = contract.observe_user_billing(job["user_id"])
-    expected_initial_balance = int(contract.settings.FREE_PLAN_INITIAL_CREDITS) * 1_000_000
-    assert billing["balance"] == expected_initial_balance
-    assert billing["transaction_types"] == ["initial_grant", "usage", "refund"]
-    assert contract.observe_job_state_transitions(job["job_id"]) == [
-        ("start_processing", "running"),
-        ("mark_failed", "failed"),
-    ]
 
 
 def test_parse_task_should_report_invalid_docx_as_client_file_error(
@@ -490,7 +341,6 @@ def test_parse_task_should_report_invalid_docx_as_client_file_error(
 ) -> None:
     contract = WorkerParseContract.create()
     contract.use_workspace_root(monkeypatch, tmp_path)
-    contract.use_billing(monkeypatch, is_enabled=True)
 
     invalid_docx_path = tmp_path / "invalid.docx"
     invalid_docx_path.write_bytes(b"this is not a docx package")
@@ -513,8 +363,6 @@ def test_parse_task_should_report_invalid_docx_as_client_file_error(
 
     job_row = contract.observe_job_status(job["job_id"])
     assert job_row["status"] == "failed"
-    assert job_row["billing_status"] == "refunded"
-    assert job_row["credits_charged"] == int(contract.settings.MICRO_DOLLARS_PER_PAGE)
     assert job_row["error_code"] == "INVALID_ARGUMENT"
     assert (
         job_row["error_message"]
@@ -542,7 +390,6 @@ def test_should_reject_pdf_when_page_count_exceeds_configured_limit(
 ) -> None:
     contract = WorkerParseContract.create()
     contract.use_workspace_root(monkeypatch, tmp_path)
-    contract.use_billing(monkeypatch, is_enabled=True)
 
     max_pdf_page_limit: int = 1
     actual_page_count: int = 2
@@ -571,14 +418,11 @@ def test_should_reject_pdf_when_page_count_exceeds_configured_limit(
 
     metadata = contract.get_job_metadata(job["job_id"])
     assert metadata["page_count"] == actual_page_count
-    assert metadata["billing_status"] == "skipped"
 
     job_row = contract.observe_job_status(job["job_id"])
 
     assert job_row["status"] == "failed"
-    assert job_row["billing_status"] == "skipped"
     assert job_row["page_count"] == actual_page_count
-    assert job_row["credits_charged"] == 0
     assert job_row["error_code"] == "INVALID_ARGUMENT"
     assert (
         job_row["error_message"]
@@ -658,7 +502,6 @@ def test_should_reject_pdf_when_page_count_exceeds_soft_limit(
 ) -> None:
     contract = WorkerParseContract.create()
     contract.use_workspace_root(monkeypatch, tmp_path)
-    contract.use_billing(monkeypatch, is_enabled=True)
 
     max_pdf_page_limit = 1
     soft_limit = 2
@@ -686,8 +529,6 @@ def test_should_reject_pdf_when_page_count_exceeds_soft_limit(
     job_row = contract.observe_job_status(job["job_id"])
 
     assert job_row["status"] == "failed"
-    assert job_row["billing_status"] == "skipped"
-    assert job_row["credits_charged"] == 0
     assert job_row["error_code"] == "INVALID_ARGUMENT"
     assert (
         job_row["error_message"]

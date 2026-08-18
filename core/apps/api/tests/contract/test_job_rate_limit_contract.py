@@ -52,36 +52,9 @@ async def _count_jobs() -> int:
         await engine.dispose()
 
 
-async def _set_local_developer_tier_limits(
-    *,
-    max_concurrent_jobs: int = -1,
-    rpm_limit: int = -1,
-    daily_quota: int = -1,
-) -> None:
-    engine = await _create_contract_engine()
-
-    try:
-        async with engine.begin() as connection:
-            await connection.execute(
-                text(
-                    """
-                    UPDATE tier_limits
-                    SET max_concurrent_jobs = :max_concurrent_jobs,
-                        rpm_limit = :rpm_limit,
-                        daily_quota = :daily_quota
-                    WHERE tier_name = :tier_name
-                    """
-                ),
-                {
-                    "max_concurrent_jobs": max_concurrent_jobs,
-                    "rpm_limit": rpm_limit,
-                    "daily_quota": daily_quota,
-                    "tier_name": "tier_5",
-                },
-            )
-    finally:
-        await engine.dispose()
-
+async def _noop_tier_limits() -> None:
+    # Tier limits were removed with billing; kept as a no-op seam.
+    return None
 
 async def _set_default_system_limit(
     *,
@@ -118,23 +91,16 @@ async def _create_rate_limited_developer_api_client(
     monkeypatch: MonkeyPatch,
     postgresql_process: PostgreSQLProcess,
     *,
-    billing_enabled: bool = True,
     rate_limit_enabled: bool = True,
     max_concurrent_jobs: int = -1,
-    rpm_limit: int = -1,
-    daily_quota: int = -1,
     default_system_rpm: int = 1000,
     default_system_period: str = "minute",
 ) -> AsyncGenerator[AsyncClient, None]:
     configure_contract_environment(monkeypatch, postgresql_process)
-    monkeypatch.setenv("BILLING_ENABLED", "true" if billing_enabled else "false")
     monkeypatch.setenv("RATE_LIMIT_ENABLED", "true" if rate_limit_enabled else "false")
+    monkeypatch.setenv("MAX_CONCURRENT_JOBS", str(max_concurrent_jobs))
     await prepare_contract_storage()
-    await _set_local_developer_tier_limits(
-        max_concurrent_jobs=max_concurrent_jobs,
-        rpm_limit=rpm_limit,
-        daily_quota=daily_quota,
-    )
+    await _noop_tier_limits()
     await _set_default_system_limit(
         rpm=default_system_rpm,
         period=default_system_period,
@@ -214,7 +180,6 @@ async def test_should_return_too_many_requests_when_the_authenticated_user_excee
         monkeypatch,
         postgresql_proc,
         max_concurrent_jobs=1,
-        rpm_limit=60,
     ) as api_client:
         first_response = await api_client.post("/api/v1/jobs", json=first_payload)
         second_response = await api_client.post("/api/v1/jobs", json=second_payload)
@@ -285,43 +250,7 @@ async def test_should_return_too_many_requests_when_the_jobs_route_exceeds_the_s
 
 
 @pytest.mark.asyncio
-async def test_should_return_too_many_requests_when_the_authenticated_user_exceeds_their_billing_rpm(
-    monkeypatch: MonkeyPatch,
-    postgresql_proc: PostgreSQLProcess,
-) -> None:
-    first_payload: dict[str, str] = {
-        "namespace": "contract-jobs",
-        "source_type": "file",
-        "file_name": "contract-billing-rpm-first.pdf",
-        "data_id": "contract-job-billing-rpm-first",
-    }
-    second_payload: dict[str, str] = {
-        "namespace": "contract-jobs",
-        "source_type": "file",
-        "file_name": "contract-billing-rpm-second.pdf",
-        "data_id": "contract-job-billing-rpm-second",
-    }
 
-    async with _create_rate_limited_developer_api_client(
-        monkeypatch,
-        postgresql_proc,
-        rpm_limit=1,
-    ) as api_client:
-        first_response = await api_client.post("/api/v1/jobs", json=first_payload)
-        second_response = await api_client.post("/api/v1/jobs", json=second_payload)
-
-    assert first_response.status_code == 200
-    details = _assert_retryable_rate_limit_response(
-        second_response,
-        expected_limit=1,
-        expected_period="minute",
-    )
-
-    assert cast(int, details["retry_after"]) >= 1
-    assert await _count_jobs() == 1
-
-
-@pytest.mark.asyncio
 async def test_should_skip_billing_rate_limits_when_billing_is_disabled(
     monkeypatch: MonkeyPatch,
     postgresql_proc: PostgreSQLProcess,
@@ -342,10 +271,7 @@ async def test_should_skip_billing_rate_limits_when_billing_is_disabled(
     async with _create_rate_limited_developer_api_client(
         monkeypatch,
         postgresql_proc,
-        billing_enabled=False,
         max_concurrent_jobs=1,
-        rpm_limit=1,
-        daily_quota=1,
     ) as api_client:
         first_response = await api_client.post("/api/v1/jobs", json=first_payload)
         second_response = await api_client.post("/api/v1/jobs", json=second_payload)
@@ -378,8 +304,6 @@ async def test_should_skip_all_api_rate_limits_when_rate_limits_are_disabled(
         postgresql_proc,
         rate_limit_enabled=False,
         max_concurrent_jobs=1,
-        rpm_limit=1,
-        daily_quota=1,
         default_system_rpm=1,
     ) as api_client:
         first_response = await api_client.post("/api/v1/jobs", json=first_payload)
@@ -388,41 +312,3 @@ async def test_should_skip_all_api_rate_limits_when_rate_limits_are_disabled(
     assert first_response.status_code == 200
     assert second_response.status_code == 200
     assert await _count_jobs() == 2
-
-
-@pytest.mark.asyncio
-async def test_should_return_too_many_requests_when_the_authenticated_user_exceeds_their_daily_quota(
-    monkeypatch: MonkeyPatch,
-    postgresql_proc: PostgreSQLProcess,
-) -> None:
-    first_payload: dict[str, str] = {
-        "namespace": "contract-jobs",
-        "source_type": "file",
-        "file_name": "contract-daily-quota-first.pdf",
-        "data_id": "contract-job-daily-quota-first",
-    }
-    second_payload: dict[str, str] = {
-        "namespace": "contract-jobs",
-        "source_type": "file",
-        "file_name": "contract-daily-quota-second.pdf",
-        "data_id": "contract-job-daily-quota-second",
-    }
-
-    async with _create_rate_limited_developer_api_client(
-        monkeypatch,
-        postgresql_proc,
-        daily_quota=1,
-    ) as api_client:
-        first_response = await api_client.post("/api/v1/jobs", json=first_payload)
-        second_response = await api_client.post("/api/v1/jobs", json=second_payload)
-
-    assert first_response.status_code == 200
-    details = _assert_retryable_rate_limit_response(
-        second_response,
-        expected_limit=1,
-        expected_period="day",
-    )
-
-    retry_after = cast(int, details["retry_after"])
-    assert 1 <= retry_after <= 3600
-    assert await _count_jobs() == 1

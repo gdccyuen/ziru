@@ -43,7 +43,7 @@ class WebhookSecret(Base):
 
     # User association
     user_id: Mapped[str] = mapped_column(
-        Text, ForeignKey("user.id", ondelete="RESTRICT"), nullable=False
+        Text, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
     )
 
     # Optional endpoint-specific secret (NULL = default account secret)

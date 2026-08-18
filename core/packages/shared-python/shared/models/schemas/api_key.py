@@ -10,9 +10,6 @@ class CreateAPIKeyRequest(BaseModel):
     """Request payload for creating an API key."""
 
     name: str = Field(..., min_length=1, max_length=255, description="API key name")
-    enabled_modules: Optional[List[str]] = Field(
-        default=None, description="Enabled feature modules"
-    )
     expires_at: Optional[datetime] = Field(default=None, description="Expiration time")
 
 
@@ -22,7 +19,6 @@ class APIKeyResponse(BaseModel):
     id: str
     name: str
     api_key: str  # Masked API key value.
-    enabled_modules: Optional[List[str]]
     is_active: bool
     created_at: datetime
     last_used_at: Optional[datetime]
@@ -38,7 +34,6 @@ class CreateAPIKeyResponse(BaseModel):
         ..., description="Generated API key; returned only during creation"
     )
     name: str
-    enabled_modules: Optional[List[str]]
     expires_at: Optional[datetime]
 
 

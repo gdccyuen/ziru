@@ -60,21 +60,19 @@ def _drop_api_app_modules() -> None:
             sys.modules.pop(module_name, None)
 
 
-def _load_api_modules() -> tuple[ModuleType, ModuleType, ModuleType, ModuleType]:
+def _load_api_modules() -> tuple[ModuleType, ModuleType, ModuleType]:
     _prioritize_api_import_root()
     _drop_non_api_app_modules()
     from app.services.auth import api_key_authentication_service
     from app.services.rate_limit import (
         data_structures,
         job_admission_service,
-        tier_service,
     )
 
     return (
         api_key_authentication_service,
         data_structures,
         job_admission_service,
-        tier_service,
     )
 
 
@@ -87,42 +85,10 @@ def _clear_api_app_modules_after_unit_test():
 
 
 @pytest.mark.asyncio
-async def test_get_tier_reuses_provided_session_without_get_db_context() -> None:
-    _, _, _, tier_service = _load_api_modules()
-    TierService = tier_service.TierService
-
-    session = AsyncMock()
-    redis_service = AsyncMock()
-    redis_service.get = AsyncMock(return_value=None)
-    redis_service.set = AsyncMock()
-
-    with (
-        patch(
-            "app.services.rate_limit.tier_service.redis_pool_manager.get_redis_service",
-            return_value=redis_service,
-        ),
-        patch(
-            "app.services.rate_limit.tier_service.get_db_context",
-        ) as get_db_context_mock,
-        patch.object(
-            TierService,
-            "_get_tier_from_db",
-            new=AsyncMock(return_value="pro"),
-        ) as get_tier_from_db,
-    ):
-        tier = await TierService.get_tier("user-1", session=session)
-
-    assert tier == "pro"
-    get_tier_from_db.assert_awaited_once_with(session, "user-1")
-    get_db_context_mock.assert_not_called()
-
-
-@pytest.mark.asyncio
-async def test_resolve_current_user_passes_request_session_to_get_tier() -> None:
-    _, data_structures, job_admission_service, tier_service = _load_api_modules()
+async def test_resolve_current_user_returns_user_without_tier() -> None:
+    _, data_structures, job_admission_service = _load_api_modules()
     RouteAdmissionContext = data_structures.RouteAdmissionContext
     JobAdmissionService = job_admission_service.JobAdmissionService
-    TierService = tier_service.TierService
 
     session = AsyncMock()
     route_context = RouteAdmissionContext(
@@ -132,17 +98,11 @@ async def test_resolve_current_user_passes_request_session_to_get_tier() -> None
     )
     service = JobAdmissionService(
         route_policy_service=MagicMock(
-            enforce_guest_api_key_scope=MagicMock(),
             enforce_user_system_limit=AsyncMock(),
         ),
     )
 
     with (
-        patch.object(
-            TierService,
-            "get_tier",
-            new=AsyncMock(return_value="free"),
-        ) as get_tier,
         patch(
             "app.services.rate_limit.job_admission_service.RateLimitConfig.get_instance",
             return_value=SimpleNamespace(is_enabled=False),
@@ -155,13 +115,12 @@ async def test_resolve_current_user_passes_request_session_to_get_tier() -> None
         )
 
     assert current_user.user_id == "user-1"
-    assert current_user.user_tier == "free"
-    get_tier.assert_awaited_once_with("user-1", session=session)
+    assert not hasattr(current_user, "user_tier")
 
 
 @pytest.mark.asyncio
 async def test_validate_api_key_updates_last_used_on_same_session() -> None:
-    api_key_authentication_service, _, _, _ = _load_api_modules()
+    api_key_authentication_service, _, _ = _load_api_modules()
     APIKeyAuthenticationService = (
         api_key_authentication_service.APIKeyAuthenticationService
     )
@@ -214,7 +173,7 @@ async def test_validate_api_key_updates_last_used_on_same_session() -> None:
 
 @pytest.mark.asyncio
 async def test_validate_api_key_skips_last_used_when_debounced() -> None:
-    api_key_authentication_service, _, _, _ = _load_api_modules()
+    api_key_authentication_service, _, _ = _load_api_modules()
     APIKeyAuthenticationService = (
         api_key_authentication_service.APIKeyAuthenticationService
     )
@@ -260,19 +219,17 @@ async def test_validate_api_key_skips_last_used_when_debounced() -> None:
 
 @pytest.mark.asyncio
 async def test_job_poll_auth_path_uses_single_session_factory_checkout() -> None:
-    """End-to-end hygiene: tier + last-used must not call get_db_context."""
+    """End-to-end hygiene: auth + admission must not call get_db_context."""
     (
         api_key_authentication_service,
         data_structures,
         job_admission_service,
-        tier_service,
     ) = _load_api_modules()
     APIKeyAuthenticationService = (
         api_key_authentication_service.APIKeyAuthenticationService
     )
     RouteAdmissionContext = data_structures.RouteAdmissionContext
     JobAdmissionService = job_admission_service.JobAdmissionService
-    TierService = tier_service.TierService
 
     session = AsyncMock()
     session.commit = AsyncMock()
@@ -287,7 +244,7 @@ async def test_job_poll_auth_path_uses_single_session_factory_checkout() -> None
             return None
 
     redis_service = AsyncMock()
-    redis_service.get = AsyncMock(side_effect=[None, None])  # api-key miss, tier miss
+    redis_service.get = AsyncMock(return_value=None)  # api-key miss
     redis_service.set_nx = AsyncMock(return_value=True)
     redis_service.set = AsyncMock()
     redis_service.sadd = AsyncMock()
@@ -312,7 +269,6 @@ async def test_job_poll_auth_path_uses_single_session_factory_checkout() -> None
     )
     admission = JobAdmissionService(
         route_policy_service=MagicMock(
-            enforce_guest_api_key_scope=MagicMock(),
             enforce_user_system_limit=AsyncMock(),
         ),
     )
@@ -323,21 +279,8 @@ async def test_job_poll_auth_path_uses_single_session_factory_checkout() -> None
             return_value=redis_service,
         ),
         patch(
-            "app.services.rate_limit.tier_service.redis_pool_manager.get_redis_service",
-            return_value=redis_service,
-        ),
-        patch(
             "app.services.auth.api_key_authentication_service.hash_api_key",
             return_value="hash-1",
-        ),
-        patch(
-            "app.services.rate_limit.tier_service.get_db_context",
-            side_effect=_CountingContext,
-        ),
-        patch.object(
-            TierService,
-            "_get_tier_from_db",
-            new=AsyncMock(return_value="free"),
         ),
         patch(
             "app.services.rate_limit.job_admission_service.RateLimitConfig.get_instance",

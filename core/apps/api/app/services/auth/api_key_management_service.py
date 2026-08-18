@@ -26,7 +26,6 @@ class APIKeyListItem(TypedDict):
     id: str
     name: str
     api_key: str
-    enabled_modules: list[str] | None
     is_active: bool
     created_at: datetime
     last_used_at: datetime | None
@@ -53,7 +52,6 @@ class APIKeyManagementService:
         *,
         user_id: str,
         name: str,
-        enabled_modules: list[str] | None = None,
         expires_at: datetime | None = None,
     ) -> str:
         key_count = await self._repository.count_by_user(session, user_id)
@@ -90,7 +88,6 @@ class APIKeyManagementService:
             key_hash=hash_api_key(api_key),
             key_mask=mask_api_key(api_key),
             name=name,
-            enabled_modules=enabled_modules or ["all"],
             expires_at=expires_at,
         )
         await self._repository.create(session, api_key_record)
@@ -150,7 +147,6 @@ class APIKeyManagementService:
                 "name": api_key.name,
                 "api_key": api_key.key_mask
                 or f"sk_{api_key.id[:8]}••••••••••••••••••••••••••••••••••••••••",
-                "enabled_modules": api_key.enabled_modules,
                 "is_active": api_key.is_active,
                 "created_at": api_key.created_at,
                 "last_used_at": api_key.last_used_at,

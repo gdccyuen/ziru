@@ -8,7 +8,6 @@ from app.services.rate_limit.job_admission_capacity_service import (
 from app.services.rate_limit.job_admission_route_policy_service import (
     JobAdmissionRoutePolicyService,
 )
-from app.services.rate_limit.tier_service import TierService
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,12 +34,7 @@ class JobAdmissionService:
         user_id: str,
         db: AsyncSession,
     ) -> CurrentUser:
-        user_tier = await TierService.get_tier(user_id, session=db)
-        self._route_policy_service.enforce_guest_api_key_scope(
-            route_context=route_context,
-            user_tier=user_tier,
-        )
-        current_user = CurrentUser(user_id=user_id, user_tier=user_tier)
+        current_user = CurrentUser(user_id=user_id)
 
         with log_context(user_id=user_id):
             config = RateLimitConfig.get_instance()
@@ -65,13 +59,6 @@ class JobAdmissionService:
 
         return current_user
 
-    async def enforce_billing_limits(
-        self,
-        *,
-        current_user: CurrentUser,
-    ) -> None:
-        await self._capacity_service.enforce_billing_limits(current_user=current_user)
-
     async def enforce_route_system_limit(
         self,
         *,
@@ -81,13 +68,10 @@ class JobAdmissionService:
             route_context=route_context,
         )
 
-    async def enforce_job_creation_capacity(
+    async def enforce_job_capacity(
         self,
         *,
         db: AsyncSession,
         current_user: CurrentUser,
     ) -> None:
-        await self._capacity_service.enforce_job_creation_capacity(
-            db=db,
-            current_user=current_user,
-        )
+        await self._capacity_service.enforce_job_capacity(db=db)

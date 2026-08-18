@@ -202,7 +202,6 @@ def test_should_republish_only_orphaned_pending_webhook_events_and_persist_qstas
                 webhook_url=target_url,
                 webhook_enabled=True,
                 job_metadata=_build_file_job_metadata(),
-                billing_status="charged",
             )
 
         _insert_webhook_event(
@@ -398,7 +397,6 @@ def test_should_publish_completed_webhook_with_result_delivery_payload(
             webhook_url=target_url,
             webhook_enabled=True,
             job_metadata=_build_file_job_metadata(),
-            billing_status="charged",
         )
         _insert_job_result(
             connection,
@@ -488,7 +486,6 @@ def test_should_reconcile_stale_delivering_webhook_events_from_qstash_logs(
             webhook_url=target_url,
             webhook_enabled=True,
             job_metadata=_build_file_job_metadata(),
-            billing_status="charged",
         )
         _insert_webhook_event(
             connection,

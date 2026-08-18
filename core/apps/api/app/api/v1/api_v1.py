@@ -6,7 +6,6 @@ from app.api.v1.routes import (
     api_key,
     demo,
     documents,
-    guest,
     jobs,
     qstash_callbacks,
     retrieval,
@@ -17,8 +16,6 @@ from app.api.v1.routes import (
 )
 from fastapi import APIRouter
 
-from shared.core.config import settings
-
 api_router = APIRouter()
 
 
@@ -26,13 +23,6 @@ api_router = APIRouter()
 api_router.include_router(api_key.router, prefix="/auth", tags=["API Key Management"])
 
 # Guest registration
-api_router.include_router(guest.router, prefix="/guest", tags=["Guest Registration"])
-
-# Billing
-if settings.BILLING_ENABLED:
-    from app.api.v1.routes import billing
-
-    api_router.include_router(billing.router, prefix="/billing", tags=["Billing"])
 
 # Unified Jobs routes
 api_router.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])

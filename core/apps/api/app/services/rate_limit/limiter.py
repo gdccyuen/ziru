@@ -1,9 +1,8 @@
 """
 Rate limiter layer implementations.
 
-Wraps the ``limits`` library for Layer 0 (system limits), Layer 1 (Billing RPM),
-and Layer 3 (Daily Quota) checks. Each layer raises RateLimitException on
-rejection with appropriate retry headers.
+Wraps the limits library for Layer 0 (system limits). Each rejection
+raises RateLimitException with appropriate retry headers.
 """
 
 import time
@@ -13,8 +12,6 @@ from app.services.rate_limit.config import RateLimitConfig
 from loguru import logger
 
 from shared.core.exceptions.domain_exceptions import RateLimitException
-
-MAX_DAILY_QUOTA_RETRY_AFTER_SECONDS: int = 3600
 
 
 class RateLimiter:
@@ -91,100 +88,6 @@ class RateLimiter:
                 period=period,
                 internal_message=(
                     f"System limit exceeded for {target}, limit={limit}/{period}"
-                ),
-            )
-            exc.details.update(
-                {
-                    "remaining": headers["remaining"],
-                    "reset": headers["reset_time"],
-                }
-            )
-            raise exc
-
-    # ------------------------------------------------------------------
-    # Layer 1 -- Billing RPM (per-user sliding window)
-    # ------------------------------------------------------------------
-
-    async def check_billing_rpm(
-        self,
-        user_id: str,
-        rpm: int,
-    ) -> None:
-        """
-        Layer 1: Billing RPM check.
-
-        Raises RateLimitException if the user's tier RPM is exhausted.
-        """
-        if not self._config.is_enabled or rpm == -1:
-            return
-
-        rate_item = self._config.parse_rate(f"{rpm}/minute")
-        namespace = self._config.namespaced_namespace("billing_rpm")
-        identifier = user_id
-
-        is_allowed: bool = await self._config.sliding_window.hit(
-            rate_item, namespace, identifier
-        )
-        if not is_allowed:
-            headers = await self._build_rejection_headers(
-                rate_item, namespace, identifier, rpm, "minute", strategy="sliding"
-            )
-            logger.warning(f"Billing RPM exceeded: user={user_id}, limit={rpm}/min")
-            exc = RateLimitException(
-                retry_after=headers["retry_after"],
-                limit=rpm,
-                period="minute",
-                internal_message=(
-                    f"Billing RPM exceeded for user={user_id}, limit={rpm}/min"
-                ),
-            )
-            exc.details.update(
-                {
-                    "remaining": headers["remaining"],
-                    "reset": headers["reset_time"],
-                }
-            )
-            raise exc
-
-    # ------------------------------------------------------------------
-    # Layer 3 -- Daily Quota (fixed window)
-    # ------------------------------------------------------------------
-
-    async def check_daily_quota(
-        self,
-        user_id: str,
-        quota: int,
-    ) -> None:
-        """
-        Layer 3: Daily quota check.
-
-        Raises RateLimitException if the user's daily request quota
-        is exhausted.
-        """
-        if not self._config.is_enabled or quota == -1:
-            return
-
-        rate_item = self._config.parse_rate(f"{quota}/day")
-        namespace = self._config.namespaced_namespace("daily_quota")
-        identifier = user_id
-
-        is_allowed: bool = await self._config.fixed_window.hit(
-            rate_item, namespace, identifier
-        )
-        if not is_allowed:
-            headers = await self._build_rejection_headers(
-                rate_item, namespace, identifier, quota, "day", strategy="fixed"
-            )
-            logger.warning(f"Daily quota exceeded: user={user_id}, limit={quota}/day")
-            exc = RateLimitException(
-                retry_after=min(
-                    headers["retry_after"],
-                    MAX_DAILY_QUOTA_RETRY_AFTER_SECONDS,
-                ),
-                limit=quota,
-                period="day",
-                internal_message=(
-                    f"Daily quota exceeded for user={user_id}, limit={quota}/day"
                 ),
             )
             exc.details.update(

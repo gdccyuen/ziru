@@ -218,30 +218,3 @@ def test_v2_jobs_documents_and_retrieval_routes_are_registered_in_openapi() -> N
         for path in paths
     )
     assert any(path.endswith("/v2/retrieval/query") for path in paths)
-
-
-@pytest.mark.parametrize(
-    "path",
-    [
-        "/v2/jobs",
-        "/v2/jobs/job_123",
-        "/v2/documents",
-        "/v2/documents/doc_123",
-        "/v2/documents/doc_123/files/page-citation-source",
-        "/v2/retrieval/query",
-    ],
-)
-def test_guest_route_policy_allows_v2_jobs_documents_and_retrieval(path: str) -> None:
-    from app.services.rate_limit.data_structures import RouteAdmissionContext
-    from app.services.rate_limit.job_admission_route_policy_service import (
-        JobAdmissionRoutePolicyService,
-    )
-
-    JobAdmissionRoutePolicyService().enforce_guest_api_key_scope(
-        route_context=RouteAdmissionContext(
-            method="GET",
-            path=path,
-            limit_identifier=path,
-        ),
-        user_tier="guest",
-    )

@@ -4,6 +4,7 @@ import json
 import sys
 import zipfile
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -49,17 +50,9 @@ class WorkerParseContract:
         monkeypatch.setattr(self.settings, "TMP_PATH", str(workspace_root))
 
     def use_billing(self, monkeypatch: MonkeyPatch, is_enabled: bool) -> None:
-        monkeypatch.setenv("BILLING_ENABLED", "true" if is_enabled else "false")
-        monkeypatch.setattr(self.settings, "BILLING_ENABLED", is_enabled)
-        for loaded_module in list(sys.modules.values()):
-            module_settings = getattr(loaded_module, "settings", None)
-            if hasattr(module_settings, "BILLING_ENABLED"):
-                monkeypatch.setattr(
-                    module_settings,
-                    "BILLING_ENABLED",
-                    is_enabled,
-                    raising=False,
-                )
+        # Billing was removed with the billing domain (07); kept as a no-op.
+        return None
+
     def use_pdf_page_limit(self, monkeypatch: MonkeyPatch, page_limit: int) -> None:
         monkeypatch.setenv("MAX_PDF_PAGE_LIMIT", str(page_limit))
         monkeypatch.setattr(self.settings, "MAX_PDF_PAGE_LIMIT", page_limit)
@@ -113,7 +106,6 @@ class WorkerParseContract:
         source_file_name: str,
         user_id: str | None = None,
         status: str = "pending",
-        billing_status: str = "pending",
         job_id_prefix: str = "job_parse",
     ) -> dict[str, Any]:
         effective_user_id = user_id or f"worker-contract-user-{uuid4().hex[:12]}"
@@ -144,7 +136,6 @@ class WorkerParseContract:
                         "summary_txt": False,
                     },
                 },
-                billing_status=billing_status,
             )
 
         return {
@@ -159,15 +150,23 @@ class WorkerParseContract:
         connection.execute(
             text(
                 """
-                INSERT INTO "user" (id, name, email)
-                VALUES (:user_id, :name, :email)
+                INSERT INTO users (
+                    id, email, password_hash, grade, profile,
+                    must_change_password, disabled, created_at, updated_at
+                ) VALUES (
+                    :user_id, :email, :password_hash, :grade, NULL,
+                    false, false, :created_at, :updated_at
+                )
                 ON CONFLICT (id) DO NOTHING
                 """
             ),
             {
                 "user_id": user_id,
-                "name": f"Worker Contract User {user_id}",
                 "email": f"{user_id}@worker-contract.ziru.local",
+                "password_hash": "contract-placeholder-hash",
+                "grade": "user",
+                "created_at": datetime.now(timezone.utc).replace(tzinfo=None),
+                "updated_at": datetime.now(timezone.utc).replace(tzinfo=None),
             },
         )
 
@@ -207,9 +206,7 @@ class WorkerParseContract:
                         """
                         SELECT
                             status,
-                            billing_status,
                             page_count,
-                            credits_charged,
                             error_code,
                             error_message
                         FROM jobs
@@ -297,9 +294,7 @@ class WorkerParseContract:
                         """
                         SELECT
                             status,
-                            billing_status,
                             page_count,
-                            credits_charged,
                             error_code,
                             error_message
                         FROM jobs
@@ -328,71 +323,8 @@ class WorkerParseContract:
         return dict(stored_metadata or {})
 
     def observe_user_billing(self, user_id: str) -> dict[str, Any]:
-        with self.engine.connect() as connection:
-            balance = connection.execute(
-                text(
-                    """
-                    SELECT credits_balance
-                    FROM user_balances
-                    WHERE user_id = :user_id
-                    """
-                ),
-                {"user_id": user_id},
-            ).scalar_one_or_none()
-            transaction_types = list(
-                connection.execute(
-                    text(
-                        """
-                        SELECT transaction_type
-                        FROM credits_transactions
-                        WHERE user_id = :user_id
-                        ORDER BY created_at ASC, id ASC
-                        """
-                    ),
-                    {"user_id": user_id},
-                )
-                .scalars()
-                .all()
-            )
-            transaction_count_rows = (
-                connection.execute(
-                    text(
-                        """
-                        SELECT transaction_type, COUNT(*) AS count
-                        FROM credits_transactions
-                        WHERE user_id = :user_id
-                        GROUP BY transaction_type
-                        ORDER BY transaction_type
-                        """
-                    ),
-                    {"user_id": user_id},
-                )
-                .mappings()
-                .all()
-            )
-            system_grant_payment_count = int(
-                connection.execute(
-                    text(
-                        """
-                        SELECT COUNT(*)
-                        FROM payment_records
-                        WHERE user_id = :user_id
-                          AND payment_type = 'system_grant'
-                        """
-                    ),
-                    {"user_id": user_id},
-                ).scalar_one()
-            )
-
-        return {
-            "balance": int(balance) if balance is not None else None,
-            "transaction_types": transaction_types,
-            "transaction_counts": {
-                str(row["transaction_type"]): int(row["count"])
-                for row in transaction_count_rows
-            },
-            "system_grant_payment_count": system_grant_payment_count,
-        }
+        # Billing was removed with the billing domain (07); no-op for compat.
+        return {}
 
     def observe_job_state_transitions(self, job_id: str) -> list[tuple[str, str]]:
         with self.engine.connect() as connection:

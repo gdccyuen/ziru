@@ -66,9 +66,7 @@ def _insert_job(
                 job_metadata,
                 version,
                 created_at,
-                updated_at,
-                credits_charged,
-                billing_status
+                updated_at
             ) VALUES (
                 :job_id,
                 :user_id,
@@ -79,9 +77,7 @@ def _insert_job(
                 CAST(:job_metadata AS JSON),
                 :version,
                 :created_at,
-                :updated_at,
-                :credits_charged,
-                :billing_status
+                :updated_at
             )
             """
         ),
@@ -96,8 +92,6 @@ def _insert_job(
             "version": 0,
             "created_at": timestamp,
             "updated_at": timestamp,
-            "credits_charged": 0,
-            "billing_status": "pending",
         },
     )
 

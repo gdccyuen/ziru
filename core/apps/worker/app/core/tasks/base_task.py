@@ -54,7 +54,6 @@ class DocumentIngestionBaseTask(Task):
                     error_message=error_info["message"],
                     error_code=error_info["code"],
                     error_details=error_info.get("details"),
-                    should_refund=True,
                 )
                 logger.info(
                     f"Job failure finalized: job_id={job_id}, error_code={error_info['code']}"

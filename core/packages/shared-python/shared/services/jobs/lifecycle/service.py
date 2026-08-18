@@ -95,7 +95,6 @@ class SyncJobLifecycleService:
         error_message: str,
         error_code: str = "UNKNOWN",
         error_details: Optional[Dict[str, Any]] = None,
-        should_refund: bool = False,
     ) -> bool:
         """Finalize a failed job in a single atomic transaction.
 
@@ -117,7 +116,6 @@ class SyncJobLifecycleService:
                 error_message=error_message,
                 error_code=error_code,
                 error_details=error_details,
-                should_refund=should_refund,
             ),
             should_commit=lambda finalization: finalization.succeeded,
             build_response=lambda finalization: finalization.succeeded,

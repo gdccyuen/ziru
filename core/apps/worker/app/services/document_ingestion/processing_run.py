@@ -9,10 +9,9 @@ from app.services.document_ingestion.parse_result_package import (
     build_parse_result_package,
 )
 from app.services.document_ingestion.parse_execution import execute_document_parse
-from app.services.document_ingestion.processing_billing import (
-    charge_parse_job_pages,
-    record_skipped_parse_job_billing,
+from app.services.document_ingestion.processing_records import (
     record_processing_start,
+    record_skipped_parse_job,
 )
 from app.services.document_ingestion.processing_context import (
     ParseJobContext,
@@ -113,30 +112,26 @@ def _run_parse_job(
             page_count=page_count,
         )
         if oversized_pdf_rejection is not None:
-            billing_snapshot = record_skipped_parse_job_billing(
+            record_skipped_parse_job(
                 job_id=job_id,
                 workload_estimate=workload_estimate,
             )
             record_processing_start(
                 job_id=job_id,
                 job_context=job_context,
-                billing_snapshot=billing_snapshot,
                 processing_started_at=processing_started_at,
                 workload_estimate=workload_estimate,
                 extra_metadata={"error_details": oversized_pdf_rejection.details},
             )
             raise oversized_pdf_rejection
 
-        billing_snapshot = charge_parse_job_pages(
+        record_skipped_parse_job(
             job_id=job_id,
-            filename=prepared_source.source_file_name,
-            job_user_id=job_context.job_user_id,
             workload_estimate=workload_estimate,
         )
         record_processing_start(
             job_id=job_id,
             job_context=job_context,
-            billing_snapshot=billing_snapshot,
             processing_started_at=processing_started_at,
             workload_estimate=workload_estimate,
         )

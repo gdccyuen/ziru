@@ -40,14 +40,12 @@ async def create_api_key(
             session=db,
             user_id=current_user.user_id,
             name=request.name,
-            enabled_modules=request.enabled_modules,
             expires_at=request.expires_at,
         )
 
         return CreateAPIKeyResponse(
             api_key=api_key,
             name=request.name,
-            enabled_modules=request.enabled_modules,
             expires_at=request.expires_at,
         )
 
@@ -78,7 +76,6 @@ async def list_api_keys(
                 id=key["id"],
                 name=key["name"],
                 api_key=key["api_key"],
-                enabled_modules=key["enabled_modules"],
                 is_active=key["is_active"],
                 created_at=key["created_at"],
                 last_used_at=key["last_used_at"],
@@ -144,7 +141,6 @@ async def get_api_key(
         return {
             "id": str(api_key.id),
             "name": api_key.name,
-            "enabled_modules": api_key.enabled_modules,
             "is_active": api_key.is_active,
             "created_at": api_key.created_at,
             "last_used_at": api_key.last_used_at,

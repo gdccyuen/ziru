@@ -1,14 +1,14 @@
 """
 Rate limit configuration singleton.
 
-Holds tier maps, system rules, and limits library instances.
+Holds system rules and limits library instances.
 Supports atomic rule updates via GIL-safe reference swaps.
 """
 
 import os
 from typing import Optional
 
-from app.services.rate_limit.data_structures import SystemLimitRule, TierLimits
+from app.services.rate_limit.data_structures import SystemLimitRule
 from loguru import logger
 
 from shared.core.exceptions.redis_exceptions import RedisConfigurationError
@@ -33,7 +33,7 @@ def _is_rate_limit_enabled() -> bool:
 class RateLimitConfig:
     """
     Singleton that owns the limits-library strategy instances and
-    the in-memory tier / system-rule maps.
+    the in-memory system-rule map.
 
     Usage:
         config = RateLimitConfig.get_instance(redis_url)
@@ -65,7 +65,6 @@ class RateLimitConfig:
         self._fixed_window = FixedWindowRateLimiter(self._storage)
 
         # In-memory maps (GIL-safe reference swap on update)
-        self._tier_map: dict[str, TierLimits] = {}
         self._system_rules: list[SystemLimitRule] = []
 
         logger.info(
@@ -109,10 +108,6 @@ class RateLimitConfig:
         return self._key_prefix
 
     @property
-    def tier_map(self) -> dict[str, TierLimits]:
-        return self._tier_map
-
-    @property
     def system_rules(self) -> list[SystemLimitRule]:
         return self._system_rules
 
@@ -137,11 +132,10 @@ class RateLimitConfig:
 
     def update_rules(
         self,
-        tier_map: dict[str, TierLimits],
         system_rules: list[SystemLimitRule],
     ) -> bool:
         """
-        Atomically swap both maps.
+        Atomically swap the system-rule map.
 
         CPython's GIL guarantees that a single reference assignment is
         atomic, so readers never see a half-updated structure.
@@ -152,14 +146,12 @@ class RateLimitConfig:
         sorted_rules = sorted(system_rules, key=lambda r: r.priority)
 
         # Check if there are actual changes
-        has_changes = self._tier_map != tier_map or self._system_rules != sorted_rules
+        has_changes = self._system_rules != sorted_rules
 
         if has_changes:
-            self._tier_map = tier_map
             self._system_rules = sorted_rules
             logger.info(
-                f"Rate limit rules updated: "
-                f"{len(tier_map)} tiers, {len(sorted_rules)} system rules"
+                f"Rate limit rules updated: {len(sorted_rules)} system rules"
             )
 
         return has_changes

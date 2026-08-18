@@ -9,7 +9,7 @@ from typing import Optional
 
 from app.api.dependencies.auth import require_write_permission
 from app.api.dependencies.current_user import with_current_user
-from app.api.dependencies.job_admission import require_billing_limits
+from app.api.dependencies.job_admission import require_job_capacity
 from app.services.document_ingestion import DocumentIngestionService
 from app.services.jobs import (
     get_job_result_for_user,
@@ -39,7 +39,7 @@ _document_ingestion_service = DocumentIngestionService()
 @router.post("/", include_in_schema=False)
 async def create_job(  # pyright: ignore[reportGeneralTypeIssues]
     payload: JobCreate,
-    current_user: CurrentUser = Depends(require_billing_limits),
+    current_user: CurrentUser = Depends(require_job_capacity),
     _write_permission: None = Depends(require_write_permission),
     db: AsyncSession = Depends(get_db),
 ):

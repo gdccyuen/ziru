@@ -190,8 +190,6 @@ def _assert_unauthenticated_response(
     assert "failure_reason" not in serialized_response
     assert "auth_component" not in serialized_response
     assert "dashboard_jwt" not in serialized_response
-    assert "jwt_algorithm" not in serialized_response
-    assert "jwt_kid" not in serialized_response
     assert "payload" not in serialized_response
     assert "contract-dashboard-user" not in serialized_response
     assert token not in serialized_response
@@ -298,9 +296,6 @@ async def test_missing_key_id_is_a_client_warning_without_fetching_jwks(
     auth_log = log_capture.records[0]
     _assert_client_auth_log(auth_log)
     assert auth_log.extra["failure_reason"] == "jwt_missing_key_id"
-    assert auth_log.extra["jwt_algorithm"] == "HS256"
-    assert auth_log.extra["jwt_kid_present"] is False
-    assert "jwt_kid" not in auth_log.extra
 
     _assert_log_excludes_token(auth_log, token=token)
 
@@ -327,9 +322,6 @@ async def test_malformed_jwt_is_a_client_warning_without_fetching_jwks(
     auth_log = log_capture.records[0]
     _assert_client_auth_log(auth_log)
     assert auth_log.extra["failure_reason"] == "jwt_invalid"
-    assert auth_log.extra["jwt_kid_present"] is False
-    assert "jwt_algorithm" not in auth_log.extra
-    assert "jwt_kid" not in auth_log.extra
     _assert_log_excludes_token(auth_log, token=token)
 
 
@@ -357,9 +349,6 @@ async def test_malformed_jwt_payload_is_a_client_warning_without_fetching_jwks(
     auth_log = log_capture.records[0]
     _assert_client_auth_log(auth_log)
     assert auth_log.extra["failure_reason"] == "jwt_invalid"
-    assert auth_log.extra["jwt_algorithm"] == "RS256"
-    assert auth_log.extra["jwt_kid_present"] is True
-    assert auth_log.extra["jwt_kid"] == key_id
     _assert_log_excludes_token(auth_log, token=token)
 
 
@@ -393,9 +382,6 @@ async def test_unknown_key_id_refreshes_once_and_remains_a_client_warning(
     auth_log = log_capture.records[0]
     _assert_client_auth_log(auth_log)
     assert auth_log.extra["failure_reason"] == "jwt_unknown_key_id"
-    assert auth_log.extra["jwt_algorithm"] == "RS256"
-    assert auth_log.extra["jwt_kid_present"] is True
-    assert auth_log.extra["jwt_kid"] == "unknown_key:" + ("x" * 52)
 
     _assert_log_excludes_token(auth_log, token=token)
     serialized_log = json.dumps(auth_log.extra, default=str)
@@ -428,7 +414,6 @@ async def test_unavailable_jwks_is_a_system_error_with_an_unchanged_response(
     _assert_jwks_dependency_auth_log(auth_log)
     assert auth_log.exception_type == "PyJWKClientConnectionError"
     assert auth_log.extra["failure_reason"] == "jwks_unavailable"
-    assert auth_log.extra["jwt_kid"] == "unavailable-key"
 
     _assert_log_excludes_token(auth_log, token=token)
     _assert_log_excludes_jwks_body(auth_log, jwks_body=jwks_body)
@@ -467,7 +452,6 @@ async def test_invalid_jwks_is_a_system_error_with_an_unchanged_response(
     auth_log = log_capture.records[0]
     _assert_jwks_dependency_auth_log(auth_log)
     assert auth_log.extra["failure_reason"] == "jwks_invalid"
-    assert auth_log.extra["jwt_kid"] == "invalid-jwks-key"
 
     _assert_log_excludes_token(auth_log, token=token)
     _assert_log_excludes_jwks_body(auth_log, jwks_body=jwks_body)
@@ -533,8 +517,6 @@ async def test_expired_jwt_retains_response_and_logs_client_warning(
     auth_log = log_capture.records[0]
     _assert_client_auth_log(auth_log)
     assert auth_log.extra["failure_reason"] == "jwt_expired"
-    assert auth_log.extra["jwt_algorithm"] == "RS256"
-    assert auth_log.extra["jwt_kid"] == key_id
     _assert_log_excludes_token(auth_log, token=token)
 
 
@@ -566,8 +548,6 @@ async def test_invalid_signature_retains_response_and_logs_client_warning(
     auth_log = log_capture.records[0]
     _assert_client_auth_log(auth_log)
     assert auth_log.extra["failure_reason"] == "jwt_invalid"
-    assert auth_log.extra["jwt_algorithm"] == "RS256"
-    assert auth_log.extra["jwt_kid"] == key_id
     _assert_log_excludes_token(auth_log, token=token)
 
 
@@ -602,8 +582,6 @@ async def test_missing_user_claim_retains_response_and_logs_client_warning(
     auth_log = log_capture.records[0]
     _assert_client_auth_log(auth_log)
     assert auth_log.extra["failure_reason"] == "jwt_invalid"
-    assert auth_log.extra["jwt_algorithm"] == "RS256"
-    assert auth_log.extra["jwt_kid"] == key_id
     _assert_log_excludes_token(auth_log, token=token)
 
 
@@ -637,9 +615,6 @@ async def test_non_allowlisted_algorithm_is_not_recorded_as_safe_metadata(
     auth_log = log_capture.records[0]
     _assert_client_auth_log(auth_log)
     assert auth_log.extra["failure_reason"] == "jwt_invalid"
-    assert auth_log.extra["jwt_kid_present"] is True
-    assert auth_log.extra["jwt_kid"] == key_id
-    assert "jwt_algorithm" not in auth_log.extra
     _assert_log_excludes_token(auth_log, token=token)
 
 

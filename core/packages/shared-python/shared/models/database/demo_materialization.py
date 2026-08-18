@@ -23,7 +23,7 @@ class DemoMaterialization(Base):
         default=lambda: f"demo_mat_{uuid4().hex[:12]}",
     )
     user_id: Mapped[str] = mapped_column(
-        Text, ForeignKey("user.id", ondelete="RESTRICT"), nullable=False
+        Text, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
     )
     namespace: Mapped[str] = mapped_column(
         String(255), nullable=False, default="default"

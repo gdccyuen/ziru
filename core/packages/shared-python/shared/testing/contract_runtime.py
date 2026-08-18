@@ -47,7 +47,6 @@ _CONTRACT_RESULTS_BUCKET: str = "ziru-test-results"
 _STATIC_TABLES_TO_PRESERVE: frozenset[str] = frozenset(
     {
         "alembic_version",
-        "tier_limits",
         "system_limits",
     }
 )
@@ -76,7 +75,6 @@ _MODULE_NAMES_TO_CLEAR: tuple[str, ...] = (
 CONTRACT_DEVELOPER_USER_ID: str = "local-dev-user"
 CONTRACT_DEVELOPER_USER_NAME: str = "Local Development User"
 CONTRACT_DEVELOPER_USER_EMAIL: str = "local-dev-user@ziru.local"
-CONTRACT_DEVELOPER_USER_TIER: str = "tier_5"
 CONTRACT_DEVELOPER_API_KEY_NAME: str = "contract-developer-api-key"
 _contract_storage_database_url: str | None = None
 _contract_fake_redis_server: fakeredis.FakeServer = fakeredis.FakeServer()
@@ -682,14 +680,14 @@ def _assert_contract_schema_ready() -> None:
                 SELECT tablename
                 FROM pg_tables
                 WHERE schemaname = 'public'
-                  AND tablename IN ('tier_limits', 'api_keys', 'user_balances')
+                  AND tablename IN ('users', 'api_keys', 'documents')
                 """
             )
             migrated_tables = {row[0] for row in cursor.fetchall()}
     finally:
         connection.close()
 
-    expected_tables = {"tier_limits", "api_keys", "user_balances"}
+    expected_tables = {"users", "api_keys", "documents"}
     missing_tables = expected_tables - migrated_tables
     if missing_tables:
         raise RuntimeError(
@@ -730,9 +728,7 @@ async def seed_contract_developer() -> dict[str, str | int]:
         initialized_user = await initialize_standalone_user(
             email=CONTRACT_DEVELOPER_USER_EMAIL,
             user_id=CONTRACT_DEVELOPER_USER_ID,
-            name=CONTRACT_DEVELOPER_USER_NAME,
             key_name=CONTRACT_DEVELOPER_API_KEY_NAME,
-            tier=CONTRACT_DEVELOPER_USER_TIER,
         )
     finally:
         await _dispose_async_database_engine()
@@ -741,7 +737,6 @@ async def seed_contract_developer() -> dict[str, str | int]:
         "user_id": initialized_user["user_id"],
         "name": CONTRACT_DEVELOPER_USER_NAME,
         "email": initialized_user["email"],
-        "tier": CONTRACT_DEVELOPER_USER_TIER,
         "api_key": initialized_user["api_key"],
     }
 

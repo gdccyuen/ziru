@@ -84,10 +84,6 @@ class DocumentSection(Base):
     section_id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: f"sec_{uuid4().hex[:12]}"
     )
-    user_id: Mapped[str] = mapped_column(Text, nullable=False)
-    namespace: Mapped[str] = mapped_column(
-        String(255), nullable=False, default="default"
-    )
     document_id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("documents.document_id", ondelete="CASCADE"),
@@ -122,7 +118,6 @@ class DocumentSection(Base):
             "section_path",
             name="uq_document_sections_revision_path",
         ),
-        Index("idx_document_sections_scope", "user_id", "namespace"),
         Index("idx_document_sections_doc_revision", "document_id", "job_result_id"),
     )
 
@@ -136,10 +131,6 @@ class DocumentChunk(Base):
         String(36), primary_key=True, default=lambda: f"dchk_{uuid4().hex[:12]}"
     )
     chunk_id: Mapped[str] = mapped_column(String(64), nullable=False)
-    user_id: Mapped[str] = mapped_column(Text, nullable=False)
-    namespace: Mapped[str] = mapped_column(
-        String(255), nullable=False, default="default"
-    )
     document_id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("documents.document_id", ondelete="CASCADE"),
@@ -195,7 +186,6 @@ class DocumentChunk(Base):
             "source_chunk_path",
             name="uq_document_chunks_revision_path",
         ),
-        Index("idx_document_chunks_scope", "user_id", "namespace"),
         Index("idx_document_chunks_chunk_id", "chunk_id"),
         Index("idx_document_chunks_doc_revision", "document_id", "job_result_id"),
         Index("idx_document_chunks_section", "section_id"),
@@ -218,10 +208,6 @@ class GraphNode(Base):
     __tablename__ = "graph_nodes"
 
     node_id: Mapped[str] = mapped_column(String(128), primary_key=True)
-    user_id: Mapped[str] = mapped_column(Text, nullable=False)
-    namespace: Mapped[str] = mapped_column(
-        String(255), nullable=False, default="default"
-    )
     node_kind: Mapped[str] = mapped_column(String(32), nullable=False)
     owner_document_id: Mapped[str] = mapped_column(
         String(36),
@@ -245,7 +231,6 @@ class GraphNode(Base):
     )
 
     __table_args__ = (
-        Index("idx_graph_nodes_scope", "user_id", "namespace", "node_kind"),
         Index("idx_graph_nodes_owner_revision", "owner_document_id", "job_result_id"),
         Index("idx_graph_nodes_ref_document", "ref_document_id"),
         Index("idx_graph_nodes_ref_section", "ref_section_id"),
@@ -258,10 +243,6 @@ class GraphEdge(Base):
     __tablename__ = "graph_edges"
 
     edge_id: Mapped[str] = mapped_column(String(160), primary_key=True)
-    user_id: Mapped[str] = mapped_column(Text, nullable=False)
-    namespace: Mapped[str] = mapped_column(
-        String(255), nullable=False, default="default"
-    )
     edge_kind: Mapped[str] = mapped_column(String(32), nullable=False)
     source_node_id: Mapped[str] = mapped_column(
         String(128),
@@ -295,7 +276,6 @@ class GraphEdge(Base):
     )
 
     __table_args__ = (
-        Index("idx_graph_edges_scope", "user_id", "namespace", "edge_kind"),
         Index("idx_graph_edges_owner_revision", "owner_document_id", "job_result_id"),
         Index("idx_graph_edges_source", "source_node_id"),
         Index("idx_graph_edges_target", "target_node_id"),
@@ -309,10 +289,6 @@ class RetrievalHitStat(Base):
 
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: f"rhs_{uuid4().hex[:12]}"
-    )
-    user_id: Mapped[str] = mapped_column(Text, nullable=False)
-    namespace: Mapped[str] = mapped_column(
-        String(255), nullable=False, default="default"
     )
     hit_kind: Mapped[str] = mapped_column(String(32), nullable=False)
     document_id: Mapped[str] = mapped_column(
@@ -338,8 +314,6 @@ class RetrievalHitStat(Base):
     __table_args__ = (
         Index(
             "uq_retrieval_hit_stats_document_key",
-            "user_id",
-            "namespace",
             "hit_kind",
             "document_id",
             unique=True,
@@ -347,15 +321,12 @@ class RetrievalHitStat(Base):
         ),
         Index(
             "uq_retrieval_hit_stats_chunk_key",
-            "user_id",
-            "namespace",
             "hit_kind",
             "document_id",
             "chunk_id",
             unique=True,
             postgresql_where=chunk_id.is_not(None),
         ),
-        Index("idx_retrieval_hit_stats_scope_kind", "user_id", "namespace", "hit_kind"),
         Index("idx_retrieval_hit_stats_document", "document_id"),
         Index("idx_retrieval_hit_stats_chunk", "chunk_id"),
     )
@@ -367,8 +338,6 @@ class RetrievalRun(Base):
     __tablename__ = 'retrieval_runs'
 
     run_id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: f'aret_{uuid4().hex[:12]}')
-    user_id: Mapped[str] = mapped_column(Text, nullable=False)
-    namespace: Mapped[str] = mapped_column(String(255), nullable=False, default='default')
     query: Mapped[str] = mapped_column(Text, nullable=False)
     query_hash: Mapped[str] = mapped_column(String(32), nullable=False, default='')
     top_k: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
@@ -390,7 +359,6 @@ class RetrievalRun(Base):
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     __table_args__ = (
-        Index('idx_retrieval_runs_user_namespace', 'user_id', 'namespace'),
         Index('idx_retrieval_runs_created', 'created_at'),
         Index('idx_retrieval_runs_query_hash', 'query_hash'),
     )

@@ -18,14 +18,22 @@ def insert_contract_user(
     connection.execute(
         text(
             """
-            INSERT INTO "user" (id, name, email)
-            VALUES (:user_id, :name, :email)
+            INSERT INTO users (
+                id, email, password_hash, grade, profile,
+                must_change_password, disabled, created_at, updated_at
+            ) VALUES (
+                :user_id, :email, :password_hash, :grade, NULL,
+                false, false, :created_at, :updated_at
+            )
             """
         ),
         {
             "user_id": user_id,
-            "name": name or f"Worker Contract User {user_id}",
             "email": email or f"{user_id}@worker-contract.ziru.local",
+            "password_hash": "contract-placeholder-hash",
+            "grade": "user",
+            "created_at": _utc_now(),
+            "updated_at": _utc_now(),
         },
     )
 
@@ -49,8 +57,6 @@ def insert_contract_job(
     job_metadata: dict[str, Any] | None = None,
     error_message: str | None = None,
     error_code: str | None = None,
-    credits_charged: int = 0,
-    billing_status: str = "pending",
     created_at: datetime | None = None,
     updated_at: datetime | None = None,
 ) -> None:
@@ -73,9 +79,7 @@ def insert_contract_job(
                 error_code,
                 version,
                 created_at,
-                updated_at,
-                credits_charged,
-                billing_status
+                updated_at
             ) VALUES (
                 :job_id,
                 :user_id,
@@ -91,9 +95,7 @@ def insert_contract_job(
                 :error_code,
                 :version,
                 :created_at,
-                :updated_at,
-                :credits_charged,
-                :billing_status
+                :updated_at
             )
             """
         ),
@@ -115,7 +117,5 @@ def insert_contract_job(
             "version": 0,
             "created_at": timestamp,
             "updated_at": updated_at or timestamp,
-            "credits_charged": credits_charged,
-            "billing_status": billing_status,
         },
     )

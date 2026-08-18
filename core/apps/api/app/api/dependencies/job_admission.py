@@ -10,14 +10,21 @@ from app.services.rate_limit.data_structures import (
 )
 from app.services.rate_limit.job_admission_service import JobAdmissionService
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from shared.core.database import get_db
 
 _job_admission_service = JobAdmissionService()
 
 
-async def require_billing_limits(
+async def require_job_capacity(
     current_user: CurrentUser = Depends(with_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> AsyncGenerator[CurrentUser, None]:
-    await _job_admission_service.enforce_billing_limits(current_user=current_user)
+    await _job_admission_service.enforce_job_capacity(
+        db=db,
+        current_user=current_user,
+    )
     yield current_user
 
 

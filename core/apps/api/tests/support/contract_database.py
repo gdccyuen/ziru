@@ -73,51 +73,21 @@ class ContractDatabase:
     ) -> None:
         await cls.execute(
             """
-            INSERT INTO "user" (id, name, email)
-            VALUES (:user_id, :name, :email)
-            """,
-            {
-                "user_id": user_id,
-                "name": name or f"Contract User {user_id}",
-                "email": email or f"{user_id}@contract.ziru.local",
-            },
-        )
-
-    @classmethod
-    async def insert_user_balance(
-        cls,
-        *,
-        user_id: str,
-        credits_balance: int = 0,
-        user_tier: str = "free",
-        stripe_customer_id: str | None = None,
-    ) -> None:
-        timestamp = _utc_now()
-        await cls.execute(
-            """
-            INSERT INTO user_balances (
-                user_id,
-                credits_balance,
-                user_tier,
-                stripe_customer_id,
-                created_at,
-                updated_at
+            INSERT INTO users (
+                id, email, password_hash, grade, profile,
+                must_change_password, disabled, created_at, updated_at
             ) VALUES (
-                :user_id,
-                :credits_balance,
-                :user_tier,
-                :stripe_customer_id,
-                :created_at,
-                :updated_at
+                :user_id, :email, :password_hash, :grade, NULL,
+                false, false, :created_at, :updated_at
             )
             """,
             {
                 "user_id": user_id,
-                "credits_balance": credits_balance,
-                "user_tier": user_tier,
-                "stripe_customer_id": stripe_customer_id,
-                "created_at": timestamp,
-                "updated_at": timestamp,
+                "email": email or f"{user_id}@contract.ziru.local",
+                "password_hash": "contract-placeholder-hash",
+                "grade": "user",
+                "created_at": _utc_now(),
+                "updated_at": _utc_now(),
             },
         )
 
@@ -127,16 +97,8 @@ class ContractDatabase:
         *,
         user_id: str,
         api_key: str,
-        user_tier: str = "free",
-        credits_balance: int = 0,
-        enabled_modules: list[str] | None = None,
     ) -> None:
         await cls.insert_user(user_id=user_id)
-        await cls.insert_user_balance(
-            user_id=user_id,
-            credits_balance=credits_balance,
-            user_tier=user_tier,
-        )
 
         timestamp = _utc_now()
         api_key_hash = hash_api_key(api_key)
@@ -150,7 +112,6 @@ class ContractDatabase:
                 key_hash,
                 key_mask,
                 name,
-                enabled_modules,
                 is_active,
                 created_at
             ) VALUES (
@@ -159,7 +120,6 @@ class ContractDatabase:
                 :key_hash,
                 :key_mask,
                 :name,
-                CAST(:enabled_modules AS JSON),
                 :is_active,
                 :created_at
             )
@@ -170,56 +130,8 @@ class ContractDatabase:
                 "key_hash": api_key_hash,
                 "key_mask": f"{api_key[:8]}...{api_key[-4:]}",
                 "name": f"Contract API Key {user_id}",
-                "enabled_modules": json.dumps(enabled_modules or ["all"]),
                 "is_active": True,
                 "created_at": timestamp,
-            },
-        )
-
-    @classmethod
-    async def insert_credits_transaction(
-        cls,
-        *,
-        transaction_id: str,
-        user_id: str,
-        credits_amount: int,
-        transaction_type: str,
-        description: str | None = None,
-        stripe_payment_id: str | None = None,
-        transaction_metadata: dict[str, Any] | None = None,
-        created_at: datetime | None = None,
-    ) -> None:
-        await cls.execute(
-            """
-            INSERT INTO credits_transactions (
-                id,
-                user_id,
-                credits_amount,
-                transaction_type,
-                stripe_payment_id,
-                description,
-                transaction_metadata,
-                created_at
-            ) VALUES (
-                :id,
-                :user_id,
-                :credits_amount,
-                :transaction_type,
-                :stripe_payment_id,
-                :description,
-                CAST(:transaction_metadata AS JSON),
-                :created_at
-            )
-            """,
-            {
-                "id": transaction_id,
-                "user_id": user_id,
-                "credits_amount": credits_amount,
-                "transaction_type": transaction_type,
-                "stripe_payment_id": stripe_payment_id,
-                "description": description,
-                "transaction_metadata": json.dumps(transaction_metadata or {}),
-                "created_at": created_at or _utc_now(),
             },
         )
 
@@ -370,8 +282,6 @@ class ContractDatabase:
         job_metadata: dict[str, Any] | None = None,
         error_message: str | None = None,
         error_code: str | None = None,
-        credits_charged: int = 0,
-        billing_status: str = "pending",
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ) -> None:
@@ -393,9 +303,7 @@ class ContractDatabase:
                 error_code,
                 version,
                 created_at,
-                updated_at,
-                credits_charged,
-                billing_status
+                updated_at
             ) VALUES (
                 :job_id,
                 :user_id,
@@ -411,9 +319,7 @@ class ContractDatabase:
                 :error_code,
                 :version,
                 :created_at,
-                :updated_at,
-                :credits_charged,
-                :billing_status
+                :updated_at
             )
             """,
             {
@@ -434,8 +340,6 @@ class ContractDatabase:
                 "version": 0,
                 "created_at": timestamp,
                 "updated_at": updated_at or timestamp,
-                "credits_charged": credits_charged,
-                "billing_status": billing_status,
             },
         )
 
