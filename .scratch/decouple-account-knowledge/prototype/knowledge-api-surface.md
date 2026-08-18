@@ -27,7 +27,7 @@ Status: prototype v1 — for the PM to react to; NOT the final spec.
 
 | Method & path | Who | What it does |
 |---|---|---|
-| GET /v2/attributes | any authenticated account | List dictionary keys and their allowed values (so uploaders and searchers can pick) |
+| GET /v2/attributes | any authenticated account | List dictionary keys and their allowed values (so uploaders and searchers can pick) — Q20 confirmed |
 | POST /v2/attributes | admin | Add a key (optionally with allowed values) |
 | PATCH /v2/attributes/{key} | admin | Edit a key or its allowed values |
 | DELETE /v2/attributes/{key} | admin | Remove a key (existing values stay on documents but are no longer selectable) |
@@ -36,7 +36,7 @@ Status: prototype v1 — for the PM to react to; NOT the final spec.
 
 | Method & path | Who | What it does |
 |---|---|---|
-| POST /v2/documents | librarian, admin | Upload a file (or a URL) with attributes; creates a parse job; `createBy`/`createTime` are stamped automatically. User grade → 403. |
+| POST /v2/documents | librarian, admin | Upload a file (or a URL — Q21 confirmed) with attributes; creates a parse job; `createBy`/`createTime` are stamped automatically. User grade → 403. |
 | GET /v2/documents | all (scoped) | List documents; filters by attributes; non-admins see only profile-visible documents |
 | GET /v2/documents/{id} | all (scoped) | Document metadata + attributes (404 if not visible) |
 | PATCH /v2/documents/{id}/attributes | admin, librarian | Edit attributes per Q8 rules (admin any; librarian only values within own profile; `createBy`/`createTime` always rejected) |
@@ -100,5 +100,5 @@ A filter-bag-only search (`query` omitted/empty, `filters` present) browses docu
 
 1. ~~Search endpoint~~ — **decided (Q18):** structured JSON `POST /v2/search`; `query` optional; `filters` mandatory bag of attribute criteria.
 2. ~~Job visibility~~ — **decided (Q19):** list = admin-only; single job = uploader or admin.
-3. Attribute dictionary readable by all authenticated users (recommended) vs admin-only — **PENDING (Q20).**
-4. URL ingestion kept (recommended — on-prem users may ingest from internal URLs) vs file upload only — **PENDING (Q21).**
+3. ~~Attribute dictionary~~ — **decided (Q20):** readable by all authenticated users; admin manages keys/values.
+4. ~~URL ingestion~~ — **decided (Q21):** kept as an upload option alongside file upload.
