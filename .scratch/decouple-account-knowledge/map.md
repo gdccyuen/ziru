@@ -37,11 +37,12 @@ The map is done when the route is clear — every decision above "just build it"
 
 ## Decisions so far
 
+- [01 — Knowledge Object Attribute Model](issues/01-knowledge-object-attribute-model.md) — Attributes: admin-managed dictionary (keys + optional allowed values); multi-value allowed; every object carries mandatory built-ins `createBy` + `createTime` (auto-set, immutable, searchable); profile = key→allowed-values constraints, fail-closed all-match; docs with no dictionary attributes are admin-only until tagged; librarians may strip all dictionary attributes but never the mandatory pair.
 - [03 — External Identity Provider (AD/SSO) Research](issues/03-external-identity-provider-research.md) — SSO = OIDC authorization-code + PKCE with the core API as relying party (Authlib/openid-client); LDAP bind as fallback for plain AD DS; avoid SAML. Core owns the handshake and `external_identity_links`; auto-provision configurable, default grade `user`; local grades/profiles authoritative; WebUI keeps thin redirect/proxy routes. Full findings on branch `research/external-identity-provider` (commit `f12e5be`).
 
 ## Not yet specified
 
-- New database schema shape (account tables + knowledge objects + attribute storage) — graduates once 01, 02, and 04 resolve.
+- New database schema shape — attribute storage is now shaped by 01 (mandatory built-ins `createBy`/`createTime`, admin dictionary keys, multi-value attributes); account tables wait on 02; API/schema details wait on 04.
 - Sequencing and verification plan: the order of cuts across core/admin/webui and which test suites gate each step; demo-document re-upload — graduates as decisions land.
 - Job admission beyond the concurrent cap (per-key vs global limits; UI vs env configuration) — sharpens after 07's inventory.
 - Fate of webhooks (keep in the account domain or drop) — revisit with 02 and 06.

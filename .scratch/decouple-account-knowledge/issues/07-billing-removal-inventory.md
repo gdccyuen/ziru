@@ -1,7 +1,8 @@
 # 07 — Billing & Credits Removal Inventory
 
 Type: task
-Status: open
+Status: claimed
+Claimed by: agent (charting session, 2026-08-18) — background subagent
 Blocked by: —
 
 ## Question
