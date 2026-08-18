@@ -187,7 +187,6 @@ class JobResultResponse(BaseModel):
     duration_seconds: Optional[float] = Field(
         None, description="Job duration (updated_at - created_at, in seconds)"
     )
-    credits_spent: Optional[float] = Field(None, description="Credits consumed")
 
 
 class JobList(BaseModel):

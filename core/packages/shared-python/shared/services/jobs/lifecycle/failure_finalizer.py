@@ -4,13 +4,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from loguru import logger
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from shared.core.response import build_standard_error_response
 from shared.core.state_machine.service_sync import SyncStateMachineService
-from shared.models.database.job import Job
-from shared.services.billing.credits_sync_service import SyncCreditsService
 from shared.services.jobs.lifecycle.post_commit_effects import PostCommitEffectPlan
 from shared.services.jobs.lifecycle.webhook_outbox import SyncJobWebhookOutbox
 from shared.utils.error_details import normalize_error_details
@@ -30,11 +27,9 @@ class SyncJobFailureFinalizer:
         *,
         state_machine: SyncStateMachineService | None = None,
         webhook_outbox: SyncJobWebhookOutbox | None = None,
-        credits_service: SyncCreditsService | None = None,
     ) -> None:
         self._state_machine = state_machine or SyncStateMachineService()
         self._webhook_outbox = webhook_outbox or SyncJobWebhookOutbox()
-        self._credits_service = credits_service or SyncCreditsService()
 
     def finalize(
         self,
@@ -44,7 +39,6 @@ class SyncJobFailureFinalizer:
         error_message: str,
         error_code: str,
         error_details: dict[str, Any] | None,
-        should_refund: bool,
     ) -> JobFailureFinalization:
         transition_outcome = self._state_machine.mark_failed_outcome(
             db,
@@ -62,9 +56,6 @@ class SyncJobFailureFinalizer:
                 succeeded=False,
                 post_commit_effects=PostCommitEffectPlan.none(),
             )
-
-        if should_refund:
-            self._try_refund_credits(db, job_id)
 
         normalized_error_details = normalize_error_details(error_details)
         webhook_event = self._webhook_outbox.create_event(
@@ -86,26 +77,3 @@ class SyncJobFailureFinalizer:
                 webhook_event_id=webhook_event.event_id if webhook_event else None,
             ),
         )
-
-    def _try_refund_credits(self, db: Session, job_id: str) -> None:
-        try:
-            result = db.execute(select(Job).where(Job.job_id == job_id))
-            job = result.scalar_one_or_none()
-            if not job:
-                return
-
-            amount = getattr(job, "credits_charged", 0) or 0
-            billing_status = getattr(job, "billing_status", "")
-            if amount <= 0 or billing_status != "charged":
-                return
-
-            self._credits_service.refund_job_credits(
-                session=db,
-                user_id=str(job.user_id),
-                amount=amount,
-                job_id=job_id,
-            )
-            job.billing_status = "refunded"
-            logger.info(f"Refunded {amount} credits for job {job_id}")
-        except Exception as exc:
-            logger.error(f"Credit refund failed for job {job_id}: {exc}")

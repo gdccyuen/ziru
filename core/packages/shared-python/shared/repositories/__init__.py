@@ -1,8 +1,3 @@
-"""
-Credits Repository
-"""
+"""Repository exports."""
 
-from shared.repositories.credits_repository import CreditsRepository
-from shared.repositories.credits_sync_repository import SyncCreditsRepository
-
-__all__ = ["CreditsRepository", "SyncCreditsRepository"]
+# Billing/credit repositories were removed with the billing domain (07).

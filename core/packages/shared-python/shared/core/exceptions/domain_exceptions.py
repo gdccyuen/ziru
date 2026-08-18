@@ -121,37 +121,6 @@ class AuthException(ZiruException):
         )
 
 
-class InsufficientCreditsException(ZiruException):
-    """
-    Payment required. HTTP 402.
-
-    4xx Error: Developer provides `user_message` that user sees directly.
-
-    Details schema:
-        {"required_credits": 10, "current_balance": 5}
-    """
-
-    def __init__(
-        self,
-        user_message: str,
-        required_credits: Optional[float] = None,
-        current_balance: Optional[float] = None,
-        internal_message: Optional[str] = None,
-    ):
-        details: Dict[str, Any] = {}
-        if required_credits is not None:
-            details["required_credits"] = required_credits
-        if current_balance is not None:
-            details["current_balance"] = current_balance
-
-        super().__init__(
-            code=ErrorCode.PAYMENT_REQUIRED,
-            internal_message=internal_message or user_message,
-            user_message=user_message,
-            details=details,
-        )
-
-
 class PermissionDeniedException(ZiruException):
     """
     Permission denied. HTTP 403.
@@ -304,45 +273,6 @@ class RateLimitException(ZiruException):
         self.retry_after = retry_after
         self.limit = limit
         self.period = period
-
-
-class QuotaExceededException(ZiruException):
-    """
-    Quota exceeded. HTTP 429. NOT RETRYABLE.
-
-    4xx Error: Developer provides `user_message` that user sees directly.
-
-    Details schema:
-        {"reason": "QUOTA_EXCEEDED", "quota_name": "...", "limit": <int>}
-    """
-
-    def __init__(
-        self,
-        quota_name: str,
-        limit: int,
-        user_message: str = "Quota exceeded",
-        internal_message: Optional[str] = None,
-    ):
-        super().__init__(
-            code=ErrorCode.RESOURCE_EXHAUSTED,
-            internal_message=internal_message
-            or f"Quota {quota_name} exceeded, limit={limit}",
-            user_message=user_message,
-            details={
-                "reason": SubCode.QUOTA_EXCEEDED.value,
-                "quota_name": quota_name,
-                "limit": limit,
-            },
-        )
-
-
-# ============================================================================
-# Server Error Exceptions (5xx)
-# ----------------------------------------------------------------------------
-# For 5xx errors, developer provides `internal_message` for debugging.
-# `user_message` auto-defaults to a safe generic message.
-# Developer CAN override `user_message` with a custom safe message.
-# ============================================================================
 
 
 class UnavailableException(ZiruException):
@@ -864,28 +794,6 @@ class DependencyMissingException(ZiruException):
             internal_message=internal_message,
             user_message=user_message,  # Defaults to generic 5xx message
             details={},
-            original_exception=original_exception,
-        )
-
-
-class StripeServiceException(ZiruException):
-    """
-    Stripe payment service operations failed.
-
-    5xx Error: Auto-defaults to safe user_message.
-    """
-
-    def __init__(
-        self,
-        internal_message: str,
-        user_message: Optional[str] = None,
-        original_exception: Optional[Exception] = None,
-    ):
-        super().__init__(
-            code=ErrorCode.INTERNAL_ERROR,
-            internal_message=internal_message,
-            user_message=user_message,
-            details={"service": "stripe"},
             original_exception=original_exception,
         )
 

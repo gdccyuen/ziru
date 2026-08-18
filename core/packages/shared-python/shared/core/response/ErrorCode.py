@@ -50,15 +50,12 @@ class ErrorCode(str, Enum):
     FAILED_PRECONDITION = "FAILED_PRECONDITION"  # 400 - System state prevents operation
     OUT_OF_RANGE = "OUT_OF_RANGE"  # 400 - Value outside valid range
     UNAUTHENTICATED = "UNAUTHENTICATED"  # 401 - Missing/invalid credentials
-    PAYMENT_REQUIRED = (
-        "PAYMENT_REQUIRED"  # 402 - Payment required / Insufficient credits
-    )
     PERMISSION_DENIED = "PERMISSION_DENIED"  # 403 - Caller lacks permission
     NOT_FOUND = "NOT_FOUND"  # 404 - Resource does not exist
     ABORTED = "ABORTED"  # 409 - Concurrency conflict
     ALREADY_EXISTS = "ALREADY_EXISTS"  # 409 - Resource already exists
     RESOURCE_EXHAUSTED = (
-        "RESOURCE_EXHAUSTED"  # 429 - Rate limit OR quota (see Retry Semantics)
+        "RESOURCE_EXHAUSTED"  # 429 - Rate limit (see Retry Semantics)
     )
     CANCELLED = "CANCELLED"  # 499 - Client cancelled request
 
@@ -86,7 +83,6 @@ class ErrorCodeMapper:
         ErrorCode.FAILED_PRECONDITION: 400,
         ErrorCode.OUT_OF_RANGE: 400,
         ErrorCode.UNAUTHENTICATED: 401,
-        ErrorCode.PAYMENT_REQUIRED: 402,
         ErrorCode.PERMISSION_DENIED: 403,
         ErrorCode.NOT_FOUND: 404,
         ErrorCode.ABORTED: 409,
@@ -107,7 +103,6 @@ class ErrorCodeMapper:
         200: ErrorCode.OK,
         400: ErrorCode.INVALID_ARGUMENT,
         401: ErrorCode.UNAUTHENTICATED,
-        402: ErrorCode.PAYMENT_REQUIRED,
         403: ErrorCode.PERMISSION_DENIED,
         404: ErrorCode.NOT_FOUND,
         409: ErrorCode.ALREADY_EXISTS,
@@ -161,7 +156,6 @@ class SubCode(str, Enum):
 
     # RESOURCE_EXHAUSTED sub-codes
     RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED"
-    QUOTA_EXCEEDED = "QUOTA_EXCEEDED"
     CONCURRENT_LIMIT_EXCEEDED = "CONCURRENT_LIMIT_EXCEEDED"
 
     # INVALID_ARGUMENT sub-codes

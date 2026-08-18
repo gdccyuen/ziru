@@ -57,7 +57,6 @@ _MODULE_NAMES_TO_CLEAR: tuple[str, ...] = (
     "shared.core.config",
     "shared.core.config.app",
     "shared.core.config.base",
-    "shared.core.config.billing",
     "shared.core.config.celery",
     "shared.core.config.database",
     "shared.core.config.job",
@@ -67,8 +66,6 @@ _MODULE_NAMES_TO_CLEAR: tuple[str, ...] = (
     "shared.core.database",
     "shared.core.database_sync",
     "shared.core.state_machine.service_sync",
-    "shared.services.billing.credits_sync_service",
-    "shared.services.billing.work_billing_service",
     "shared.services.jobs.lifecycle.service",
     "shared.services.retrieval.app_service",
     "shared.services.retrieval.publication_service",
@@ -378,12 +375,6 @@ def clear_application_modules() -> None:
 
         if module_name == "shared.services.storage" or module_name.startswith(
             "shared.services.storage."
-        ):
-            sys.modules.pop(module_name, None)
-            continue
-
-        if module_name == "shared.services.billing" or module_name.startswith(
-            "shared.services.billing."
         ):
             sys.modules.pop(module_name, None)
             continue

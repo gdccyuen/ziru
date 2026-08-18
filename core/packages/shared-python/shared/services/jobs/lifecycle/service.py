@@ -101,7 +101,7 @@ class SyncJobLifecycleService:
 
         Steps (all within one DB transaction):
             1. Mark job as FAILED via state machine (CAS + error fields)
-            2. Refund credits if needed
+            2. Publish post-commit effects (webhooks)
             3. Create WebhookEvent if webhook_enabled
             4. COMMIT
             5. Post-commit: enqueue webhook

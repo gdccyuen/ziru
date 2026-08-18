@@ -7,7 +7,6 @@ from shared.core.exceptions.domain_exceptions import (
     LibreOfficeServiceException,
     NotFoundException,
     PermissionDeniedException,
-    QuotaExceededException,
     RateLimitException,
     TimeoutException,
     UnavailableException,
@@ -32,7 +31,6 @@ __all__ = [
     "NotFoundException",
     "ConflictException",
     "RateLimitException",
-    "QuotaExceededException",
     # Server Errors (5xx)
     "UnavailableException",
     "TimeoutException",
