@@ -333,7 +333,7 @@ describe("dashboard session handoff", () => {
 
     expect(destination).toBe("/")
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      "http://localhost:3000/api/orpc/users.getCurrentUser",
+      "http://localhost:3000/api/orpc/users/getCurrentUser",
       expect.objectContaining({
         method: "POST",
         body: "{}",

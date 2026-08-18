@@ -293,7 +293,7 @@ async function fetchDashboardCurrentUser(
   )
   try {
     const response = await fetch(
-      `${dashboardOrigin.replace(/\/$/, "")}/api/orpc/users.getCurrentUser`,
+      `${dashboardOrigin.replace(/\/$/, "")}/api/orpc/users/getCurrentUser`,
       {
         method: "POST",
         headers: {
