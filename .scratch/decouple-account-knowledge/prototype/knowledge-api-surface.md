@@ -37,7 +37,7 @@ Status: prototype v1 — for the PM to react to; NOT the final spec.
 | Method & path | Who | What it does |
 |---|---|---|
 | POST /v2/documents | librarian, admin | Upload a file (or a URL — Q21 confirmed) with attributes; creates a parse job; `createBy`/`createTime` are stamped automatically. User grade → 403. |
-| GET /v2/documents | all (scoped) | List documents; filters by attributes; non-admins see only profile-visible documents |
+| GET /v2/documents | all (scoped) | List/browse documents by attribute filters (Q18-revised: this is the attribute-browsing path); non-admins see only profile-visible documents |
 | GET /v2/documents/{id} | all (scoped) | Document metadata + attributes (404 if not visible) |
 | PATCH /v2/documents/{id}/attributes | admin, librarian | Edit attributes per Q8 rules (admin any; librarian only values within own profile; `createBy`/`createTime` always rejected) |
 | DELETE /v2/documents/{id} | admin only | Delete a document (and its chunks) |
@@ -50,7 +50,7 @@ Status: prototype v1 — for the PM to react to; NOT the final spec.
 |---|---|---|
 | POST /v2/search | all (scoped) | Full retrieval: BM25 + RRF, optional agentic workflow, evidence + citations — same engine behavior as today, but the server intersects results with the caller's profile scope; query filters can only narrow further |
 
-**Search body shape (Q18, PM decision):** structured JSON; `query` is OPTIONAL (may be empty — pure attribute browsing); `filters` is MANDATORY and always carries the criteria bag over attributes (a non-empty list; an empty filter bag is not allowed — at minimum the server injects the caller's profile constraints).
+**Search body shape (Q18, PM decision, revised):** structured JSON; `query` is REQUIRED and must be non-empty (empty query is rejected — the API points the caller to `GET /v2/documents` for attribute browsing); `filters` is MANDATORY and always carries the criteria bag over attributes (a non-empty list; an empty filter bag is not allowed — at minimum the server injects the caller's profile constraints). The retrieval engine itself is unchanged: keyword matching (BM25 + RRF, optional agentic) runs inside the attribute-bounded candidate set.
 
 Example request body (shape only):
 
@@ -65,7 +65,7 @@ Example request body (shape only):
 }
 ```
 
-A filter-bag-only search (`query` omitted/empty, `filters` present) browses documents by attributes without lexical search.
+Attribute browsing (no keyword query) is a document-list operation, not a search: `GET /v2/documents` with the same filter syntax — profile-scoped, newest first.
 
 ### E. Jobs & monitoring
 
@@ -98,7 +98,7 @@ A filter-bag-only search (`query` omitted/empty, `filters` present) browses docu
 
 ## Open points for the PM (reaction round)
 
-1. ~~Search endpoint~~ — **decided (Q18):** structured JSON `POST /v2/search`; `query` optional; `filters` mandatory bag of attribute criteria.
+1. ~~Search endpoint~~ — **decided (Q18, revised):** structured JSON `POST /v2/search`; `query` REQUIRED non-empty; `filters` mandatory bag of attribute criteria; attribute browsing = `GET /v2/documents` (no browse mode inside search).
 2. ~~Job visibility~~ — **decided (Q19):** list = admin-only; single job = uploader or admin.
 3. ~~Attribute dictionary~~ — **decided (Q20):** readable by all authenticated users; admin manages keys/values.
 4. ~~URL ingestion~~ — **decided (Q21):** kept as an upload option alongside file upload.
