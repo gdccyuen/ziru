@@ -50,6 +50,8 @@ Status: prototype v1 — for the PM to react to; NOT the final spec.
 |---|---|---|
 | POST /v2/search | all (scoped) | Full retrieval: BM25 + RRF, optional agentic workflow, evidence + citations — same engine behavior as today, but the server intersects results with the caller's profile scope; query filters can only narrow further |
 
+**Search body shape (Q18, PM decision):** structured JSON; `query` is OPTIONAL (may be empty — pure attribute browsing); `filters` is MANDATORY and always carries the criteria bag over attributes (a non-empty list; an empty filter bag is not allowed — at minimum the server injects the caller's profile constraints).
+
 Example request body (shape only):
 
 ```json
@@ -63,13 +65,15 @@ Example request body (shape only):
 }
 ```
 
+A filter-bag-only search (`query` omitted/empty, `filters` present) browses documents by attributes without lexical search.
+
 ### E. Jobs & monitoring
 
 | Method & path | Who | What it does |
 |---|---|---|
 | POST /v2/jobs | librarian, admin | Create a parse job directly (URL ingestion, re-parse) |
-| GET /v2/jobs/{id} | uploader or admin | Job status + result (uploader tracks their own upload) |
-| GET /v2/jobs | admin only | Job list for monitoring (dashboard default view, Q11) |
+| GET /v2/jobs/{id} | uploader or admin | Job status + result (uploader tracks their own upload) — Q19 confirmed |
+| GET /v2/jobs | admin only | Job list for monitoring (dashboard default view, Q11) — Q19 confirmed |
 
 ### F. System
 
@@ -94,7 +98,7 @@ Example request body (shape only):
 
 ## Open points for the PM (reaction round)
 
-1. Search endpoint: JSON `POST /v2/search` (recommended) vs keeping today's query-string shape.
-2. Job visibility: list = admin-only, single job = uploader or admin (recommended) vs librarian sees all own-profile jobs.
-3. Attribute dictionary readable by all authenticated users (recommended) vs admin-only.
-4. URL ingestion kept (recommended — on-prem users may ingest from internal URLs) vs file upload only.
+1. ~~Search endpoint~~ — **decided (Q18):** structured JSON `POST /v2/search`; `query` optional; `filters` mandatory bag of attribute criteria.
+2. ~~Job visibility~~ — **decided (Q19):** list = admin-only; single job = uploader or admin.
+3. Attribute dictionary readable by all authenticated users (recommended) vs admin-only — **PENDING (Q20).**
+4. URL ingestion kept (recommended — on-prem users may ingest from internal URLs) vs file upload only — **PENDING (Q21).**
