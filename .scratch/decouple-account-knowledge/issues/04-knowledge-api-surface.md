@@ -1,8 +1,9 @@
 # 04 — Knowledge API Surface
 
 Type: prototype
-Status: open
-Blocked by: 01
+Status: claimed
+Claimed by: agent (charting session, 2026-08-18) — prototype written for PM reaction
+Blocked by: —
 
 ## Question
 
