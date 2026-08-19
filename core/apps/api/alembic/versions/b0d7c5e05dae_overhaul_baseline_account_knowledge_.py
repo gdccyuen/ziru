@@ -325,7 +325,6 @@ def upgrade() -> None:
     op.create_index('idx_webhook_events_job_id', 'webhook_events', ['job_id'], unique=False)
     op.create_index('idx_webhook_events_next_retry', 'webhook_events', ['next_retry_at'], unique=False)
     op.create_index('idx_webhook_events_status', 'webhook_events', ['status'], unique=False)
-    op.create_index(op.f('ix_webhook_events_status'), 'webhook_events', ['status'], unique=False)
     op.create_table('document_sections',
     sa.Column('section_id', sa.String(length=36), nullable=False),
     sa.Column('document_id', sa.String(length=36), nullable=False),
@@ -518,7 +517,6 @@ def downgrade() -> None:
     op.drop_table('graph_nodes')
     op.drop_index('idx_document_sections_doc_revision', table_name='document_sections')
     op.drop_table('document_sections')
-    op.drop_index(op.f('ix_webhook_events_status'), table_name='webhook_events')
     op.drop_index('idx_webhook_events_status', table_name='webhook_events')
     op.drop_index('idx_webhook_events_next_retry', table_name='webhook_events')
     op.drop_index('idx_webhook_events_job_id', table_name='webhook_events')
