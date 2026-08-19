@@ -20,7 +20,11 @@ from shared.core.exceptions.domain_exceptions import (
     PasswordChangeRequiredException,
     PermissionDeniedException,
 )
-from shared.models.database.user import GRADE_ADMINISTRATOR, User
+from shared.models.database.user import (
+    GRADE_ADMINISTRATOR,
+    GRADE_LIBRARIAN,
+    User,
+)
 
 _job_admission_service = JobAdmissionService()
 
@@ -74,5 +78,17 @@ async def require_admin(
         raise PermissionDeniedException(
             user_message="Administrator access required",
             required_permission=GRADE_ADMINISTRATOR,
+        )
+    return current_user
+
+
+async def require_librarian_or_admin(
+    current_user: CurrentUser = Depends(with_current_user),
+) -> CurrentUser:
+    """Reject callers whose live grade is not librarian or administrator."""
+    if current_user.grade not in (GRADE_LIBRARIAN, GRADE_ADMINISTRATOR):
+        raise PermissionDeniedException(
+            user_message="Librarian or administrator access required",
+            required_permission=GRADE_LIBRARIAN,
         )
     return current_user
