@@ -54,6 +54,21 @@ class AppConfig(
         description="Mark the ziru_session cookie Secure (requires HTTPS)",
     )
 
+    # Login brute-force throttling (P2 security hardening).
+    LOGIN_THROTTLE_ENABLED: bool = Field(
+        default=True,
+        description="Enable per-account and per-client-IP failed-login throttling",
+    )
+    LOGIN_FAILURE_LIMIT_PER_ACCOUNT: int = Field(
+        default=5, ge=1, description="Failed logins per account before throttling"
+    )
+    LOGIN_FAILURE_LIMIT_PER_IP: int = Field(
+        default=20, ge=1, description="Failed logins per client IP before throttling"
+    )
+    LOGIN_FAILURE_WINDOW_SECONDS: int = Field(
+        default=900, ge=1, description="Failed-login counting window in seconds"
+    )
+
     # SSO OIDC (P2, ticket 03; Q26/Q28 — admin pre-link only).
     SSO_OIDC_ISSUER: str = Field(
         default="", description="OIDC issuer URL; empty disables the OIDC flow"

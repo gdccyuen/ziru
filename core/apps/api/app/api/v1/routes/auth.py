@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.api.dependencies.session_auth import SessionAuth, require_session
+from app.services.auth.login_throttle_service import LoginThrottleService
 from app.services.auth.session_service import (
     clear_session_cookie,
     create_session,
@@ -17,7 +18,7 @@ from app.services.auth.session_service import (
     set_session_cookie,
 )
 from app.services.auth.sso_oidc_service import get_sso_oidc_service
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -36,6 +37,7 @@ from shared.services.password_policy import DEFAULT_POLICY
 
 router = APIRouter(tags=["Auth"])
 _sso_oidc_service = get_sso_oidc_service()
+_login_throttle = LoginThrottleService()
 
 
 class LoginRequest(BaseModel):
@@ -63,11 +65,21 @@ def _user_payload(user: User) -> dict[str, Any]:
 @router.post("/login", summary="Log in with email and password")
 async def login(
     payload: LoginRequest,
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a session and set the ziru_session cookie."""
+    """Create a session and set the ziru_session cookie.
+
+    Every failure (unknown email, wrong password, disabled account) returns
+    the identical 401 so the endpoint does not disclose account existence.
+    Failed attempts are throttled per account and per client IP; throttled
+    requests return 429 with a Retry-After header.
+    """
     email = payload.email.strip().lower()
+    client_ip = request.client.host if request.client is not None else "unknown"
+    await _login_throttle.check(email, client_ip)
+
     result = await db.execute(select(User).where(User.email == email).limit(1))
     user = result.scalar_one_or_none()
     if (
@@ -75,7 +87,10 @@ async def login(
         or not verify_password(payload.password, user.password_hash)
         or user.disabled
     ):
+        await _login_throttle.record_failure(email, client_ip)
         raise AuthException(user_message="Invalid email or password")
+
+    await _login_throttle.record_success(email)
     token = await create_session(db, user.id)
     set_session_cookie(response, token)
     return _user_payload(user)
