@@ -14,6 +14,7 @@ from tests.support.v2_knowledge import (
     bootstrap_admin,
     create_user_with_key,
     seed_attribute_dictionary,
+    seed_document_with_attributes,
 )
 
 
