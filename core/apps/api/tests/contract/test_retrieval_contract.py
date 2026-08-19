@@ -678,7 +678,7 @@ async def test_agentic_retrieval_should_not_send_table_artifacts_to_vlm(
 
 
 @pytest.mark.asyncio
-async def test_agentic_retrieval_should_not_hydrate_references_outside_request_scope(
+async def test_agentic_retrieval_preserves_references_to_any_document_globally(
     developer_api_client_factory: Callable[
         [], AbstractAsyncContextManager[AsyncClient]
     ],
@@ -751,8 +751,29 @@ async def test_agentic_retrieval_should_not_hydrate_references_outside_request_s
     results = cast(list[dict[str, object]], response_json["results"])
 
     assert request_document["document_id"] != foreign_document["document_id"]
-    assert referenced_chunks == []
-    assert results == []
+    # Knowledge objects are global (P3): references are no longer scoped by
+    # namespace, so the fake orchestrator's reference to a document outside
+    # the request namespace is preserved.
+    assert {
+        "chunk_id": foreign_document["chunk_id"],
+        "document_id": foreign_document["document_id"],
+        "chunk_type": "text",
+        "section_path": foreign_document["section_path"],
+        "file_path": None,
+        "job_id": foreign_document["job_id"],
+    } in [
+        {k: v for k, v in ref.items() if k not in {"score", "asset_url"}}
+        for ref in referenced_chunks
+    ]
+    assert len(results) == 1
+    assert results[0]["chunk_id"] == foreign_document["chunk_id"]
+    assert results[0]["chunk_type"] == "text"
+    assert results[0]["content"] == "foreign scoped content should not leak"
+    assert results[0]["source"] == {
+        "document_id": foreign_document["document_id"],
+        "source_file_name": "foreign.pdf",
+        "section_path": foreign_document["section_path"],
+    }
 
 
 @pytest.mark.asyncio
