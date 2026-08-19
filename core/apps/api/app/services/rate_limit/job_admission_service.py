@@ -72,6 +72,5 @@ class JobAdmissionService:
         self,
         *,
         db: AsyncSession,
-        current_user: CurrentUser,
     ) -> None:
         await self._capacity_service.enforce_job_capacity(db=db)

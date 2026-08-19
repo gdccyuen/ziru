@@ -21,10 +21,7 @@ async def require_job_capacity(
     current_user: CurrentUser = Depends(with_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> AsyncGenerator[CurrentUser, None]:
-    await _job_admission_service.enforce_job_capacity(
-        db=db,
-        current_user=current_user,
-    )
+    await _job_admission_service.enforce_job_capacity(db=db)
     yield current_user
 
 
