@@ -1,6 +1,13 @@
 # Ziru Overhaul — Build Plan
 
-Status: **draft for PM review** (2026-08-18). Decisions live in the wayfinder map at `.scratch/decouple-account-knowledge/map.md` (all 7 tickets resolved). This document sequences the build itself.
+Status: **active build plan** (approved 2026-08-18, D1–D4 locked; last updated 2026-08-19). Decisions live in the wayfinder map at `.scratch/decouple-account-knowledge/map.md` (all 7 tickets resolved). This document sequences the build itself.
+
+## Progress
+
+- **P0 — ✅ done** (baseline recorded in `.scratch/decouple-account-knowledge/p0-baseline.md`; branch `overhaul` created; glitch list logged).
+- **P1 — ⏳ in progress** on branch `overhaul` (commits `6703f64` → `4a1961c`): new schema baseline, profile matcher, password policy, billing/guest/tier/telemetry deletion done; **exit not yet met** — see `.scratch/decouple-account-knowledge/p1-status.md` for the honest mid-overhaul suite state (the v1 document flow must be rewired to the owner-less schema before P1 goes green).
+- **P2–P7 — pending.** Several items nominally listed under P2/P3/P4 were pulled forward and already landed in P1 (billing routes, guest removal, `require_job_capacity`, worker `processing_billing` removal).
+- **Session rule:** local commits only — no remote pushes until the PM explicitly agrees (`session-rules.md`).
 
 ## What we're building
 
@@ -12,7 +19,7 @@ References: map `.scratch/decouple-account-knowledge/map.md` · tickets 01–07 
 
 | Component | Tests | Type-check / lint | Notes |
 |---|---|---|---|
-| core (API + worker + shared) | `cd core/apps/api && uv run pytest` · `cd core/apps/worker && uv run pytest` | `make check` (ruff + pyright) | Contract tests need `TEST_DATABASE_URL` (skip without it) |
+| core (API + worker + shared) | `cd core/apps/api && uv run pytest` · `cd core/apps/worker && uv run pytest` | `make check` (ruff + pyright) | Contract tests use a local ephemeral PostgreSQL (pytest-postgresql) — no `TEST_DATABASE_URL` needed. Sandbox quirk: run uv with `UV_CACHE_DIR=core/.uv-cache` |
 | admin | `cd admin && pnpm test` (≈108) | `pnpm type-check` · `pnpm lint` | DB-gated tests skip without `TEST_DATABASE_URL` |
 | webui | `cd webui && pnpm test` (≈619) | `pnpm typecheck` · `pnpm lint` | Integration tests need `TEST_DATABASE_URL`; e2e via Playwright |
 
@@ -23,7 +30,7 @@ Rule: no phase merges until its suite is green and the previous phase's checks s
 - **D1 — Branch strategy:** the whole overhaul happens on branch `overhaul`; the live demo stack keeps running on `main` until cutover (P7), then `overhaul` merges to main.
 - **D2 — SSO test target:** a local Keycloak (or mock OIDC server) joins the dev compose stack so OIDC flow is testable on-prem; no internet needed.
 - **D3 — Feel-test glitch list:** logged at kickoff (PM input), fixed at P7 — the old WebUI is being reworked anyway.
-- **D4 — Telemetry:** **removed completely** — not just default-off. Deletion lands with the shared-library cuts in P1 (core), the admin analytics surfaces in P5, and is verified by the P7 residue grep. ADR 0004 (anonymous self-hosted telemetry) is retired with it.
+- **D4 — Telemetry:** **removed completely** — not just default-off. Deletion lands with the shared-library cuts in P1 (core), the admin analytics surfaces in P5, and is verified by the P7 residue grep. ADR 0004 (anonymous self-hosted telemetry) is retired with it — **core telemetry deletion done in P1; ADR 0004 retirement and admin analytics removal are pending (P1 wrap-up / P5).**
 
 ## Phases
 
@@ -35,7 +42,7 @@ Rule: no phase merges until its suite is green and the previous phase's checks s
 **Exit:** baseline numbers recorded; branch exists; test-DB path works.
 
 ### P1 — New schema baseline & shared library (core)
-- **Schema (clean start, Q12):** new Alembic baseline — account tables (users with grade/profile/must-change-password/disabled, sessions, api_keys, external_identity_links) and knowledge tables (documents without `user_id`/namespace, document_attributes, attribute_dictionary, jobs without billing columns; engine tables — sections, chunks, graph, retrieval stats — unchanged). Billing/guest/tier tables simply don't exist. Old migrations retired (07, step 1).
+- **Schema (clean start, Q12):** new Alembic baseline — account tables (users with grade/profile/must-change-password/disabled, sessions, api_keys, external_identity_links) and knowledge tables (documents without `user_id`/namespace, document_attributes, attribute_dictionary, jobs without billing columns; engine tables keep their structure except the `user_id`/`namespace` scope columns are removed — schema-level decoupling only, algorithms untouched). Billing/guest/tier tables simply don't exist. Old migrations retired (07, step 1).
 - **Shared library:** new models/schemas for users, grades, profiles, attributes; **profile-matching engine** (fail-closed all-match, multi-value); **password-policy module** (configurable: length, case, punctuation); delete billing/credit/tier/guest shared modules (07, step 2); **delete the telemetry module entirely** (shared/services/telemetry: config, events, runtime, aggregates) and retire ADR 0004 (D4); keep engine modules byte-identical.
 - **Tests:** new unit tests (profile matching, attribute validation, password policy, key hashing); delete/adjust billing tests; contract fixtures updated.
 
@@ -89,7 +96,7 @@ Rule: no phase merges until its suite is green and the previous phase's checks s
 - Re-upload demo documents; smoke the whole story: bootstrap admin → forced change → create librarian/user → dictionary setup → librarian upload with attributes → profile-scoped search by each grade → admin monitoring/health → SSO login (D2 IdP).
 - Zero-residue grep: billing|credit|stripe|tier|guest|namespace|telemetry across core/admin/webui (07, step 7 + D4).
 - Full suites; MinerU attribution present in the UI; update `core/CONTEXT.md` + `webui/CONTEXT.md` and README to the new vocabulary.
-- Merge `overhaul` → `main`, push, restart the demo stack.
+- Merge `overhaul` → `main`, restart the demo stack. **Push to remote only after the PM explicitly agrees** (session rule).
 
 **Exit:** new Ziru live on main, demo docs searchable, feel-test clean, docs current.
 
