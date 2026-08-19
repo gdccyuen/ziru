@@ -243,6 +243,55 @@ class ContractDatabase:
         )
 
     @classmethod
+    async def insert_attribute_dictionary(
+        cls,
+        *,
+        key: str,
+        allowed_values: list[str] | None = None,
+    ) -> None:
+        timestamp = _utc_now()
+        await cls.execute(
+            """
+            INSERT INTO attribute_dictionary (
+                key, allowed_values, created_at, updated_at
+            ) VALUES (
+                :key, CAST(:allowed_values AS JSON), :created_at, :updated_at
+            )
+            """,
+            {
+                "key": key,
+                "allowed_values": json.dumps(allowed_values) if allowed_values else None,
+                "created_at": timestamp,
+                "updated_at": timestamp,
+            },
+        )
+
+    @classmethod
+    async def insert_document_attribute(
+        cls,
+        *,
+        document_id: str,
+        attr_key: str,
+        attr_value: str,
+    ) -> None:
+        await cls.execute(
+            """
+            INSERT INTO document_attributes (
+                id, document_id, attr_key, attr_value, created_at
+            ) VALUES (
+                :id, :document_id, :attr_key, :attr_value, :created_at
+            )
+            """,
+            {
+                "id": str(uuid4()),
+                "document_id": document_id,
+                "attr_key": attr_key,
+                "attr_value": attr_value,
+                "created_at": _utc_now(),
+            },
+        )
+
+    @classmethod
     async def fetch_document(cls, document_id: str) -> dict[str, Any] | None:
         return await cls.fetch_one(
             """
