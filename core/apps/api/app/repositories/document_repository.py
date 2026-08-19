@@ -11,8 +11,13 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.models.database.document import Document, DocumentChunk, DocumentSection
+from shared.models.database.document_attribute import DocumentAttribute
 from shared.models.database.job import Job
 from shared.models.database.job_result import JobResult
+from shared.services.profile import (
+    ProfileConstraint,
+    build_profile_scope_clause,
+)
 
 DocumentChunkRow = tuple[DocumentChunk, DocumentSection | None, JobResult]
 DocumentJobRevisionRow = tuple[Document, JobResult, Job]
@@ -44,6 +49,76 @@ class DocumentRepository:
             .where(Document.status != "archived")
         )
         return int(result.scalar_one())
+
+    async def list_documents_matching(
+        self,
+        db: AsyncSession,
+        *,
+        constraints: list[ProfileConstraint],
+        limit: int,
+        offset: int,
+    ) -> Sequence[Document]:
+        statement = select(Document).where(Document.status != "archived")
+        scope_clause = build_profile_scope_clause(
+            constraints,
+            document_id_column=Document.document_id,
+            attribute_table=DocumentAttribute,
+        )
+        if scope_clause is not None:
+            statement = statement.where(scope_clause)
+        result = await db.execute(
+            statement.order_by(
+                Document.updated_at.desc(), Document.document_id.asc()
+            )
+            .limit(limit)
+            .offset(offset)
+        )
+        return result.scalars().all()
+
+    async def count_documents_matching(
+        self,
+        db: AsyncSession,
+        *,
+        constraints: list[ProfileConstraint],
+    ) -> int:
+        statement = (
+            select(func.count(Document.document_id))
+            .where(Document.status != "archived")
+        )
+        scope_clause = build_profile_scope_clause(
+            constraints,
+            document_id_column=Document.document_id,
+            attribute_table=DocumentAttribute,
+        )
+        if scope_clause is not None:
+            statement = statement.where(scope_clause)
+        result = await db.execute(statement)
+        return int(result.scalar_one())
+
+    async def get_document_attributes_map(
+        self,
+        db: AsyncSession,
+        *,
+        document_ids: Sequence[str],
+    ) -> dict[str, dict[str, list[str]]]:
+        """Aggregate document_attributes rows into {doc_id: {key: [values]}}."""
+        attributes_map: dict[str, dict[str, list[str]]] = {}
+        if not document_ids:
+            return attributes_map
+        result = await db.execute(
+            select(
+                DocumentAttribute.document_id,
+                DocumentAttribute.attr_key,
+                DocumentAttribute.attr_value,
+            )
+            .where(DocumentAttribute.document_id.in_(list(document_ids)))
+            .order_by(DocumentAttribute.created_at.asc(), DocumentAttribute.id.asc())
+        )
+        for document_id, attr_key, attr_value in result.all():
+            attributes_map.setdefault(document_id, {}).setdefault(attr_key, []).append(
+                attr_value
+            )
+        return attributes_map
 
     async def get_document(
         self,

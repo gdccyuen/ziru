@@ -8,9 +8,13 @@ from typing import Any
 
 from app.repositories.document_repository import DocumentRepository
 from loguru import logger
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.models.database.document import DocumentChunk, DocumentSection
+from shared.core.exceptions.domain_exceptions import NotFoundException
+from shared.models.database.document_attribute import DocumentAttribute
+from shared.services.profile import BUILTIN_ATTRIBUTE_KEYS, ProfileConstraint
 from shared.services.retrieval.cache_service import invalidate_retrieval_cache
 from shared.services.retrieval.graph.service import DocumentGraphService
 from shared.services.storage.result_storage import ResultStorage, get_result_storage
@@ -213,6 +217,89 @@ class DocumentService:
             },
         }
 
+    async def list_documents_v2(
+        self,
+        db: AsyncSession,
+        *,
+        page: int,
+        page_size: int,
+        constraints: list[ProfileConstraint],
+    ) -> dict[str, Any]:
+        """List non-archived documents matching ALL attribute constraints.
+
+        Each payload carries the document attributes map (including the
+        createBy/createTime built-ins stored as document_attributes rows).
+        """
+        total = await self._repository.count_documents_matching(
+            db,
+            constraints=constraints,
+        )
+        documents = await self._repository.list_documents_matching(
+            db,
+            constraints=constraints,
+            limit=page_size,
+            offset=(page - 1) * page_size,
+        )
+        attributes_map = await self._repository.get_document_attributes_map(
+            db,
+            document_ids=[document.document_id for document in documents],
+        )
+        payloads = []
+        for document in documents:
+            payload = document_payload(document)
+            payload["attributes"] = attributes_map.get(document.document_id, {})
+            payloads.append(payload)
+        return {
+            "documents": payloads,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total": total,
+                "total_pages": math.ceil(total / page_size) if total else 0,
+            },
+        }
+
+    async def get_document_attributes(
+        self,
+        db: AsyncSession,
+        *,
+        document_id: str,
+    ) -> dict[str, list[str]]:
+        """Return the full attributes multimap for one document."""
+        attributes_map = await self._repository.get_document_attributes_map(
+            db,
+            document_ids=[document_id],
+        )
+        return attributes_map.get(document_id, {})
+
+    async def replace_document_attributes(
+        self,
+        db: AsyncSession,
+        *,
+        document_id: str,
+        attributes: dict[str, list[str]],
+    ) -> dict[str, list[str]]:
+        """Full-replace NON-built-in attributes; built-ins stay untouched.
+
+        Returns the updated full attributes map including createBy/createTime.
+        """
+        await db.execute(
+            delete(DocumentAttribute)
+            .where(DocumentAttribute.document_id == document_id)
+            .where(DocumentAttribute.attr_key.notin_(list(BUILTIN_ATTRIBUTE_KEYS)))
+        )
+        db.add_all(
+            DocumentAttribute(
+                document_id=document_id,
+                attr_key=key,
+                attr_value=value,
+            )
+            for key, values in attributes.items()
+            for value in values
+        )
+        await db.flush()
+        return await self.get_document_attributes(db, document_id=document_id)
+
     async def list_document_chunks(
         self,
         db: AsyncSession,
@@ -324,6 +411,25 @@ class DocumentService:
                 result_storage=result_storage,
             ),
         }
+
+    async def get_document_or_raise(
+        self,
+        db: AsyncSession,
+        *,
+        document_id: str,
+    ):
+        """Return the live Document row; missing/archived raises 404."""
+        document = await self._repository.get_document(
+            db,
+            document_id=document_id,
+        )
+        if document is None or document.status == "archived":
+            raise NotFoundException(
+                resource="Document",
+                resource_id=document_id,
+                internal_message="Document not found or archived",
+            )
+        return document
 
     async def get_document(
         self,
