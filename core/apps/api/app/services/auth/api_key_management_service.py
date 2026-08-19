@@ -134,6 +134,51 @@ class APIKeyManagementService:
 
         return success
 
+    async def list_all_api_keys(
+        self,
+        session: AsyncSession,
+    ) -> list[dict[str, object]]:
+        """List every API key with its owner email (admin)."""
+        rows = await self._repository.list_all_with_user(session)
+        return [
+            {
+                "id": str(api_key.id),
+                "name": api_key.name,
+                "api_key": api_key.key_mask
+                or f"sk_{api_key.id[:8]}••••••••••••••••••••••••••••••••••••••••",
+                "is_active": api_key.is_active,
+                "created_at": api_key.created_at,
+                "last_used_at": api_key.last_used_at,
+                "expires_at": api_key.expires_at,
+                "user_id": str(api_key.user_id),
+                "user_email": email,
+            }
+            for api_key, email in rows
+        ]
+
+    async def revoke_api_key_any(
+        self,
+        session: AsyncSession,
+        *,
+        api_key_id: str,
+    ) -> bool:
+        """Revoke any API key (admin); ownership is not checked."""
+        api_key = await self._repository.get_by_id(session, api_key_id)
+        if not api_key:
+            raise NotFoundException(
+                resource="APIKey",
+                resource_id=api_key_id,
+                internal_message="API Key not found",
+            )
+        success = await self._repository.delete_by_id(session, api_key_id)
+        if success:
+            await session.commit()
+            await self._authentication_service.invalidate_api_key_user_cache(
+                user_id=str(api_key.user_id),
+                api_key_hash=api_key.key_hash,
+            )
+        return success
+
     async def list_user_api_keys(
         self,
         session: AsyncSession,

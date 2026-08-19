@@ -43,6 +43,19 @@ class APIKeyRepository(BaseRepository[APIKey, dict, dict]):
         )
         return result.scalars().all()
 
+    async def list_all_with_user(
+        self, session: AsyncSession
+    ) -> Sequence[tuple[APIKey, str]]:
+        """Return every API key joined with its owner email (admin listing)."""
+        from shared.models.database.user import User
+
+        result = await session.execute(
+            select(APIKey, User.email)
+            .join(User, User.id == APIKey.user_id)
+            .order_by(APIKey.created_at.desc())
+        )
+        return result.all()
+
     async def get_unexpired_by_user_id(
         self, session: AsyncSession, user_id: str
     ) -> Sequence[APIKey]:
