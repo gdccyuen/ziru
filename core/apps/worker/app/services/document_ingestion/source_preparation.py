@@ -18,7 +18,12 @@ from shared.core.exceptions.domain_exceptions import (
     ValidationException,
 )
 from shared.models.schemas.job_metadata import JobMetadataHelper
+from shared.services.jobs.metadata_persist import merge_job_metadata
 from shared.services.storage.job_file_storage import JobFileStorage
+from shared.services.storage.original_file_retention import (
+    sha256_file,
+    store_original_file,
+)
 
 
 @dataclass(frozen=True)
@@ -52,6 +57,13 @@ def prepare_source_file(
     )
     logger.info(f"File downloaded: job_id={job_id}, local_path={local_file_path}")
 
+    _retain_original_source_file(
+        job_id=job_id,
+        job_context=job_context,
+        local_file_path=local_file_path,
+        source_file_name=source_file_name,
+    )
+
     prepared_parse_input = prepare_internal_parse_input(
         local_file_path,
         source_file_name,
@@ -69,6 +81,62 @@ def prepare_source_file(
         internal_parse_name=prepared_parse_input.internal_filename,
         local_file_path=prepared_parse_input.file_path,
         file_extension=file_extension,
+    )
+
+
+def _retain_original_source_file(
+    *,
+    job_id: str,
+    job_context: ParseJobContext,
+    local_file_path: str,
+    source_file_name: str,
+) -> None:
+    """Record upload provenance (fileHash + originalFile) for publication.
+
+    The sha256 digest is computed from the exact uploaded bytes and the
+    original file is archived under objects/{document_id}/original/{filename}
+    when the job carries a document_id. Both are persisted into job_metadata
+    (DB row + Redis) so the publication step can write the immutable
+    built-in attributes.
+    """
+    document_id = JobMetadataHelper.get_document_id(job_context.job_metadata)
+    updates: dict[str, object] = {}
+    if not str(job_context.job_metadata.get("file_hash") or "").strip():
+        try:
+            updates["file_hash"] = sha256_file(local_file_path)
+        except Exception as exc:
+            logger.warning(
+                f"Failed to hash source file (ignored): job_id={job_id}, error={exc}"
+            )
+
+    if document_id and not str(
+        job_context.job_metadata.get("original_file_key") or ""
+    ).strip():
+        try:
+            updates["original_file_key"] = store_original_file(
+                local_file_path=local_file_path,
+                document_id=document_id,
+                filename=source_file_name,
+            )
+        except Exception as exc:
+            logger.warning(
+                f"Failed to retain original file (ignored): job_id={job_id}, "
+                f"document_id={document_id}, error={exc}"
+            )
+
+    if not updates:
+        return
+    job_context.job_metadata.update(updates)
+    try:
+        merge_job_metadata(job_id, updates)
+    except Exception as exc:
+        logger.warning(
+            f"Failed to persist upload provenance (ignored): job_id={job_id}, "
+            f"error={exc}"
+        )
+    logger.info(
+        f"Upload provenance recorded: job_id={job_id}, "
+        f"updates={sorted(updates.keys())}"
     )
 
 

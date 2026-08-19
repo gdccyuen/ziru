@@ -12,8 +12,9 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Mapping, Sequence, Tuple
 
 # System-managed attributes (Q16/Q17): auto-set, immutable, never in the
-# admin dictionary.
-BUILTIN_ATTRIBUTE_KEYS = ("createBy", "createTime")
+# admin dictionary. fileHash/originalFile are the document source-file
+# fingerprint and retained-original storage key (upload provenance).
+BUILTIN_ATTRIBUTE_KEYS = ("createBy", "createTime", "fileHash", "originalFile")
 
 
 @dataclass(frozen=True)

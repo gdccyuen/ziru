@@ -76,4 +76,9 @@ def test_constraint_matches_multimap():
 
 
 def test_builtin_keys_are_not_dictionary_managed():
-    assert BUILTIN_ATTRIBUTE_KEYS == ("createBy", "createTime")
+    assert BUILTIN_ATTRIBUTE_KEYS == (
+        "createBy",
+        "createTime",
+        "fileHash",
+        "originalFile",
+    )

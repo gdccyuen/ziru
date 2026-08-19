@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ChevronDown,
   FileText,
   KeyRound,
   LayoutDashboard,
@@ -15,13 +16,30 @@ import {
   Webhook,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError, api } from "@/lib/api";
@@ -67,11 +85,13 @@ function ThemeToggle() {
   );
 }
 
-function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarNav({ grade, onNavigate }: { grade: string; onNavigate?: () => void }) {
   const pathname = usePathname();
+  const visibleItems =
+    grade === "administrator" ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.href !== "/users");
   return (
     <nav className="flex flex-col gap-1 p-3">
-      {NAV_ITEMS.map((item) => {
+      {visibleItems.map((item) => {
         const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
         return (
           <Link
@@ -175,10 +195,131 @@ function ForcedChangePassword() {
   );
 }
 
+function RedirectTo({ to }: { to: string }) {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace(to);
+  }, [router, to]);
+  return null;
+}
+
+function ChangePasswordDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setOldPassword("");
+    setNewPassword("");
+    setConfirm("");
+    setError(null);
+    setSuccess(false);
+  }, [open]);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    if (newPassword !== confirm) {
+      setError("New password and confirmation do not match");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await api.changePassword(oldPassword, newPassword);
+      setSuccess(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to change password");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Change password</DialogTitle>
+          <DialogDescription>
+            Your other sessions will be signed out; this session stays active.
+          </DialogDescription>
+        </DialogHeader>
+        {success ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Password changed successfully. Your session remains active.
+            </p>
+            <DialogFooter>
+              <Button type="button" onClick={() => onOpenChange(false)}>
+                Done
+              </Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="account-old-password">Current password</Label>
+              <Input
+                id="account-old-password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={oldPassword}
+                onChange={(event) => setOldPassword(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="account-new-password">New password</Label>
+              <Input
+                id="account-new-password"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Policy: at least 8 characters, with uppercase, lowercase, and a digit.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="account-confirm-password">Confirm new password</Label>
+              <Input
+                id="account-confirm-password"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={confirm}
+                onChange={(event) => setConfirm(event.target.value)}
+              />
+            </div>
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            <DialogFooter>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? "Updating…" : "Update password"}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { user, loading, error, logout } = useAuth();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   if (loading) {
     return (
@@ -212,14 +353,19 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     return <ForcedChangePassword />;
   }
 
+  if (pathname.startsWith("/users") && user.grade !== "administrator") {
+    return <RedirectTo to="/" />;
+  }
+
   const title = PAGE_TITLES[pathname] ?? "Ziru Admin";
+  const accountInitial = (user.email ?? user.grade).charAt(0).toUpperCase();
 
   return (
     <div className="flex min-h-dvh">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r bg-card md:flex">
         <div className="flex h-14 items-center border-b px-4 font-semibold">Ziru Admin</div>
         <div className="flex-1 overflow-y-auto">
-          <SidebarNav />
+          <SidebarNav grade={user.grade} />
         </div>
       </aside>
 
@@ -239,27 +385,51 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           <Badge variant="outline" className="hidden sm:inline-flex">
             {gradeLabel(user.grade)}
           </Badge>
-          <span className="hidden text-sm text-muted-foreground lg:inline">{user.email}</span>
-          <ThemeToggle />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Sign out"
-            onClick={() => void logout()}
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="flex items-center gap-2 px-2"
+                  aria-label="Account menu"
+                >
+                  <Avatar className="size-8">
+                    <AvatarFallback className="text-xs">{accountInitial}</AvatarFallback>
+                  </Avatar>
+                  <span className="hidden max-w-[180px] truncate text-sm text-muted-foreground lg:inline">
+                    {user.email}
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => setChangePasswordOpen(true)}>
+                  <KeyRound className="h-4 w-4" />
+                  Change password
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => void logout()}>
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </header>
 
         {mobileOpen ? (
           <div className="border-b bg-card md:hidden">
-            <SidebarNav onNavigate={() => setMobileOpen(false)} />
+            <SidebarNav grade={user.grade} onNavigate={() => setMobileOpen(false)} />
           </div>
         ) : null}
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
+
+      <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
     </div>
   );
 }

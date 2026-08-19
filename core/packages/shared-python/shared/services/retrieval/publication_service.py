@@ -141,11 +141,17 @@ class RetrievalPublicationService:
             job_result_id=job_result_id,
             document_id=document.document_id,
         )
+        file_hash = str(job_metadata.get("file_hash") or "").strip() or None
+        original_file_key = (
+            str(job_metadata.get("original_file_key") or "").strip() or None
+        )
         self._replace_document_attributes(
             db,
             document_id=document.document_id,
             attributes=attributes,
             user_id=str(job.user_id) if job.user_id else "",
+            file_hash=file_hash,
+            original_file_key=original_file_key,
         )
         scope = DocumentPublicationScope(
             document_id=document.document_id,
@@ -221,11 +227,14 @@ class RetrievalPublicationService:
         document_id: str,
         attributes: dict[str, list[str]] | None,
         user_id: str,
+        file_hash: str | None = None,
+        original_file_key: str | None = None,
     ) -> None:
         """Replace document_attributes rows and ensure built-ins exist.
 
-        Built-in keys supplied by callers are skipped; createBy/createTime
-        are always (re)created by the system (Q16/Q17).
+        Built-in keys supplied by callers are skipped; createBy/createTime,
+        fileHash and originalFile are always (re)created by the system
+        (Q16/Q17, upload provenance).
         """
         db.execute(
             delete(DocumentAttribute).where(
@@ -263,6 +272,22 @@ class RetrievalPublicationService:
                 attr_value=utc_now_naive().isoformat(),
             )
         )
+        if file_hash:
+            rows.append(
+                DocumentAttribute(
+                    document_id=document_id,
+                    attr_key="fileHash",
+                    attr_value=file_hash,
+                )
+            )
+        if original_file_key:
+            rows.append(
+                DocumentAttribute(
+                    document_id=document_id,
+                    attr_key="originalFile",
+                    attr_value=original_file_key,
+                )
+            )
         db.add_all(rows)
 
     def _bind_job_result_document(

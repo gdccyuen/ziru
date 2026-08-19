@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from loguru import logger
@@ -14,7 +15,15 @@ from app.services.workload.url_upload_transfer import (
     verify_source_upload,
 )
 from shared.services.jobs.lifecycle.service import get_sync_job_lifecycle_service
-from shared.services.redis.redis_sync_service import SyncRedisServiceFactory
+from shared.services.jobs.metadata_persist import merge_job_metadata
+from shared.services.redis.redis_sync_service import (
+    SyncJobMetadataService,
+    SyncRedisServiceFactory,
+)
+from shared.services.storage.original_file_retention import (
+    sha256_file,
+    store_original_file,
+)
 
 
 def upload_url_file(
@@ -67,6 +76,11 @@ def upload_url_file(
             temp_file_path=temp_file_path,
             s3_key=upload_context.s3_key,
         )
+        _retain_url_original(
+            job_id=job_id,
+            temp_file_path=temp_file_path,
+            source_url=source_url,
+        )
 
     finally:
         cleanup_temp_file(temp_file_path)
@@ -96,3 +110,66 @@ def upload_url_file(
         "s3_key": upload_context.s3_key,
         "file_size": file_info.get("size"),
     }
+
+
+def _retain_url_original(
+    *,
+    job_id: str,
+    temp_file_path: str,
+    source_url: str,
+) -> None:
+    """Record upload provenance for URL-sourced jobs (upload time).
+
+    Computes the sha256 of the downloaded bytes and archives the original
+    under objects/{document_id}/original/{filename} when the job metadata
+    carries a document_id. Best-effort: failures are logged, never fatal.
+    """
+    try:
+        metadata = SyncJobMetadataService(
+            SyncRedisServiceFactory.get_service()
+        ).get_metadata(job_id)
+    except Exception as exc:
+        logger.warning(
+            f"Failed to read job metadata for provenance (ignored): "
+            f"job_id={job_id}, error={exc}"
+        )
+        metadata = None
+    if not isinstance(metadata, dict):
+        metadata = {}
+
+    updates: dict[str, object] = {}
+    try:
+        updates["file_hash"] = sha256_file(temp_file_path)
+    except Exception as exc:
+        logger.warning(
+            f"Failed to hash URL source (ignored): job_id={job_id}, error={exc}"
+        )
+
+    document_id = metadata.get("document_id")
+    if document_id:
+        filename = os.path.basename(source_url.split("?", 1)[0]).strip() or "download"
+        try:
+            updates["original_file_key"] = store_original_file(
+                local_file_path=temp_file_path,
+                document_id=document_id,
+                filename=filename,
+            )
+        except Exception as exc:
+            logger.warning(
+                f"Failed to retain URL original (ignored): job_id={job_id}, "
+                f"document_id={document_id}, error={exc}"
+            )
+
+    if not updates:
+        return
+    try:
+        merge_job_metadata(job_id, updates)
+    except Exception as exc:
+        logger.warning(
+            f"Failed to persist URL provenance (ignored): job_id={job_id}, "
+            f"error={exc}"
+        )
+    logger.info(
+        f"URL upload provenance recorded: job_id={job_id}, "
+        f"updates={sorted(updates.keys())}"
+    )

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  addMonths,
   formatDateTime,
   gradeLabel,
   joinAllowedValues,
@@ -7,6 +8,7 @@ import {
   profileToRows,
   rowsToProfile,
   splitAllowedValues,
+  toDatetimeLocalValue,
   truncate,
 } from "@/lib/format";
 
@@ -106,5 +108,25 @@ describe("truncate", () => {
   it("truncates long strings", () => {
     expect(truncate("abcdefgh", 4)).toBe("abc…");
     expect(truncate("abc", 4)).toBe("abc");
+  });
+});
+
+describe("datetime-local helpers", () => {
+  it("formats a date as a native datetime-local value in local time", () => {
+    const date = new Date(2026, 7, 22, 22, 38);
+    expect(toDatetimeLocalValue(date)).toBe("2026-08-22T22:38");
+  });
+
+  it("pads month and day to two digits", () => {
+    const date = new Date(2026, 0, 3, 9, 5);
+    expect(toDatetimeLocalValue(date)).toBe("2026-01-03T09:05");
+  });
+
+  it("adds months for the default expiry", () => {
+    const date = new Date(2026, 4, 15, 12, 0);
+    const next = addMonths(date, 3);
+    expect(next.getFullYear()).toBe(2026);
+    expect(next.getMonth()).toBe(7);
+    expect(next.getDate()).toBe(15);
   });
 });

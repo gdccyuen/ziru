@@ -44,7 +44,7 @@ import {
 } from "@/components/ui/table";
 import { ApiError, type ApiKey, api, type User } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { formatDateTime, parseExpiresAtInput } from "@/lib/format";
+import { defaultExpiryDatetimeLocal, formatDateTime, parseExpiresAtInput } from "@/lib/format";
 
 function CreateKeyDialog({
   users,
@@ -64,13 +64,14 @@ function CreateKeyDialog({
   const [submitting, setSubmitting] = useState(false);
   const [createdKey, setCreatedKey] = useState<string | null>(null);
 
-  const reset = () => {
+  useEffect(() => {
+    if (!open) return;
     setUserId("");
     setName("");
-    setExpiresAt("");
+    setExpiresAt(defaultExpiryDatetimeLocal());
     setError(null);
     setCreatedKey(null);
-  };
+  }, [open]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -84,11 +85,12 @@ function CreateKeyDialog({
     }
     setSubmitting(true);
     try {
-      const response = await api.createApiKey({
+      const payload: { user_id: string; name: string; expires_at?: string } = {
         user_id: userId,
         name: name.trim(),
-        expires_at: iso,
-      });
+      };
+      if (iso !== null) payload.expires_at = iso;
+      const response = await api.createApiKey(payload);
       setCreatedKey(response.api_key);
       onCreated();
     } catch (err) {
@@ -126,7 +128,6 @@ function CreateKeyDialog({
               type="button"
               className="w-full"
               onClick={() => {
-                reset();
                 onOpenChange(false);
               }}
             >
@@ -160,16 +161,20 @@ function CreateKeyDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="key-expires">Expires at (optional)</Label>
-              <Input
-                id="key-expires"
-                type="text"
-                placeholder="2026-08-22 22:38 or 22/8/2026, 22:38"
-                value={expiresAt}
-                onChange={(event) => setExpiresAt(event.target.value)}
-              />
+              <Label htmlFor="key-expires">Expires at</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="key-expires"
+                  type="datetime-local"
+                  value={expiresAt}
+                  onChange={(event) => setExpiresAt(event.target.value)}
+                />
+                <Button type="button" variant="outline" size="sm" onClick={() => setExpiresAt("")}>
+                  Clear
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Accepts ISO 8601 or DD/MM/YYYY HH:MM (the core API validates the value).
+                Defaults to now + 3 months. Empty = never expires.
               </p>
             </div>
             {error ? <p className="text-sm text-destructive">{error}</p> : null}

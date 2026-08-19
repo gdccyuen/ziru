@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import os
 from typing import Any
@@ -21,6 +22,7 @@ from app.services.document_ingestion import DocumentIngestionService
 from app.services.documents.lifecycle_service import DocumentService
 from app.services.rate_limit.data_structures import CurrentUser
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import StreamingResponse
 from loguru import logger
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,16 +30,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from shared.core.config import settings
 from shared.core.config.storage import get_cached_storage_adapter
 from shared.core.database import get_db
-from shared.core.exceptions.domain_exceptions import NotFoundException
+from shared.core.exceptions.domain_exceptions import (
+    NotFoundException,
+    PermissionDeniedException,
+)
 from shared.models.database.job import Job
 from shared.models.database.user import GRADE_ADMINISTRATOR
 from shared.models.schemas.job import JobCreateBase, JobResponse
 from shared.services.profile import (
     constraints_from_mapping,
     normalize_profile,
+    profile_matches,
 )
 from shared.services.redis import JobMetadataService, RedisServiceFactory
 from shared.services.storage.file_upload_service import FileUploadService
+from shared.services.storage.job_file_storage import JobFileStorage
+from shared.services.storage.original_file_retention import store_original_fileobj
 from starlette.datastructures import UploadFile
 
 router = APIRouter(tags=["Documents"])
@@ -102,24 +110,35 @@ async def _attach_attributes_to_job(
     *,
     job_id: str,
     attributes: dict[str, list[str]],
+    extra: dict[str, Any] | None = None,
 ) -> None:
-    """Persist upload attributes into job_metadata (DB + Redis cache)."""
-    if not attributes:
+    """Persist upload attributes (and provenance) into job_metadata.
+
+    Writes the DB row and the Redis cache so the worker/publication can
+    read them without a round-trip.
+    """
+    if not attributes and not extra:
         return
     job = await db.get(Job, job_id)
     if job is None:
         return
     metadata = dict(job.job_metadata or {})
-    metadata["attributes"] = attributes
+    updates: dict[str, Any] = {}
+    if attributes:
+        metadata["attributes"] = attributes
+        updates["attributes"] = attributes
+    if extra:
+        metadata.update(extra)
+        updates.update(extra)
     job.job_metadata = metadata
     await db.commit()
     try:
         redis_service = RedisServiceFactory.get_service()
         metadata_service = JobMetadataService(redis_service)
-        await metadata_service.update_metadata(job_id, {"attributes": attributes})
+        await metadata_service.update_metadata(job_id, updates)
     except Exception as exc:
         logger.warning(
-            f"Failed to cache job attributes in Redis (ignored): job_id={job_id}, "
+            f"Failed to cache job metadata in Redis (ignored): job_id={job_id}, "
             f"error={exc}"
         )
 
@@ -219,6 +238,14 @@ async def _create_document_from_multipart(
     )
     s3_key = str(upload_info["s3_key"])
     storage_adapter = get_cached_storage_adapter()
+
+    # sha256 of the exact uploaded bytes (upload-time provenance).
+    digest = hashlib.sha256()
+    while chunk := await upload_file.read(1024 * 1024):
+        digest.update(chunk)
+    file_hash = digest.hexdigest()
+    await upload_file.seek(0)
+
     await asyncio.to_thread(
         storage_adapter.upload_fileobj,
         upload_file.file,
@@ -232,10 +259,37 @@ async def _create_document_from_multipart(
         request_payload=None,
         user_id=current_user.user_id,
     )
+
+    # Retain the original bytes for the /file/original endpoint.
+    original_key: str | None = None
+    job = await db.get(Job, job_id)
+    document_id = (
+        (job.job_metadata or {}).get("document_id") if job is not None else None
+    )
+    if document_id:
+        try:
+            original_key = await asyncio.to_thread(
+                lambda: store_original_fileobj(
+                    file_obj=upload_file.file,
+                    document_id=document_id,
+                    filename=filename,
+                    content_type=upload_file.content_type,
+                )
+            )
+        except Exception as exc:
+            logger.warning(
+                f"Failed to retain original file (ignored): job_id={job_id}, "
+                f"document_id={document_id}, error={exc}"
+            )
+
+    extra: dict[str, Any] = {"file_hash": file_hash}
+    if original_key:
+        extra["original_file_key"] = original_key
     await _attach_attributes_to_job(
         db,
         job_id=job_id,
         attributes=cleaned,
+        extra=extra,
     )
     return job_response
 
@@ -329,6 +383,78 @@ async def patch_document_attributes(
     )
     await db.commit()
     return {"attributes": attributes}
+
+
+@router.get(
+    "/{document_id}/file/original",
+    summary="Stream the original uploaded file",
+)
+async def get_document_original_file(
+    document_id: str,
+    current_user: CurrentUser = Depends(with_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Stream the archived original upload for a document.
+
+    Administrators may fetch any document; other grades must have profile
+    visibility of the document (fail-closed, same rule as listing).
+    """
+    await _document_service.get_document_or_raise(
+        db,
+        document_id=document_id,
+    )
+    attributes = await _document_service.get_document_attributes(
+        db,
+        document_id=document_id,
+    )
+
+    if current_user.grade != GRADE_ADMINISTRATOR:
+        profile = normalize_profile(current_user.profile or [])
+        if not profile_matches(profile, attributes):
+            raise PermissionDeniedException(
+                user_message="Document is not visible to your profile",
+                internal_message=(
+                    f"Original-file access denied for non-visible document: "
+                    f"document_id={document_id}, user_id={current_user.user_id}"
+                ),
+            )
+
+    original_keys = attributes.get("originalFile") or []
+    if not original_keys:
+        raise NotFoundException(
+            resource="Original file",
+            resource_id=document_id,
+            internal_message=f"No original file attribute for document {document_id}",
+        )
+    storage_key = original_keys[0]
+
+    job_file_storage = JobFileStorage()
+    try:
+        raw_bytes = await asyncio.to_thread(
+            job_file_storage.storage_adapter.download_fileobj,
+            storage_key,
+            job_file_storage.results_bucket,
+        )
+    except Exception as exc:
+        logger.warning(
+            f"Failed to download original file: document_id={document_id}, "
+            f"storage_key={storage_key}, error={exc}"
+        )
+        raise NotFoundException(
+            resource="Original file",
+            resource_id=document_id,
+            internal_message=(
+                f"Original file object missing from storage: {storage_key}"
+            ),
+        ) from exc
+
+    filename = os.path.basename(storage_key.replace("\\", "/")).strip() or "original"
+    media_type = JobFileStorage.get_content_type(os.path.splitext(filename)[1].lower())
+    return StreamingResponse(
+        iter([raw_bytes]),
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.delete("/{document_id}", summary="Archive a document (admin only)")

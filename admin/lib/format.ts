@@ -107,3 +107,30 @@ export function truncate(value: string, maxLength = 48): string {
   if (value.length <= maxLength) return value;
   return `${value.slice(0, maxLength - 1)}…`;
 }
+
+export function addMonths(date: Date, months: number): Date {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + months);
+  return next;
+}
+
+/** Format a Date as a native <input type="datetime-local"> value (local time). */
+export function toDatetimeLocalValue(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    "-",
+    pad(date.getMonth() + 1),
+    "-",
+    pad(date.getDate()),
+    "T",
+    pad(date.getHours()),
+    ":",
+    pad(date.getMinutes()),
+  ].join("");
+}
+
+/** Default API-key expiry: now + 3 months, as a datetime-local value. */
+export function defaultExpiryDatetimeLocal(): string {
+  return toDatetimeLocalValue(addMonths(new Date(), 3));
+}
