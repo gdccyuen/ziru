@@ -479,7 +479,6 @@ class DocumentService:
         self,
         db: AsyncSession,
         *,
-        user_id: str,
         document_id: str,
     ) -> dict[str, Any] | None:
         document = await self._repository.get_document(
@@ -501,7 +500,7 @@ class DocumentService:
         )
         await db.commit()
         try:
-            await invalidate_retrieval_cache(user_id=user_id)
+            await invalidate_retrieval_cache()
         except Exception as e:
             logger.warning(
                 f"Cache invalidation failed after archiving document {document_id}: {e}"

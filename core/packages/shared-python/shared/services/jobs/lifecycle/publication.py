@@ -9,19 +9,13 @@ from sqlalchemy.orm import Session
 
 from shared.models.database.job import Job
 from shared.models.schemas.job_metadata import JobMetadataHelper
-from shared.models.schemas.retrieval_namespace import normalize_retrieval_namespace
 from shared.services.redis.redis_sync_service import SyncRedisServiceFactory
 from shared.services.retrieval.publication_service import RetrievalPublicationService
-from shared.services.retrieval.publication_models import (
-    ExistingDocumentScope,
-    PublishedDocumentState,
-)
+from shared.services.retrieval.publication_models import PublishedDocumentState
 
 
 @dataclass(frozen=True)
 class RetrievalCacheInvalidation:
-    user_id: str
-    namespaces: tuple[str, ...]
     job_id: str
 
 
@@ -53,7 +47,7 @@ class SyncJobPublicationFinalizer:
         section_summaries: dict[str, str] | None,
         document_top_summary: str | None = None,
     ) -> JobPublicationOutcome:
-        previous_document_scope = self._retrieval_publication.get_existing_document_scope(
+        self._retrieval_publication.get_existing_document_scope(
             db,
             job_id=job_id,
         )
@@ -76,8 +70,6 @@ class SyncJobPublicationFinalizer:
         cache_invalidation = self._build_cache_invalidation(
             db,
             job_id=job_id,
-            published_document_state=published_document_state,
-            previous_document_scope=previous_document_scope,
         )
         return JobPublicationOutcome(
             published_document_state=published_document_state,
@@ -93,8 +85,7 @@ class SyncJobPublicationFinalizer:
 
         try:
             redis_service = SyncRedisServiceFactory.get_service()
-            user_id = cache_invalidation.user_id
-            redis_service.incr(f"retrieval:version:{user_id}")
+            redis_service.incr("retrieval:version")
         except Exception as exc:
             logger.warning(
                 "Failed to invalidate retrieval cache after publication "
@@ -106,18 +97,12 @@ class SyncJobPublicationFinalizer:
         db: Session,
         *,
         job_id: str,
-        published_document_state: PublishedDocumentState | None,
-        previous_document_scope: ExistingDocumentScope | None,
     ) -> RetrievalCacheInvalidation | None:
         job = db.execute(select(Job).where(Job.job_id == job_id)).scalar_one_or_none()
         if not job:
             return None
 
-        return RetrievalCacheInvalidation(
-            user_id=str(job.user_id),
-            namespaces=(),
-            job_id=job_id,
-        )
+        return RetrievalCacheInvalidation(job_id=job_id)
 
 
 def _should_publish_document_graph(

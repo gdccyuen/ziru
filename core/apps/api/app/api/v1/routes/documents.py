@@ -23,12 +23,10 @@ DocumentChunkType = Literal["text", "image", "table", "page"]
 async def _archive_document_response(
     *,
     document_id: str,
-    current_user: CurrentUser,
     db: AsyncSession,
 ):
     document = await _document_service.archive_document(
         db,
-        user_id=current_user.user_id,
         document_id=document_id,
     )
     if document is None:
@@ -139,7 +137,6 @@ async def archive_document(
 ):
     return await _archive_document_response(
         document_id=document_id,
-        current_user=current_user,
         db=db,
     )
 
@@ -153,6 +150,5 @@ async def archive_document_legacy(
 ):
     return await _archive_document_response(
         document_id=document_id,
-        current_user=current_user,
         db=db,
     )

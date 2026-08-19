@@ -12,8 +12,8 @@ _WORKFLOW_PLAN_CACHE_TTL_SECONDS = 600
 _VERSION_FALLBACK = 0
 
 
-def _cache_version_key(*, user_id: str) -> str:
-    return f"retrieval:version:{user_id}"
+def _cache_version_key() -> str:
+    return "retrieval:version"
 
 
 def _normalize_exclude_sections(exclude_sections: list[dict[str, str]]) -> list[str]:
@@ -69,7 +69,6 @@ def _cache_shape_digest(
 
 def _query_cache_key(
     *,
-    user_id: str,
     version: int,
     query: str,
     top_k: int,
@@ -84,13 +83,13 @@ def _query_cache_key(
         exclude_sections=exclude_sections,
         **extra_params,
     )
-    return f"retrieval:query:{user_id}:v{version}:{digest}"
+    return f"retrieval:query:v{version}:{digest}"
 
 
-async def get_retrieval_cache_version(*, user_id: str) -> int:
+async def get_retrieval_cache_version() -> int:
     redis_service = RedisServiceFactory.get_service()
     raw = await redis_service.get(
-        _cache_version_key(user_id=user_id),
+        _cache_version_key(),
         default=_VERSION_FALLBACK,
     )
     try:
@@ -99,34 +98,32 @@ async def get_retrieval_cache_version(*, user_id: str) -> int:
         return _VERSION_FALLBACK
 
 
-async def bump_retrieval_cache_version(*, user_id: str) -> int:
+async def bump_retrieval_cache_version() -> int:
     redis_service = RedisServiceFactory.get_service()
-    return await redis_service.incr(_cache_version_key(user_id=user_id))
+    return await redis_service.incr(_cache_version_key())
 
 
-async def invalidate_retrieval_cache(*, user_id: str) -> None:
+async def invalidate_retrieval_cache() -> None:
     try:
-        await bump_retrieval_cache_version(user_id=user_id)
+        await bump_retrieval_cache_version()
     except Exception as exc:
         logger.warning(
-            f"Failed to invalidate retrieval cache (ignored): user_id={user_id}, error={exc}"
+            f"Failed to invalidate retrieval cache (ignored): error={exc}"
         )
 
 
 async def get_cached_retrieval_query_result(
     *,
-    user_id: str,
     query: str,
     top_k: int,
     exclude_document_ids: list[str],
     exclude_sections: list[dict[str, str]],
     **extra_params: Any,
 ) -> tuple[int, dict[str, Any] | None]:
-    version = await get_retrieval_cache_version(user_id=user_id)
+    version = await get_retrieval_cache_version()
     redis_service = RedisServiceFactory.get_service()
     cached = await redis_service.get(
         _query_cache_key(
-            user_id=user_id,
             version=version,
             query=query,
             top_k=top_k,
@@ -141,7 +138,6 @@ async def get_cached_retrieval_query_result(
 
 async def set_cached_retrieval_query_result(
     *,
-    user_id: str,
     version: int,
     query: str,
     top_k: int,
@@ -153,7 +149,6 @@ async def set_cached_retrieval_query_result(
     redis_service = RedisServiceFactory.get_service()
     await redis_service.set(
         _query_cache_key(
-            user_id=user_id,
             version=version,
             query=query,
             top_k=top_k,
@@ -168,13 +163,12 @@ async def set_cached_retrieval_query_result(
 
 async def _workflow_plan_cache_key(
     *,
-    user_id: str,
     query: str,
     top_k: int,
     chunk_types: set[str] | None = None,
     exclude_document_ids: list[str] | None = None,
 ) -> str:
-    version = await get_retrieval_cache_version(user_id=user_id)
+    version = await get_retrieval_cache_version()
     digest = _cache_shape_digest(
         query=query,
         top_k=top_k,
@@ -182,12 +176,11 @@ async def _workflow_plan_cache_key(
         exclude_document_ids=exclude_document_ids or [],
         exclude_sections=[],
     )
-    return f"retrieval:workflow:plan:{user_id}:v{version}:{digest}"
+    return f"retrieval:workflow:plan:v{version}:{digest}"
 
 
 async def get_cached_workflow_plan(
     *,
-    user_id: str,
     query: str,
     top_k: int,
     chunk_types: set[str] | None = None,
@@ -195,7 +188,7 @@ async def get_cached_workflow_plan(
 ) -> dict[str, Any] | None:
     redis_service = RedisServiceFactory.get_service()
     key = await _workflow_plan_cache_key(
-        user_id=user_id, query=query,
+        query=query,
         top_k=top_k, chunk_types=chunk_types,
         exclude_document_ids=exclude_document_ids,
     )
@@ -205,7 +198,6 @@ async def get_cached_workflow_plan(
 
 async def set_cached_workflow_plan(
     *,
-    user_id: str,
     query: str,
     top_k: int,
     chunk_types: set[str] | None = None,
@@ -214,7 +206,7 @@ async def set_cached_workflow_plan(
 ) -> None:
     redis_service = RedisServiceFactory.get_service()
     key = await _workflow_plan_cache_key(
-        user_id=user_id, query=query,
+        query=query,
         top_k=top_k, chunk_types=chunk_types,
         exclude_document_ids=exclude_document_ids,
     )

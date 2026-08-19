@@ -84,9 +84,7 @@ class DemoSourceMaterializer:
             results.append(result)
 
         await db.commit()
-        await invalidate_retrieval_cache(
-            user_id=user_id,
-        )
+        await invalidate_retrieval_cache()
         return results
 
     async def _materialize_source(

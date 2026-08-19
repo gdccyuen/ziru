@@ -620,9 +620,9 @@ directly (router: `small_corpus_all`).
 
 ### Caching
 
-Results are cached per `(user_id, namespace, query, top_k, filters)` via
-`cache_service`. Cache version is checked before execution; cache is written
-after successful retrieval.
+Results are cached per `(query, top_k, filters)` via `cache_service` with a
+global cache version (documents are global). Cache version is checked before
+execution; cache is written after successful retrieval.
 
 ---
 
