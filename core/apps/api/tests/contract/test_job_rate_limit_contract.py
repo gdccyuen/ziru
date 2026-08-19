@@ -52,10 +52,6 @@ async def _count_jobs() -> int:
         await engine.dispose()
 
 
-async def _noop_tier_limits() -> None:
-    # Tier limits were removed with billing; kept as a no-op seam.
-    return None
-
 async def _set_default_system_limit(
     *,
     rpm: int,
@@ -102,7 +98,6 @@ async def _create_rate_limited_developer_api_client(
     from shared.core.config import settings
     monkeypatch.setattr(settings, "MAX_CONCURRENT_JOBS", max_concurrent_jobs)
     await prepare_contract_storage()
-    await _noop_tier_limits()
     await _set_default_system_limit(
         rpm=default_system_rpm,
         period=default_system_period,

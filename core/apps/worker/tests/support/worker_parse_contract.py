@@ -49,10 +49,6 @@ class WorkerParseContract:
     ) -> None:
         monkeypatch.setattr(self.settings, "TMP_PATH", str(workspace_root))
 
-    def use_billing(self, monkeypatch: MonkeyPatch, is_enabled: bool) -> None:
-        # Billing was removed with the billing domain (07); kept as a no-op.
-        return None
-
     def use_pdf_page_limit(self, monkeypatch: MonkeyPatch, page_limit: int) -> None:
         monkeypatch.setenv("MAX_PDF_PAGE_LIMIT", str(page_limit))
         monkeypatch.setattr(self.settings, "MAX_PDF_PAGE_LIMIT", page_limit)
@@ -321,10 +317,6 @@ class WorkerParseContract:
                 {"job_id": job_id},
             ).scalar_one_or_none()
         return dict(stored_metadata or {})
-
-    def observe_user_billing(self, user_id: str) -> dict[str, Any]:
-        # Billing was removed with the billing domain (07); no-op for compat.
-        return {}
 
     def observe_job_state_transitions(self, job_id: str) -> list[tuple[str, str]]:
         with self.engine.connect() as connection:
