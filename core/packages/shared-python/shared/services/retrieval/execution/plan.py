@@ -28,8 +28,6 @@ from shared.services.retrieval.execution.query_request import RetrievalQuery
 async def run_retrieval_query(
     *,
     db: AsyncSession,
-    user_id: str,
-    namespace: str,
     query: str,
     top_k: int,
     exclude_document_ids: list[str],
@@ -49,8 +47,6 @@ async def run_retrieval_query(
     return await RetrievalExecutionPlan(
         RetrievalQuery.from_parameters(
             db=db,
-            user_id=user_id,
-            namespace=namespace,
             query=query,
             top_k=top_k,
             exclude_document_ids=exclude_document_ids,
@@ -98,8 +94,6 @@ class RetrievalExecutionPlan:
         start_time = time.monotonic()
         _log_retrieval_start(
             query=request.query,
-            user_id=request.user_id,
-            namespace=request.namespace,
             top_k=request.top_k,
             chunk_types=request.chunk_types,
             exclude_document_ids=request.exclude_document_ids,
@@ -109,7 +103,6 @@ class RetrievalExecutionPlan:
         if not request.query:
             logger.info("  ⛔ Empty query filtered, skipping retrieval pipeline")
             return {
-                "namespace": request.namespace,
                 "query": request.query,
                 "router_used": "empty_query_filtered",
                 "evidence_text": "",
@@ -129,8 +122,6 @@ class RetrievalExecutionPlan:
 
         cache_extra = request.build_cache_extra()
         cache_version, cached_response = await _read_cached_response(
-            user_id=request.user_id,
-            namespace=request.namespace,
             query=request.query,
             top_k=request.top_k,
             exclude_document_ids=request.exclude_document_ids,
@@ -146,8 +137,6 @@ class RetrievalExecutionPlan:
 
         if cache_version is not None:
             await _write_cached_response(
-                user_id=request.user_id,
-                namespace=request.namespace,
                 version=cache_version,
                 query=request.query,
                 top_k=request.top_k,
@@ -158,8 +147,6 @@ class RetrievalExecutionPlan:
             )
 
         _schedule_hit_stats_update(
-            user_id=request.user_id,
-            namespace=request.namespace,
             results=outcome.hit_stats_results,
         )
         _log_retrieval_complete(
@@ -174,8 +161,6 @@ class RetrievalExecutionPlan:
 
 async def _read_cached_response(
     *,
-    user_id: str,
-    namespace: str,
     query: str,
     top_k: int,
     exclude_document_ids: list[str],
@@ -185,8 +170,6 @@ async def _read_cached_response(
     cache_version: int | None = None
     try:
         cache_version, cached = await get_cached_retrieval_query_result(
-            user_id=user_id,
-            namespace=namespace,
             query=query,
             top_k=top_k,
             exclude_document_ids=exclude_document_ids,
@@ -196,8 +179,6 @@ async def _read_cached_response(
         if cached:
             logger.info(f"retrieval: cache_hit=True version={cache_version}")
             _schedule_hit_stats_update(
-                user_id=user_id,
-                namespace=namespace,
                 results=cached.get("results", []),
             )
             return cache_version, await project_public_retrieval_response(cached)
@@ -208,8 +189,6 @@ async def _read_cached_response(
 
 async def _write_cached_response(
     *,
-    user_id: str,
-    namespace: str,
     version: int,
     query: str,
     top_k: int,
@@ -220,8 +199,6 @@ async def _write_cached_response(
 ) -> None:
     try:
         await set_cached_retrieval_query_result(
-            user_id=user_id,
-            namespace=namespace,
             version=version,
             query=query,
             top_k=top_k,
@@ -236,14 +213,10 @@ async def _write_cached_response(
 
 def _schedule_hit_stats_update(
     *,
-    user_id: str,
-    namespace: str,
     results: list[dict[str, Any]],
 ) -> None:
     try:
         schedule_retrieval_hit_stats_update(
-            user_id=user_id,
-            namespace=namespace,
             results=results,
         )
     except Exception as exc:
@@ -253,8 +226,6 @@ def _schedule_hit_stats_update(
 def _log_retrieval_start(
     *,
     query: str,
-    user_id: str,
-    namespace: str,
     top_k: int,
     chunk_types: set[str] | None,
     exclude_document_ids: list[str],
@@ -264,7 +235,7 @@ def _log_retrieval_start(
     logger.info("  🚀 RETRIEVAL PIPELINE START")
     logger.info(f'  query="{query}"')
     logger.info(
-        f"  user={user_id}  ns={namespace}  top_k={top_k}  chunk_types={chunk_types}"
+        f"  user={user_id}  top_k={top_k}  chunk_types={chunk_types}"
     )
     logger.info(
         f"  exclude_docs={exclude_document_ids}  "

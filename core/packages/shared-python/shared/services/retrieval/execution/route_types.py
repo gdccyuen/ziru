@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 class RetrievalRouteContext:
     db: AsyncSession
     user_id: str
-    namespace: str
     query: str
     top_k: int
     exclude_document_ids: list[str]

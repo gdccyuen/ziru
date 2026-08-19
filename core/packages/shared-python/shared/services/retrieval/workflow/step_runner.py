@@ -63,8 +63,6 @@ class WorkflowStepRunner:
             async with self._db_factory() as step_db:
                 agentic_result = await self._agent_factory().run(
                     step_db,
-                    user_id=request.user_id,
-                    namespace=request.namespace,
                     query=request.query,
                     top_k=request.top_k,
                     llm_fn=llm_fn,

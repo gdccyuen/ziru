@@ -31,8 +31,6 @@ def build_config_from_env() -> AgentRunConfig:
 async def load_budget_inventory(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     exclude_document_ids: list[str],
 ) -> tuple[int, int, dict[str, int]]:
     stmt = (
@@ -42,8 +40,7 @@ async def load_budget_inventory(
             (DocumentChunk.document_id == Document.document_id)
             & (DocumentChunk.job_result_id == Document.current_job_result_id),
         )
-        .where(Document.user_id == user_id)
-        .where(Document.namespace == namespace)
+
         .where(Document.status == "active")
         .group_by(Document.document_id)
     )

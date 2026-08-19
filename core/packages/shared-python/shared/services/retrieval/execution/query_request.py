@@ -6,7 +6,6 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.models.schemas.llm_config import LLMConfig
-from shared.models.schemas.retrieval_namespace import normalize_retrieval_namespace
 from shared.services.retrieval.execution.route_types import RetrievalRouteContext
 from shared.services.retrieval.settings import (
     INTERNAL_RECALL_K_MULTIPLIER,
@@ -17,7 +16,6 @@ from shared.services.retrieval.settings import (
 class RetrievalQuery:
     db: AsyncSession
     user_id: str
-    namespace: str
     query: str
     top_k: int
     exclude_document_ids: list[str]
@@ -39,7 +37,6 @@ class RetrievalQuery:
         *,
         db: AsyncSession,
         user_id: str,
-        namespace: str,
         query: str,
         top_k: int,
         exclude_document_ids: list[str],
@@ -58,7 +55,6 @@ class RetrievalQuery:
         return cls(
             db=db,
             user_id=user_id,
-            namespace=normalize_retrieval_namespace(namespace),
             query=str(query).strip(),
             top_k=top_k,
             exclude_document_ids=exclude_document_ids,
@@ -110,7 +106,6 @@ class RetrievalQuery:
         return RetrievalRouteContext(
             db=self.db,
             user_id=self.user_id,
-            namespace=self.namespace,
             query=self.query,
             top_k=self.top_k,
             exclude_document_ids=self.exclude_document_ids,

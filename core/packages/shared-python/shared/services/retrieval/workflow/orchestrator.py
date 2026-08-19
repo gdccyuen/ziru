@@ -63,8 +63,6 @@ class WorkflowOrchestrator:
         self,
         db: AsyncSession,
         *,
-        user_id: str,
-        namespace: str,
         query: str,
         top_k: int,
         exclude_document_ids: list[str],
@@ -80,8 +78,6 @@ class WorkflowOrchestrator:
         llm_fn=None,
     ) -> WorkflowResult:
         request = WorkflowRunRequest(
-            user_id=user_id,
-            namespace=namespace,
             query=query,
             top_k=top_k,
             exclude_document_ids=exclude_document_ids,
@@ -117,15 +113,11 @@ class WorkflowOrchestrator:
         )
         total_chunks, total_docs, _chunks_count_by_doc = await _load_budget_inventory(
             db,
-            user_id=request.user_id,
-            namespace=request.namespace,
             exclude_document_ids=request.exclude_document_ids,
         )
         planner_ledger.total_chunks = total_chunks
         planner_ledger.total_docs = total_docs
         plan = await self._plan_service.load_or_create(
-            user_id=request.user_id,
-            namespace=request.namespace,
             query=request.query,
             top_k=request.top_k,
             chunk_types=request.chunk_types,
@@ -189,7 +181,6 @@ class WorkflowOrchestrator:
             elapsed_ms,
         )
         return WorkflowResult(
-            namespace=request.namespace,
             query=request.query,
             router_used='workflow_decomposed' if len(plan.steps) > 1 else 'workflow_single_step',
             answer_text="",

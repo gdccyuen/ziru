@@ -39,8 +39,6 @@ async def _insert_document(
                 text("""
                     INSERT INTO documents (
                         document_id,
-                        user_id,
-                        namespace,
                         status,
                         current_job_result_id,
                         source_file_name,
@@ -51,8 +49,6 @@ async def _insert_document(
                         archived_at
                     ) VALUES (
                         :document_id,
-                        :user_id,
-                        :namespace,
                         :status,
                         :current_job_result_id,
                         :source_file_name,
@@ -65,8 +61,6 @@ async def _insert_document(
                     """),
                 {
                     "document_id": document_id,
-                    "user_id": user_id,
-                    "namespace": namespace,
                     "status": status,
                     "current_job_result_id": None,
                     "source_file_name": source_file_name or f"{document_id}.pdf",
@@ -93,8 +87,6 @@ async def _fetch_document(document_id: str) -> dict[str, object]:
                         text("""
                         SELECT
                             document_id,
-                            user_id,
-                            namespace,
                             status,
                             current_job_result_id,
                             source_file_name,
@@ -186,8 +178,6 @@ async def _insert_document_graph_fixture(
                 text("""
                 INSERT INTO graph_nodes (
                     node_id,
-                    user_id,
-                    namespace,
                     node_kind,
                     owner_document_id,
                     job_result_id,
@@ -197,14 +187,12 @@ async def _insert_document_graph_fixture(
                     created_at,
                     updated_at
                 ) VALUES
-                    (:doc_node_id, :user_id, :namespace, 'document', :document_id, :job_result_id, :document_id, NULL, CAST('{}' AS JSON), :created_at, :updated_at),
-                    (:peer_node_id, :user_id, :namespace, 'document', :peer_document_id, :peer_job_result_id, :peer_document_id, NULL, CAST('{}' AS JSON), :created_at, :updated_at)
+                    (:doc_node_id, 'document', :document_id, :job_result_id, :document_id, NULL, CAST('{}' AS JSON), :created_at, :updated_at),
+                    (:peer_node_id, 'document', :peer_document_id, :peer_job_result_id, :peer_document_id, NULL, CAST('{}' AS JSON), :created_at, :updated_at)
                 """),
                 {
                     "doc_node_id": f"doc:{document_id}",
                     "peer_node_id": f"doc:{peer_document_id}",
-                    "user_id": user_id,
-                    "namespace": namespace,
                     "document_id": document_id,
                     "peer_document_id": peer_document_id,
                     "job_result_id": job_result_id,
@@ -217,8 +205,6 @@ async def _insert_document_graph_fixture(
                 text("""
                 INSERT INTO graph_edges (
                     edge_id,
-                    user_id,
-                    namespace,
                     edge_kind,
                     source_node_id,
                     target_node_id,
@@ -230,14 +216,12 @@ async def _insert_document_graph_fixture(
                     created_at,
                     updated_at
                 ) VALUES
-                    (:owned_edge_id, :user_id, :namespace, 'related', :doc_node_id, :peer_node_id, :document_id, :job_result_id, FALSE, 1.0, CAST('{}' AS JSON), :created_at, :updated_at),
-                    (:incoming_edge_id, :user_id, :namespace, 'related', :peer_node_id, :doc_node_id, :peer_document_id, :peer_job_result_id, FALSE, 1.0, CAST('{}' AS JSON), :created_at, :updated_at)
+                    (:owned_edge_id, 'related', :doc_node_id, :peer_node_id, :document_id, :job_result_id, FALSE, 1.0, CAST('{}' AS JSON), :created_at, :updated_at),
+                    (:incoming_edge_id, 'related', :peer_node_id, :doc_node_id, :peer_document_id, :peer_job_result_id, FALSE, 1.0, CAST('{}' AS JSON), :created_at, :updated_at)
                 """),
                 {
                     "owned_edge_id": f"edge_{uuid4().hex[:12]}",
                     "incoming_edge_id": f"edge_{uuid4().hex[:12]}",
-                    "user_id": user_id,
-                    "namespace": namespace,
                     "doc_node_id": f"doc:{document_id}",
                     "peer_node_id": f"doc:{peer_document_id}",
                     "document_id": document_id,
@@ -282,8 +266,6 @@ async def _insert_document_revision_with_chunks(
                 text("""
                     INSERT INTO documents (
                         document_id,
-                        user_id,
-                        namespace,
                         status,
                         current_job_result_id,
                         source_file_name,
@@ -293,8 +275,6 @@ async def _insert_document_revision_with_chunks(
                         archived_at
                     ) VALUES (
                         :document_id,
-                        :user_id,
-                        :namespace,
                         :status,
                         NULL,
                         :source_file_name,
@@ -306,8 +286,6 @@ async def _insert_document_revision_with_chunks(
                     """),
                 {
                     "document_id": document_id,
-                    "user_id": user_id,
-                    "namespace": namespace,
                     "status": status,
                     "source_file_name": source_file_name,
                     "parse_track": parse_track,
@@ -320,7 +298,6 @@ async def _insert_document_revision_with_chunks(
                 text("""
                     INSERT INTO jobs (
                         job_id,
-                        user_id,
                         job_type,
                         status,
                         source_type,
@@ -329,11 +306,8 @@ async def _insert_document_revision_with_chunks(
                         version,
                         created_at,
                         updated_at,
-                        credits_charged,
-                        billing_status
                     ) VALUES (
                         :job_id,
-                        :user_id,
                         'document_ingestion',
                         'done',
                         'url',
@@ -348,7 +322,6 @@ async def _insert_document_revision_with_chunks(
                     """),
                 {
                     "job_id": job_id,
-                    "user_id": user_id,
                     "job_metadata": json.dumps({"document_id": document_id}),
                     "created_at": timestamp,
                     "updated_at": timestamp,
@@ -396,8 +369,6 @@ async def _insert_document_revision_with_chunks(
                 text("""
                     INSERT INTO document_sections (
                         section_id,
-                        user_id,
-                        namespace,
                         document_id,
                         job_result_id,
                         parent_section_id,
@@ -410,8 +381,6 @@ async def _insert_document_revision_with_chunks(
                         created_at
                     ) VALUES (
                         :section_id,
-                        :user_id,
-                        :namespace,
                         :document_id,
                         :job_result_id,
                         NULL,
@@ -426,8 +395,6 @@ async def _insert_document_revision_with_chunks(
                     """),
                 {
                     "section_id": section_id,
-                    "user_id": user_id,
-                    "namespace": namespace,
                     "document_id": document_id,
                     "job_result_id": job_result_id,
                     "created_at": timestamp,
@@ -439,8 +406,6 @@ async def _insert_document_revision_with_chunks(
                         INSERT INTO document_chunks (
                             id,
                             chunk_id,
-                            user_id,
-                            namespace,
                             document_id,
                             job_result_id,
                             section_id,
@@ -459,8 +424,6 @@ async def _insert_document_revision_with_chunks(
                         ) VALUES (
                             :id,
                             :chunk_id,
-                            :user_id,
-                            :namespace,
                             :document_id,
                             :job_result_id,
                             :section_id,
@@ -481,8 +444,6 @@ async def _insert_document_revision_with_chunks(
                     {
                         "id": chunk["id"],
                         "chunk_id": chunk["chunk_id"],
-                        "user_id": user_id,
-                        "namespace": namespace,
                         "document_id": document_id,
                         "job_result_id": job_result_id,
                         "section_id": section_id,

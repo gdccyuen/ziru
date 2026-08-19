@@ -12,7 +12,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.core.database import get_db
 from shared.models.schemas.llm_config import LLMConfig
-from shared.models.schemas.retrieval_namespace import normalize_retrieval_namespace
 from shared.services.retrieval.app_service import run_retrieval_query
 from shared.services.retrieval.settings import DEFAULT_TOP_K, VALID_CHUNK_TYPES, normalize_chunk_types
 
@@ -25,11 +24,6 @@ class ExcludeSection(BaseModel):
 
 
 class RetrievalQueryRequest(BaseModel):
-    namespace: str | None = Field(
-        None,
-        max_length=255,
-        description="Effective namespace; defaults to default",
-    )
     query: str
     top_k: int = DEFAULT_TOP_K
     exclude_document_ids: list[str] = Field(default_factory=list)
@@ -96,14 +90,9 @@ class RetrievalQueryRequest(BaseModel):
                 )
         return v
 
-    @field_validator("namespace")
-    @classmethod
-    def normalize_namespace(cls, namespace: str | None) -> str:
-        return normalize_retrieval_namespace(namespace)
 
 
 class RetrievalQueryResponse(BaseModel):
-    namespace: str
     query: str
     router_used: str
     evidence_text: str = Field(

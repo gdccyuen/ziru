@@ -32,7 +32,6 @@ async def enrich_referenced_chunks_with_asset_url(refs: list[dict[str, Any]]) ->
 
 async def project_public_retrieval_response(response: dict[str, Any]) -> dict[str, Any]:
     public_response = {
-        'namespace': response.get('namespace'),
         'query': response.get('query'),
         'router_used': response.get('router_used'),
         'evidence_text': response.get('evidence_text') or '',

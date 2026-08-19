@@ -19,19 +19,15 @@ DocumentJobRevisionRow = tuple[Document, JobResult, Job]
 
 
 class DocumentRepository:
-    async def list_by_user_namespace(
+    async def list_documents(
         self,
         db: AsyncSession,
         *,
-        user_id: str,
-        namespace: str,
         limit: int,
         offset: int,
     ) -> Sequence[Document]:
         result = await db.execute(
             select(Document)
-            .where(Document.user_id == user_id)
-            .where(Document.namespace == namespace)
             .where(Document.status != "archived")
             .order_by(Document.updated_at.desc(), Document.document_id.asc())
             .limit(limit)
@@ -39,47 +35,25 @@ class DocumentRepository:
         )
         return result.scalars().all()
 
-    async def count_by_user_namespace(
+    async def count_documents(
         self,
         db: AsyncSession,
-        *,
-        user_id: str,
-        namespace: str,
     ) -> int:
         result = await db.execute(
             select(func.count(Document.document_id))
-            .where(Document.user_id == user_id)
-            .where(Document.namespace == namespace)
             .where(Document.status != "archived")
         )
         return int(result.scalar_one())
-
-    async def list_namespace_counts_for_user(
-        self,
-        db: AsyncSession,
-        *,
-        user_id: str,
-    ) -> Sequence[tuple[str, int]]:
-        result = await db.execute(
-            select(Document.namespace, func.count(Document.document_id))
-            .where(Document.user_id == user_id)
-            .where(Document.status != "archived")
-            .group_by(Document.namespace)
-            .order_by(Document.namespace.asc())
-        )
-        return [(row[0], int(row[1])) for row in result.all()]
 
     async def get_document(
         self,
         db: AsyncSession,
         *,
         document_id: str,
-        user_id: str,
     ) -> Document | None:
         result = await db.execute(
             select(Document)
             .where(Document.document_id == document_id)
-            .where(Document.user_id == user_id)
         )
         return result.scalar_one_or_none()
 
@@ -88,16 +62,13 @@ class DocumentRepository:
         db: AsyncSession,
         *,
         document_id: str,
-        user_id: str,
     ) -> DocumentJobRevisionRow | None:
         stmt = (
             select(Document, JobResult, Job)
             .join(JobResult, JobResult.id == Document.current_job_result_id)
             .join(Job, Job.job_id == JobResult.job_id)
             .where(Document.document_id == document_id)
-            .where(Document.user_id == user_id)
             .where(JobResult.document_id == Document.document_id)
-            .where(Job.user_id == user_id)
             .where(Document.status != "archived")
             .limit(1)
         )

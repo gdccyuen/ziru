@@ -66,8 +66,6 @@ class RetrievalAgent:
         self,
         db: AsyncSession,
         *,
-        user_id: str,
-        namespace: str,
         query: str,
         top_k: int = DEFAULT_TOP_K,
         llm_fn: LLMFn | None = None,
@@ -103,8 +101,6 @@ class RetrievalAgent:
         )
         total_chunks, total_docs, chunks_count_by_doc = await _load_budget_inventory(
             db,
-            user_id=user_id,
-            namespace=namespace,
             exclude_document_ids=exclude_document_ids,
         )
         state.kg_total_chunks = total_chunks
@@ -147,8 +143,6 @@ class RetrievalAgent:
             state=state,
             trace=trace,
             trace_enabled=trace_enabled,
-            user_id=user_id,
-            namespace=namespace,
             query=query,
             top_k=top_k,
             exclude_document_ids=exclude_document_ids,
@@ -325,8 +319,6 @@ class RetrievalAgent:
                 state=state,
                 trace=trace,
                 trace_enabled=trace_enabled,
-                user_id=user_id,
-                namespace=namespace,
                 query=query,
                 config=config,
                 discovery_by_doc=discovery_by_doc,
@@ -348,8 +340,6 @@ class RetrievalAgent:
                 doc_trees=state.doc_trees,
                 doc_id_to_name=state.doc_id_to_name,
                 context_remaining=context_remaining,
-                user_id=user_id,
-                namespace=namespace,
                 ledger=state.ledger,
             )
 

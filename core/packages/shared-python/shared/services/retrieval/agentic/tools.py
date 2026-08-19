@@ -19,8 +19,6 @@ from shared.services.retrieval.llm_adapter import LLMFn
 async def bottom_discovery(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     query: str,
     top_k: int,
     exclude_document_ids: list[str],
@@ -35,8 +33,6 @@ async def bottom_discovery(
 ) -> ToolResult:
     return await discovery_tools.bottom_discovery(
         db,
-        user_id=user_id,
-        namespace=namespace,
         query=query,
         top_k=top_k,
         exclude_document_ids=exclude_document_ids,
@@ -54,8 +50,6 @@ async def bottom_discovery(
 async def kg_document_select(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     query: str,
     llm_fn: LLMFn | None,
     exclude_document_ids: list[str],
@@ -64,8 +58,6 @@ async def kg_document_select(
 ) -> ToolResult:
     return await discovery_tools.kg_document_select(
         db,
-        user_id=user_id,
-        namespace=namespace,
         query=query,
         llm_fn=llm_fn,
         exclude_document_ids=exclude_document_ids,
@@ -81,8 +73,6 @@ async def navigate_step(
     job_result_id: str,
     query: str,
     llm_fn: LLMFn,
-    user_id: str,
-    namespace: str,
     doc_name: str = "",
     scope_path: str | None = None,
     exclude_paths: set[str] | None = None,
@@ -104,8 +94,6 @@ async def navigate_step(
         job_result_id=job_result_id,
         query=query,
         llm_fn=llm_fn,
-        user_id=user_id,
-        namespace=namespace,
         doc_name=doc_name,
         scope_path=scope_path,
         exclude_paths=exclude_paths,

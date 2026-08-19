@@ -193,8 +193,6 @@ def _estimate_chunks_tokens(chunks: list[dict[str, Any]]) -> int:
 async def _fetch_importance_norm_scores(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     chunk_ids: list[str],
 ) -> dict[str, float]:
     if not chunk_ids:
@@ -229,8 +227,6 @@ async def trim_evidence_to_budget(
     doc_trees: dict[str, DocTreeNode],
     doc_id_to_name: dict[str, str],
     context_remaining: int,
-    user_id: str,
-    namespace: str,
     ledger: BudgetLedger | None,
     safety_margin: float = 0.9,
 ) -> str:
@@ -251,8 +247,6 @@ async def trim_evidence_to_budget(
             importance = 0.0
             importance_scores = await _fetch_importance_norm_scores(
                 db,
-                user_id=user_id,
-                namespace=namespace,
                 chunk_ids=chunk_ids,
             )
             if importance_scores:

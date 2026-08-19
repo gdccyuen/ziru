@@ -13,7 +13,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.core.database import get_db
 from shared.core.exceptions.domain_exceptions import NotFoundException
-from shared.models.schemas.retrieval_namespace import normalize_retrieval_namespace
 
 router = APIRouter(tags=["Documents"])
 
@@ -43,32 +42,17 @@ async def _archive_document_response(
 
 @router.get("")
 async def list_documents(
-    namespace: str | None = Query(None, max_length=255),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(50, ge=1, le=200, description="Items per page"),
     current_user: CurrentUser = Depends(with_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    effective_namespace = normalize_retrieval_namespace(namespace)
     response = await _document_service.list_documents(
         db,
-        user_id=current_user.user_id,
-        namespace=effective_namespace,
         page=page,
         page_size=page_size,
     )
     return response
-
-
-@router.get("/namespaces")
-async def list_namespaces(
-    current_user: CurrentUser = Depends(with_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    return await _document_service.list_namespaces(
-        db,
-        user_id=current_user.user_id,
-    )
 
 
 @router.get("/{document_id}")
@@ -79,7 +63,6 @@ async def get_document(
 ):
     document = await _document_service.get_document(
         db,
-        user_id=current_user.user_id,
         document_id=document_id,
     )
     if document is None:
@@ -106,7 +89,6 @@ async def list_document_chunks(
 ):
     response = await _document_service.list_document_chunks(
         db,
-        user_id=current_user.user_id,
         document_id=document_id,
         page=page,
         page_size=page_size,
@@ -135,7 +117,6 @@ async def get_document_chunk(
 ):
     response = await _document_service.get_document_chunk(
         db,
-        user_id=current_user.user_id,
         document_id=document_id,
         document_chunk_id=document_chunk_id,
         include_asset_urls=include_asset_urls,

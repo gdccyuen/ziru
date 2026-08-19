@@ -108,7 +108,6 @@ class ContractDatabase:
             """
             INSERT INTO api_keys (
                 id,
-                user_id,
                 key_hash,
                 key_mask,
                 name,
@@ -116,7 +115,6 @@ class ContractDatabase:
                 created_at
             ) VALUES (
                 :id,
-                :user_id,
                 :key_hash,
                 :key_mask,
                 :name,
@@ -126,7 +124,6 @@ class ContractDatabase:
             """,
             {
                 "id": api_key_id,
-                "user_id": user_id,
                 "key_hash": api_key_hash,
                 "key_mask": f"{api_key[:8]}...{api_key[-4:]}",
                 "name": f"Contract API Key {user_id}",
@@ -212,8 +209,6 @@ class ContractDatabase:
             """
             INSERT INTO documents (
                 document_id,
-                user_id,
-                namespace,
                 status,
                 current_job_result_id,
                 source_file_name,
@@ -223,8 +218,6 @@ class ContractDatabase:
                 archived_at
             ) VALUES (
                 :document_id,
-                :user_id,
-                :namespace,
                 :status,
                 :current_job_result_id,
                 :source_file_name,
@@ -236,8 +229,6 @@ class ContractDatabase:
             """,
             {
                 "document_id": document_id,
-                "user_id": user_id,
-                "namespace": namespace,
                 "status": status,
                 "current_job_result_id": current_job_result_id,
                 "source_file_name": source_file_name or f"{document_id}.pdf",
@@ -254,8 +245,6 @@ class ContractDatabase:
             """
             SELECT
                 document_id,
-                user_id,
-                namespace,
                 status,
                 current_job_result_id,
                 source_file_name,
@@ -349,7 +338,6 @@ class ContractDatabase:
             """
             SELECT
                 job_id,
-                user_id,
                 job_type,
                 status,
                 source_type,
@@ -440,8 +428,6 @@ class ContractDatabase:
             """
             INSERT INTO document_sections (
                 section_id,
-                user_id,
-                namespace,
                 document_id,
                 job_result_id,
                 parent_section_id,
@@ -454,8 +440,6 @@ class ContractDatabase:
                 created_at
             ) VALUES (
                 :section_id,
-                :user_id,
-                :namespace,
                 :document_id,
                 :job_result_id,
                 :parent_section_id,
@@ -470,8 +454,6 @@ class ContractDatabase:
             """,
             {
                 "section_id": section_id,
-                "user_id": user_id,
-                "namespace": namespace,
                 "document_id": document_id,
                 "job_result_id": job_result_id,
                 "parent_section_id": parent_section_id,
@@ -507,8 +489,6 @@ class ContractDatabase:
             INSERT INTO document_chunks (
                 id,
                 chunk_id,
-                user_id,
-                namespace,
                 document_id,
                 job_result_id,
                 section_id,
@@ -527,8 +507,6 @@ class ContractDatabase:
             ) VALUES (
                 :id,
                 :chunk_id,
-                :user_id,
-                :namespace,
                 :document_id,
                 :job_result_id,
                 :section_id,
@@ -549,8 +527,6 @@ class ContractDatabase:
             {
                 "id": f"dchk_{uuid4().hex[:12]}",
                 "chunk_id": chunk_id,
-                "user_id": user_id,
-                "namespace": namespace,
                 "document_id": document_id,
                 "job_result_id": job_result_id,
                 "section_id": section_id,

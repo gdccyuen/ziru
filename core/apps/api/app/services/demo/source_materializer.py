@@ -19,7 +19,7 @@ from shared.models.database.demo_materialization import DemoMaterialization
 from shared.models.database.document import Document
 from shared.models.database.job import Job
 from shared.models.database.job_result import JobResult
-from shared.services.retrieval.cache_service import invalidate_retrieval_cache_namespaces
+from shared.services.retrieval.cache_service import invalidate_retrieval_cache
 from shared.services.retrieval.publication_service import RetrievalPublicationService
 from shared.services.storage.result_storage import get_result_storage
 
@@ -84,9 +84,8 @@ class DemoSourceMaterializer:
             results.append(result)
 
         await db.commit()
-        await invalidate_retrieval_cache_namespaces(
+        await invalidate_retrieval_cache(
             user_id=user_id,
-            namespaces=[namespace],
         )
         return results
 

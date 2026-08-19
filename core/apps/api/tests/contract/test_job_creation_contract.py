@@ -40,7 +40,6 @@ async def _load_job_record(job_id: str) -> dict[str, object]:
                     text(
                         """
                         SELECT
-                            user_id,
                             job_type,
                             status,
                             source_type,
@@ -148,8 +147,6 @@ async def _insert_document(
                     """
                     INSERT INTO documents (
                         document_id,
-                        user_id,
-                        namespace,
                         status,
                         source_file_name,
                         parse_track,
@@ -158,8 +155,6 @@ async def _insert_document(
                         archived_at
                     ) VALUES (
                         :document_id,
-                        :user_id,
-                        :namespace,
                         :status,
                         :source_file_name,
                         :parse_track,
@@ -171,8 +166,6 @@ async def _insert_document(
                 ),
                 {
                     "document_id": document_id,
-                    "user_id": user_id,
-                    "namespace": namespace,
                     "status": status,
                     "source_file_name": f"{document_id}.pdf",
                     "parse_track": "chunk",
@@ -197,7 +190,6 @@ async def _insert_active_job(
     timestamp = datetime.now(timezone.utc).replace(tzinfo=None)
     job_metadata: dict[str, str] = {
         "document_id": document_id,
-        "namespace": namespace,
         "source_type": "file",
     }
 
@@ -208,7 +200,6 @@ async def _insert_active_job(
                     """
                     INSERT INTO jobs (
                         job_id,
-                        user_id,
                         job_type,
                         status,
                         source_type,
@@ -217,11 +208,8 @@ async def _insert_active_job(
                         version,
                         created_at,
                         updated_at,
-                        credits_charged,
-                        billing_status
                     ) VALUES (
                         :job_id,
-                        :user_id,
                         :job_type,
                         :status,
                         :source_type,
@@ -230,14 +218,11 @@ async def _insert_active_job(
                         :version,
                         :created_at,
                         :updated_at,
-                        :credits_charged,
-                        :billing_status
                     )
                     """
                 ),
                 {
                     "job_id": job_id,
-                    "user_id": user_id,
                     "job_type": "document_ingestion",
                     "status": status,
                     "source_type": "file",
@@ -246,8 +231,6 @@ async def _insert_active_job(
                     "version": 0,
                     "created_at": timestamp,
                     "updated_at": timestamp,
-                    "credits_charged": 0,
-                    "billing_status": "pending",
                 },
             )
     finally:
@@ -302,7 +285,6 @@ async def test_should_create_a_waiting_file_job_for_an_authenticated_developer(
                         text(
                             """
                             SELECT
-                                user_id,
                                 job_type,
                                 status,
                                 source_type,
@@ -1299,7 +1281,6 @@ async def test_should_confirm_upload_and_start_processing_for_a_waiting_file_job
         started_workflows.append(
             {
                 "job_id": job_id,
-                "user_id": user_id,
             }
         )
         return "contract-task-id"

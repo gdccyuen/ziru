@@ -30,11 +30,11 @@ def compute_importance_score(
 
 _UPSERT_DOCUMENT_HIT_SQL = text("""
     INSERT INTO retrieval_hit_stats (
-        id, user_id, namespace, hit_kind, document_id, chunk_id,
+        id, hit_kind, document_id, chunk_id,
         hit_count, last_hit_at, created_at, updated_at
     )
-    VALUES (:id, :user_id, :namespace, :hit_kind, :document_id, NULL, 1, :now, :now, :now)
-    ON CONFLICT (user_id, namespace, hit_kind, document_id)
+    VALUES (:id, :hit_kind, :document_id, NULL, 1, :now, :now, :now)
+    ON CONFLICT (hit_kind, document_id)
     WHERE chunk_id IS NULL
     DO UPDATE SET
         hit_count = retrieval_hit_stats.hit_count + 1,
@@ -44,11 +44,11 @@ _UPSERT_DOCUMENT_HIT_SQL = text("""
 
 _UPSERT_CHUNK_HIT_SQL = text("""
     INSERT INTO retrieval_hit_stats (
-        id, user_id, namespace, hit_kind, document_id, chunk_id,
+        id, hit_kind, document_id, chunk_id,
         hit_count, last_hit_at, created_at, updated_at
     )
-    VALUES (:id, :user_id, :namespace, :hit_kind, :document_id, :chunk_id, 1, :now, :now, :now)
-    ON CONFLICT (user_id, namespace, hit_kind, document_id, chunk_id)
+    VALUES (:id, :hit_kind, :document_id, :chunk_id, 1, :now, :now, :now)
+    ON CONFLICT (hit_kind, document_id, chunk_id)
     WHERE chunk_id IS NOT NULL
     DO UPDATE SET
         hit_count = retrieval_hit_stats.hit_count + 1,
@@ -60,8 +60,6 @@ _UPSERT_CHUNK_HIT_SQL = text("""
 async def _upsert_hit_stat(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     hit_kind: str,
     document_id: str,
     chunk_id: str | None,
@@ -69,8 +67,6 @@ async def _upsert_hit_stat(
 ) -> None:
     params = {
         "id": f"rhs_{uuid4().hex[:12]}",
-        "user_id": user_id,
-        "namespace": namespace,
         "hit_kind": hit_kind,
         "document_id": document_id,
         "now": now,
@@ -85,8 +81,6 @@ async def _upsert_hit_stat(
 async def record_retrieval_hits(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     results: list[dict[str, Any]],
 ) -> None:
     seen_documents: set[str] = set()
@@ -100,8 +94,6 @@ async def record_retrieval_hits(
         if document_id not in seen_documents:
             await _upsert_hit_stat(
                 db,
-                user_id=user_id,
-                namespace=namespace,
                 hit_kind="document",
                 document_id=document_id,
                 chunk_id=None,
@@ -111,8 +103,6 @@ async def record_retrieval_hits(
         if chunk_id:
             await _upsert_hit_stat(
                 db,
-                user_id=user_id,
-                namespace=namespace,
                 hit_kind="chunk",
                 document_id=document_id,
                 chunk_id=chunk_id,

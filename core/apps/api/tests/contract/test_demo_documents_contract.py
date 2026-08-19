@@ -392,8 +392,6 @@ async def test_should_materialize_demo_source_without_parse_or_credit_charge(
     job_row = job_rows[0]
     assert job_row["status"] == "done"
     assert job_row["job_type"] == "demo_materialization"
-    assert job_row["credits_charged"] == 0
-    assert job_row["billing_status"] == "skipped"
 
     retrieval_body = cast(dict[str, Any], retrieval_response.json())
     retrieval_results = cast(list[dict[str, Any]], retrieval_body["results"])

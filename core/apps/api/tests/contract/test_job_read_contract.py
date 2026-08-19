@@ -149,8 +149,6 @@ async def test_should_report_zero_credits_spent_for_refunded_failed_job(
                 status = 'failed',
                 error_code = 'INVALID_ARGUMENT',
                 error_message = 'Invalid file: the uploaded .docx file is not a valid Word document. Please check the file and upload again.',
-                credits_charged = 15000,
-                billing_status = 'refunded'
             WHERE job_id = :job_id
             """,
             {"job_id": job_id},

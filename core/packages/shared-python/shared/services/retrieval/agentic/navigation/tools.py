@@ -40,8 +40,6 @@ async def navigate_step(
     job_result_id: str,
     query: str,
     llm_fn: LLMFn,
-    user_id: str,
-    namespace: str,
     doc_name: str = "",
     scope_path: str | None = None,
     exclude_paths: set[str] | None = None,

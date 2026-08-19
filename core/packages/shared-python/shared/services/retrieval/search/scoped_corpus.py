@@ -13,8 +13,6 @@ from shared.services.retrieval.search.section_filters import is_excluded_section
 async def count_scoped_chunks(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     exclude_document_ids: list[str],
     allowed_chunk_types: set[str] | None,
 ) -> int:
@@ -25,8 +23,6 @@ async def count_scoped_chunks(
             (Document.document_id == DocumentChunk.document_id)
             & (Document.current_job_result_id == DocumentChunk.job_result_id),
         )
-        .where(Document.user_id == user_id)
-        .where(Document.namespace == namespace)
         .where(Document.status == 'active')
     )
     if exclude_document_ids:
@@ -40,8 +36,6 @@ async def count_scoped_chunks(
 async def load_all_scoped_chunks(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     exclude_document_ids: list[str],
     exclude_sections: list[dict[str, str]],
     allowed_chunk_types: set[str] | None,
@@ -57,8 +51,6 @@ async def load_all_scoped_chunks(
         )
         .outerjoin(DocumentSection, DocumentSection.section_id == DocumentChunk.section_id)
         .join(JobResult, JobResult.id == DocumentChunk.job_result_id)
-        .where(Document.user_id == user_id)
-        .where(Document.namespace == namespace)
         .where(Document.status == 'active')
         .order_by(DocumentChunk.sort_order)
     )

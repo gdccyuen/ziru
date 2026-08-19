@@ -20,8 +20,6 @@ async def run_initial_discovery(
     state: AgentState,
     trace: TraceRecorder,
     trace_enabled: bool,
-    user_id: str,
-    namespace: str,
     query: str,
     top_k: int,
     exclude_document_ids: list[str],
@@ -36,7 +34,6 @@ async def run_initial_discovery(
 ) -> list[dict[str, Any]]:
     discovery_kwargs: dict[str, Any] = {
         "user_id": user_id,
-        "namespace": namespace,
         "query": query,
         "top_k": top_k,
         "exclude_document_ids": exclude_document_ids,
@@ -84,8 +81,6 @@ async def run_initial_discovery(
             state=state,
             trace=trace,
             trace_enabled=trace_enabled,
-            user_id=user_id,
-            namespace=namespace,
             query=query,
             exclude_document_ids=exclude_document_ids,
             bootstrap_llm_fn=bootstrap_llm_fn,
@@ -130,8 +125,6 @@ async def _select_documents(
     state: AgentState,
     trace: TraceRecorder,
     trace_enabled: bool,
-    user_id: str,
-    namespace: str,
     query: str,
     exclude_document_ids: list[str],
     bootstrap_llm_fn: LLMFn,
@@ -140,8 +133,6 @@ async def _select_documents(
     try:
         kg_result = await tools.kg_document_select(
             db,
-            user_id=user_id,
-            namespace=namespace,
             query=query,
             llm_fn=bootstrap_llm_fn,
             exclude_document_ids=list(state.ever_explored_doc_ids | set(exclude_document_ids)),

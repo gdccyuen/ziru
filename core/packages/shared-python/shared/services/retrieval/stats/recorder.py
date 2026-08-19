@@ -22,15 +22,11 @@ def _finalize_retrieval_hit_stats_task(task: asyncio.Task[None]) -> None:
         logger.warning(f'Failed to record retrieval hit stats (ignored): {exc}')
 
 
-def schedule_retrieval_hit_stats_update(*, user_id: str, namespace: str, results: list[dict[str, Any]]) -> None:
+def schedule_retrieval_hit_stats_update(*, results: list[dict[str, Any]]) -> None:
     try:
         task = asyncio.create_task(
-            _record_retrieval_hit_stats_best_effort(
-                user_id=user_id,
-                namespace=namespace,
-                results=results,
-            ),
-            name=f'retrieval_hit_stats:{user_id}:{namespace}',
+            _record_retrieval_hit_stats_best_effort(results=results),
+            name='retrieval_hit_stats',
         )
         _pending_retrieval_hit_stat_tasks.add(task)
         task.add_done_callback(_finalize_retrieval_hit_stats_task)
@@ -57,12 +53,12 @@ async def drain_retrieval_hit_stats_updates(timeout_seconds: float = 2.0) -> Non
         await asyncio.gather(*pending_tasks, return_exceptions=True)
 
 
-async def _record_retrieval_hit_stats_best_effort(*, user_id: str, namespace: str, results: list[dict[str, Any]]) -> None:
+async def _record_retrieval_hit_stats_best_effort(*, results: list[dict[str, Any]]) -> None:
     try:
         from shared.core.database import get_db_context
 
         async with get_db_context() as db:
-            await record_retrieval_hits(db, user_id=user_id, namespace=namespace, results=results)
+            await record_retrieval_hits(db, results=results)
             await db.commit()
     except Exception as exc:
         logger.warning(f'Failed to record retrieval hit stats (ignored): {exc}')

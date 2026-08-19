@@ -198,7 +198,6 @@ class StepResult:
 class WorkflowResult:
     """Top-level response from query workflow execution."""
 
-    namespace: str
     query: str
     router_used: str
     answer_text: str
@@ -213,7 +212,6 @@ class WorkflowResult:
 
     def to_api_response(self) -> dict[str, Any]:
         return {
-            "namespace": self.namespace,
             "query": self.query,
             "router_used": self.router_used,
             "answer_text": self.answer_text,

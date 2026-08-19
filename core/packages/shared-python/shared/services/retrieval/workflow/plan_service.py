@@ -17,8 +17,6 @@ class WorkflowPlanService:
     async def load_or_create(
         self,
         *,
-        user_id: str,
-        namespace: str,
         query: str,
         top_k: int,
         chunk_types: set[str] | None = None,
@@ -33,8 +31,6 @@ class WorkflowPlanService:
     ) -> QueryPlan:
         try:
             cached = await get_cached_workflow_plan(
-                user_id=user_id,
-                namespace=namespace,
                 query=query,
                 top_k=top_k,
                 chunk_types=chunk_types,
@@ -59,8 +55,6 @@ class WorkflowPlanService:
         )
         try:
             await set_cached_workflow_plan(
-                user_id=user_id,
-                namespace=namespace,
                 query=query,
                 top_k=top_k,
                 chunk_types=chunk_types,

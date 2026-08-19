@@ -39,8 +39,6 @@ async def _try_run_small_corpus_route(
     try:
         total_chunk_count = await count_scoped_chunks(
             context.db,
-            user_id=context.user_id,
-            namespace=context.namespace,
             exclude_document_ids=context.exclude_document_ids,
             allowed_chunk_types=context.allowed_chunk_types,
         )
@@ -60,8 +58,6 @@ async def _try_run_small_corpus_route(
     )
     all_rows = await load_all_scoped_chunks(
         context.db,
-        user_id=context.user_id,
-        namespace=context.namespace,
         exclude_document_ids=context.exclude_document_ids,
         exclude_sections=context.exclude_sections,
         allowed_chunk_types=context.allowed_chunk_types,
@@ -81,7 +77,6 @@ async def _try_run_small_corpus_route(
     )
     results = [attach_citation(row) for row in assembled_rows]
     response = {
-        "namespace": context.namespace,
         "query": context.query,
         "router_used": "small_corpus_all",
         "evidence_text": render_legacy_evidence_text(results),
@@ -102,8 +97,6 @@ async def _run_classic_topk_route(
 ) -> RetrievalRouteOutcome:
     discovery_result = await bottom_discovery(
         context.db,
-        user_id=context.user_id,
-        namespace=context.namespace,
         query=context.query,
         top_k=context.effective_recall_k,
         exclude_document_ids=context.exclude_document_ids,
@@ -124,8 +117,6 @@ async def _run_classic_topk_route(
 
     ranked_rows = await rank_retrieval_candidates(
         context.db,
-        user_id=context.user_id,
-        namespace=context.namespace,
         discovery_rows=fused_rows,
         routed_rows=[],
         top_k=context.top_k,
@@ -141,7 +132,6 @@ async def _run_classic_topk_route(
     )
     results = [attach_citation(row) for row in assembled_rows]
     response = {
-        "namespace": context.namespace,
         "query": context.query,
         "router_used": "classic_topk",
         "evidence_text": render_legacy_evidence_text(results),
@@ -203,8 +193,6 @@ async def _run_agentic_route(
 
     resolved_references = await resolve_workflow_references(
         db=context.db,
-        user_id=context.user_id,
-        namespace=context.namespace,
         refs=workflow_result.referenced_chunks,
         score_by_chunk_id=score_by_chunk_id if score_by_chunk_id else None,
     )

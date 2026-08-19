@@ -5,7 +5,6 @@ from typing import Any
 
 from loguru import logger
 
-from shared.models.schemas.retrieval_namespace import normalize_retrieval_namespace
 from shared.services.redis import RedisServiceFactory
 
 _RETRIEVAL_CACHE_TTL_SECONDS = 300
@@ -13,9 +12,8 @@ _WORKFLOW_PLAN_CACHE_TTL_SECONDS = 600
 _VERSION_FALLBACK = 0
 
 
-def _namespace_version_key(*, user_id: str, namespace: str) -> str:
-    namespace = normalize_retrieval_namespace(namespace)
-    return f"retrieval:version:{user_id}:{namespace}"
+def _cache_version_key(*, user_id: str) -> str:
+    return f"retrieval:version:{user_id}"
 
 
 def _normalize_exclude_sections(exclude_sections: list[dict[str, str]]) -> list[str]:
@@ -72,7 +70,6 @@ def _cache_shape_digest(
 def _query_cache_key(
     *,
     user_id: str,
-    namespace: str,
     version: int,
     query: str,
     top_k: int,
@@ -80,7 +77,6 @@ def _query_cache_key(
     exclude_sections: list[dict[str, str]],
     **extra_params: Any,
 ) -> str:
-    namespace = normalize_retrieval_namespace(namespace)
     digest = _cache_shape_digest(
         query=query,
         top_k=top_k,
@@ -88,13 +84,13 @@ def _query_cache_key(
         exclude_sections=exclude_sections,
         **extra_params,
     )
-    return f"retrieval:query:{user_id}:{namespace}:v{version}:{digest}"
+    return f"retrieval:query:{user_id}:v{version}:{digest}"
 
 
-async def get_retrieval_namespace_cache_version(*, user_id: str, namespace: str) -> int:
+async def get_retrieval_cache_version(*, user_id: str) -> int:
     redis_service = RedisServiceFactory.get_service()
     raw = await redis_service.get(
-        _namespace_version_key(user_id=user_id, namespace=namespace),
+        _cache_version_key(user_id=user_id),
         default=_VERSION_FALLBACK,
     )
     try:
@@ -103,52 +99,34 @@ async def get_retrieval_namespace_cache_version(*, user_id: str, namespace: str)
         return _VERSION_FALLBACK
 
 
-async def bump_retrieval_namespace_cache_version(
-    *, user_id: str, namespace: str
-) -> int:
+async def bump_retrieval_cache_version(*, user_id: str) -> int:
     redis_service = RedisServiceFactory.get_service()
-    return await redis_service.incr(
-        _namespace_version_key(user_id=user_id, namespace=namespace)
-    )
+    return await redis_service.incr(_cache_version_key(user_id=user_id))
 
 
-async def invalidate_retrieval_cache_namespaces(
-    *, user_id: str, namespaces: list[str]
-) -> None:
-    seen: set[str] = set()
-    for raw_namespace in namespaces:
-        namespace = normalize_retrieval_namespace(raw_namespace)
-        if not namespace or namespace in seen:
-            continue
-        seen.add(namespace)
-        try:
-            await bump_retrieval_namespace_cache_version(
-                user_id=user_id, namespace=namespace
-            )
-        except Exception as exc:
-            logger.warning(
-                f"Failed to invalidate retrieval cache namespace (ignored): user_id={user_id}, namespace={namespace}, error={exc}"
-            )
+async def invalidate_retrieval_cache(*, user_id: str) -> None:
+    try:
+        await bump_retrieval_cache_version(user_id=user_id)
+    except Exception as exc:
+        logger.warning(
+            f"Failed to invalidate retrieval cache (ignored): user_id={user_id}, error={exc}"
+        )
 
 
 async def get_cached_retrieval_query_result(
     *,
     user_id: str,
-    namespace: str,
     query: str,
     top_k: int,
     exclude_document_ids: list[str],
     exclude_sections: list[dict[str, str]],
     **extra_params: Any,
 ) -> tuple[int, dict[str, Any] | None]:
-    version = await get_retrieval_namespace_cache_version(
-        user_id=user_id, namespace=namespace
-    )
+    version = await get_retrieval_cache_version(user_id=user_id)
     redis_service = RedisServiceFactory.get_service()
     cached = await redis_service.get(
         _query_cache_key(
             user_id=user_id,
-            namespace=namespace,
             version=version,
             query=query,
             top_k=top_k,
@@ -164,7 +142,6 @@ async def get_cached_retrieval_query_result(
 async def set_cached_retrieval_query_result(
     *,
     user_id: str,
-    namespace: str,
     version: int,
     query: str,
     top_k: int,
@@ -177,7 +154,6 @@ async def set_cached_retrieval_query_result(
     await redis_service.set(
         _query_cache_key(
             user_id=user_id,
-            namespace=namespace,
             version=version,
             query=query,
             top_k=top_k,
@@ -193,16 +169,12 @@ async def set_cached_retrieval_query_result(
 async def _workflow_plan_cache_key(
     *,
     user_id: str,
-    namespace: str,
     query: str,
     top_k: int,
     chunk_types: set[str] | None = None,
     exclude_document_ids: list[str] | None = None,
 ) -> str:
-    namespace = normalize_retrieval_namespace(namespace)
-    version = await get_retrieval_namespace_cache_version(
-        user_id=user_id, namespace=namespace
-    )
+    version = await get_retrieval_cache_version(user_id=user_id)
     digest = _cache_shape_digest(
         query=query,
         top_k=top_k,
@@ -210,13 +182,12 @@ async def _workflow_plan_cache_key(
         exclude_document_ids=exclude_document_ids or [],
         exclude_sections=[],
     )
-    return f"retrieval:workflow:plan:{user_id}:{namespace}:v{version}:{digest}"
+    return f"retrieval:workflow:plan:{user_id}:v{version}:{digest}"
 
 
 async def get_cached_workflow_plan(
     *,
     user_id: str,
-    namespace: str,
     query: str,
     top_k: int,
     chunk_types: set[str] | None = None,
@@ -224,7 +195,7 @@ async def get_cached_workflow_plan(
 ) -> dict[str, Any] | None:
     redis_service = RedisServiceFactory.get_service()
     key = await _workflow_plan_cache_key(
-        user_id=user_id, namespace=namespace, query=query,
+        user_id=user_id, query=query,
         top_k=top_k, chunk_types=chunk_types,
         exclude_document_ids=exclude_document_ids,
     )
@@ -235,7 +206,6 @@ async def get_cached_workflow_plan(
 async def set_cached_workflow_plan(
     *,
     user_id: str,
-    namespace: str,
     query: str,
     top_k: int,
     chunk_types: set[str] | None = None,
@@ -244,7 +214,7 @@ async def set_cached_workflow_plan(
 ) -> None:
     redis_service = RedisServiceFactory.get_service()
     key = await _workflow_plan_cache_key(
-        user_id=user_id, namespace=namespace, query=query,
+        user_id=user_id, query=query,
         top_k=top_k, chunk_types=chunk_types,
         exclude_document_ids=exclude_document_ids,
     )

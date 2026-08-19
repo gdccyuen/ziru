@@ -21,15 +21,11 @@ class ResolvedWorkflowReferences:
 async def resolve_workflow_references(
     *,
     db: AsyncSession,
-    user_id: str,
-    namespace: str,
     refs: list[dict[str, Any]],
     score_by_chunk_id: dict[str, float] | None = None,
 ) -> ResolvedWorkflowReferences:
     hydrated_rows = await hydrate_referenced_chunk_rows(
         db=db,
-        user_id=user_id,
-        namespace=namespace,
         refs=refs,
         score_by_chunk_id=score_by_chunk_id,
     )

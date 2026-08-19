@@ -48,8 +48,6 @@ class TraceRecorder:
         self,
         db: AsyncSession,
         *,
-        user_id: str,
-        namespace: str,
         query: str,
         config: AgentRunConfig,
         top_k: int = DEFAULT_TOP_K,
@@ -62,7 +60,6 @@ class TraceRecorder:
         self._db = db
         self._run_id = f'aret_{uuid4().hex[:12]}'
         self._user_id = user_id
-        self._namespace = namespace
         self._query = query
         self._config = config
         self._top_k = top_k

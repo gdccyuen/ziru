@@ -11,12 +11,10 @@ from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.core.database import get_db_context
-from shared.models.schemas.retrieval_namespace import normalize_retrieval_namespace
 from shared.services.retrieval.app_service import run_retrieval_query
 from shared.services.retrieval.settings import DEFAULT_TOP_K
 
 DbFactory = Callable[[], AsyncContextManager[AsyncSession]]
-ZIRU_NAMESPACE_HEADER = "x-ziru-namespace"
 
 
 def create_public_mcp_transport_security() -> TransportSecuritySettings:
@@ -39,16 +37,6 @@ def get_mcp_request(ctx: Context | None) -> Any:
     if request is None:
         raise RuntimeError("MCP auth context request is not available")
     return request
-
-
-def resolve_mcp_namespace(*, ctx: Context | None) -> str:
-    try:
-        request = get_mcp_request(ctx)
-    except (RuntimeError, ValueError):
-        return normalize_retrieval_namespace(None)
-    headers = getattr(request, "headers", {}) or {}
-    namespace = get_header(headers, ZIRU_NAMESPACE_HEADER)
-    return normalize_retrieval_namespace(namespace)
 
 
 def to_mcp_query_response(response: dict[str, Any]) -> dict[str, Any]:
@@ -146,13 +134,11 @@ def create_retrieval_mcp_server(
         # data_type / signal_paths / filter_mode / exclude_document_ids
         # automatically before calling run_retrieval_query.
         # See: shared/services/retrieval/intent/ (to be created)
-        namespace = resolve_mcp_namespace(ctx=ctx)
         async with db_factory() as db:
             user_id = await resolve_mcp_user_id(ctx=ctx, db=db)
             response = await run_retrieval_query(
                 db=db,
                 user_id=user_id,
-                namespace=namespace,
                 query=query,
                 top_k=top_k,
                 exclude_document_ids=exclude_document_ids,

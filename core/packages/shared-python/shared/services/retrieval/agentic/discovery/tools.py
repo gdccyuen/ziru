@@ -40,8 +40,6 @@ from shared.services.retrieval.settings import (
 async def bottom_discovery(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     query: str,
     top_k: int,
     exclude_document_ids: list[str],
@@ -72,8 +70,6 @@ async def bottom_discovery(
         if "path" in active_channels:
             path_rows = await path_channel(
                 db,
-                user_id=user_id,
-                namespace=namespace,
                 query=query,
                 top_k=effective_recall_k,
                 exclude_document_ids=exclude_document_ids,
@@ -86,8 +82,6 @@ async def bottom_discovery(
         if "content" in active_channels:
             content_rows = await content_channel(
                 db,
-                user_id=user_id,
-                namespace=namespace,
                 query=query,
                 top_k=effective_recall_k,
                 exclude_document_ids=exclude_document_ids,
@@ -100,8 +94,6 @@ async def bottom_discovery(
         if "term" in active_channels:
             term_rows = await term_channel(
                 db,
-                user_id=user_id,
-                namespace=namespace,
                 query=query,
                 top_k=effective_recall_k,
                 exclude_document_ids=exclude_document_ids,
@@ -183,8 +175,6 @@ async def bottom_discovery(
 async def kg_document_select(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     query: str,
     llm_fn: LLMFn | None,
     exclude_document_ids: list[str],
@@ -196,8 +186,6 @@ async def kg_document_select(
     try:
         overview_text, doc_id_to_name = await build_knowledge_map_overview(
             db,
-            user_id=user_id,
-            namespace=namespace,
         )
         if overview_text == "(empty)":
             latency = int((time.monotonic() - t0) * 1000)

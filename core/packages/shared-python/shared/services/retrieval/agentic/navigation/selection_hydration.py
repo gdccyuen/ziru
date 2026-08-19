@@ -16,16 +16,12 @@ async def hydrate_path_selections_into_node(
     *,
     node: DocTreeNode,
     path_selections: list[dict[str, Any]],
-    user_id: str,
-    namespace: str,
     document_id: str,
     job_result_id: str | None = None,
 ) -> None:
     chunks = await hydrate_paths_to_rows(
         db,
         path_selections=path_selections,
-        user_id=user_id,
-        namespace=namespace,
         document_id=document_id,
     )
     if not chunks:
@@ -49,15 +45,11 @@ async def hydrate_chunk_refs_into_node(
     *,
     node: DocTreeNode,
     refs: list[dict[str, Any]],
-    user_id: str,
-    namespace: str,
     document_id: str,
     job_result_id: str | None = None,
 ) -> None:
     chunks = await hydrate_referenced_chunk_rows(
         db=db,
-        user_id=user_id,
-        namespace=namespace,
         refs=refs,
     )
     if not chunks:

@@ -11,10 +11,8 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.models.database.document import DocumentChunk, DocumentSection
-from shared.services.retrieval.cache_service import (
-    invalidate_retrieval_cache_namespaces,
-)
-from shared.services.retrieval.graph.service import DocumentGraphService, GraphScope
+from shared.services.retrieval.cache_service import invalidate_retrieval_cache
+from shared.services.retrieval.graph.service import DocumentGraphService
 from shared.services.storage.result_storage import ResultStorage, get_result_storage
 
 _DOCUMENT_CHUNK_ASSET_URL_EXPIRES_SECONDS = 7 * 24 * 60 * 60
@@ -166,7 +164,6 @@ def _positive_int(value: Any) -> int | None:
 def document_payload(document) -> dict[str, Any]:
     return {
         "document_id": document.document_id,
-        "namespace": document.namespace,
         "status": document.status,
         "current_job_result_id": document.current_job_result_id,
         "source_file_name": document.source_file_name,
@@ -195,25 +192,18 @@ class DocumentService:
         self,
         db: AsyncSession,
         *,
-        user_id: str,
-        namespace: str,
         page: int,
         page_size: int,
     ) -> dict[str, Any]:
-        total = await self._repository.count_by_user_namespace(
+        total = await self._repository.count_documents(
             db,
-            user_id=user_id,
-            namespace=namespace,
         )
-        documents = await self._repository.list_by_user_namespace(
+        documents = await self._repository.list_documents(
             db,
-            user_id=user_id,
-            namespace=namespace,
             limit=page_size,
             offset=(page - 1) * page_size,
         )
         return {
-            "namespace": namespace,
             "documents": [document_payload(document) for document in documents],
             "pagination": {
                 "page": page,
@@ -223,27 +213,10 @@ class DocumentService:
             },
         }
 
-    async def list_namespaces(
-        self,
-        db: AsyncSession,
-        *,
-        user_id: str,
-    ) -> dict[str, Any]:
-        rows = await self._repository.list_namespace_counts_for_user(
-            db,
-            user_id=user_id,
-        )
-        namespaces = [
-            {"namespace": namespace, "document_count": count}
-            for namespace, count in rows
-        ]
-        return {"namespaces": namespaces}
-
     async def list_document_chunks(
         self,
         db: AsyncSession,
         *,
-        user_id: str,
         document_id: str,
         page: int,
         page_size: int,
@@ -252,7 +225,6 @@ class DocumentService:
     ) -> dict[str, Any] | None:
         document = await self._repository.get_document(
             db,
-            user_id=user_id,
             document_id=document_id,
         )
         if document is None:
@@ -262,7 +234,6 @@ class DocumentService:
         if not job_result_id:
             return {
                 "document_id": document.document_id,
-                "namespace": document.namespace,
                 "job_result_id": None,
                 "job_id": None,
                 "chunks": [],
@@ -304,7 +275,6 @@ class DocumentService:
 
         return {
             "document_id": document.document_id,
-            "namespace": document.namespace,
             "job_result_id": job_result_id,
             "job_id": job_id,
             "chunks": chunks,
@@ -320,14 +290,12 @@ class DocumentService:
         self,
         db: AsyncSession,
         *,
-        user_id: str,
         document_id: str,
         document_chunk_id: str,
         include_asset_urls: bool,
     ) -> dict[str, Any] | None:
         document = await self._repository.get_document(
             db,
-            user_id=user_id,
             document_id=document_id,
         )
         if document is None or not document.current_job_result_id:
@@ -346,7 +314,6 @@ class DocumentService:
         result_storage = get_result_storage() if include_asset_urls else None
         return {
             "document_id": document.document_id,
-            "namespace": document.namespace,
             "job_result_id": document.current_job_result_id,
             "job_id": job_result.job_id,
             "chunk": self._chunk_payload(
@@ -362,12 +329,10 @@ class DocumentService:
         self,
         db: AsyncSession,
         *,
-        user_id: str,
         document_id: str,
     ) -> dict[str, Any] | None:
         document = await self._repository.get_document(
             db,
-            user_id=user_id,
             document_id=document_id,
         )
         if document is None:
@@ -378,12 +343,10 @@ class DocumentService:
         self,
         db: AsyncSession,
         *,
-        user_id: str,
         document_id: str,
     ) -> dict[str, Any] | None:
         row = await self._repository.get_current_document_job_revision(
             db,
-            user_id=user_id,
             document_id=document_id,
         )
         if row is None:
@@ -413,7 +376,6 @@ class DocumentService:
         )
         return {
             "document_id": document.document_id,
-            "namespace": document.namespace,
             "job_id": job.job_id,
             "job_result_id": job_result.id,
             "variant": _PAGE_CITATION_SOURCE_VARIANT,
@@ -427,12 +389,10 @@ class DocumentService:
         self,
         db: AsyncSession,
         *,
-        user_id: str,
         document_id: str,
     ) -> dict[str, Any] | None:
         row = await self._repository.get_current_document_job_revision(
             db,
-            user_id=user_id,
             document_id=document_id,
         )
         if row is None:
@@ -460,7 +420,6 @@ class DocumentService:
         )
         response: dict[str, Any] = {
             "document_id": document.document_id,
-            "namespace": document.namespace,
             "job_id": job.job_id,
             "job_result_id": job_result.id,
             "file_name": _MINERU_RAW_FILE_NAME,
@@ -525,7 +484,6 @@ class DocumentService:
     ) -> dict[str, Any] | None:
         document = await self._repository.get_document(
             db,
-            user_id=user_id,
             document_id=document_id,
         )
         if document is None:
@@ -534,21 +492,10 @@ class DocumentService:
         if document.status == "archived":
             return document_payload(document)
 
-        previous_namespace = document.namespace
         await self._repository.archive_document(db, document=document)
-        await db.run_sync(
-            lambda sync_db: self._graph_service.remove_document_graph(
-                sync_db,
-                scope=GraphScope(user_id=user_id, namespace=document.namespace),
-                document_id=document_id,
-            )
-        )
         await db.commit()
         try:
-            await invalidate_retrieval_cache_namespaces(
-                user_id=user_id,
-                namespaces=[previous_namespace],
-            )
+            await invalidate_retrieval_cache(user_id=user_id)
         except Exception as e:
             logger.warning(
                 f"Cache invalidation failed after archiving document {document_id}: {e}"

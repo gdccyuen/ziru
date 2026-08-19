@@ -56,8 +56,6 @@ class DocumentNavigationRunner:
         state: AgentState,
         trace: TraceRecorder,
         trace_enabled: bool,
-        user_id: str,
-        namespace: str,
         query: str,
         config: AgentRunConfig,
         discovery_by_doc: dict[str, list[dict[str, Any]]],
@@ -70,7 +68,6 @@ class DocumentNavigationRunner:
         self._trace = trace
         self._trace_enabled = trace_enabled
         self._user_id = user_id
-        self._namespace = namespace
         self._query = query
         self._config = config
         self._discovery_by_doc = discovery_by_doc

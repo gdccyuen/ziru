@@ -12,15 +12,10 @@ _MAX_OVERVIEW_FILES = 50
 
 async def build_knowledge_map_overview(
     db: AsyncSession,
-    *,
-    user_id: str,
-    namespace: str,
 ) -> tuple[str, dict[str, str]]:
     """Build a file-level knowledge map overview for LLM file selection."""
     doc_stmt = (
         select(Document)
-        .where(Document.user_id == user_id)
-        .where(Document.namespace == namespace)
         .where(Document.status == "active")
         .where(Document.current_job_result_id.is_not(None))
         .order_by(Document.updated_at.desc())
