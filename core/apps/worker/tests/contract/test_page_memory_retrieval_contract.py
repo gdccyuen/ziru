@@ -531,8 +531,6 @@ async def test_referenced_chunks_get_page_asset_url_from_hydrated_rows(
 
     resolved = await resolve_workflow_references(
         db=None,  # fake hydrate ignores db
-        user_id="user-1",
-        namespace="default",
         refs=[
             {
                 "document_id": "doc-1",

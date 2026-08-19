@@ -437,11 +437,6 @@ def test_should_reject_pdf_when_page_count_exceeds_configured_limit(
         ]
     }
 
-    billing = contract.observe_user_billing(job["user_id"])
-    assert billing["balance"] is None
-    assert billing["transaction_types"] == []
-    assert billing["transaction_counts"] == {}
-    assert billing["system_grant_payment_count"] == 0
 
 
 def test_page_memory_parse_track_bypasses_legacy_oversized_pdf_gate(

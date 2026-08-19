@@ -94,13 +94,7 @@ class SyncJobPublicationFinalizer:
         try:
             redis_service = SyncRedisServiceFactory.get_service()
             user_id = cache_invalidation.user_id
-            seen: set[str] = set()
-            for raw_namespace in cache_invalidation.namespaces:
-                namespace = normalize_retrieval_namespace(str(raw_namespace))
-                if not namespace or namespace in seen:
-                    continue
-                seen.add(namespace)
-                redis_service.incr(f"retrieval:version:{user_id}:{namespace}")
+            redis_service.incr(f"retrieval:version:{user_id}")
         except Exception as exc:
             logger.warning(
                 "Failed to invalidate retrieval cache after publication "
@@ -119,18 +113,9 @@ class SyncJobPublicationFinalizer:
         if not job:
             return None
 
-        metadata = job.job_metadata or {}
-        namespaces: list[str] = [
-            JobMetadataHelper.get_namespace(metadata, "default") or "default",
-        ]
-        if previous_document_scope:
-            namespaces.append(previous_document_scope.namespace)
-        if published_document_state:
-            namespaces.append(published_document_state.namespace)
-
         return RetrievalCacheInvalidation(
             user_id=str(job.user_id),
-            namespaces=tuple(namespaces),
+            namespaces=(),
             job_id=job_id,
         )
 
