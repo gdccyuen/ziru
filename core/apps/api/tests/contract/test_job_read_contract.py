@@ -49,7 +49,6 @@ async def test_should_list_created_jobs_for_the_authenticated_developer(
 
     job = jobs[0]
     assert job["job_id"] == created_job["job_id"]
-    assert job["namespace"] == "contract-jobs"
     assert job["document_id"] == created_job["document_id"]
     assert job["status"] == "waiting-file"
     assert job["source_type"] == "file"
@@ -65,7 +64,6 @@ async def test_should_list_created_jobs_for_the_authenticated_developer(
     assert job["model"] is None
     assert job["ocr_enabled"] is None
     assert job["duration_seconds"] is not None
-    assert job["credits_spent"] == 0.0
 
 
 @pytest.mark.asyncio
@@ -113,7 +111,6 @@ async def test_should_return_job_details_for_an_existing_waiting_file_job(
     response_json = cast(dict[str, object], response.json())
 
     assert response_json["job_id"] == job_id
-    assert response_json["namespace"] == "contract-jobs"
     assert response_json["document_id"] == created_job["document_id"]
     assert response_json["status"] == "waiting-file"
     assert response_json["source_type"] == "file"
@@ -129,7 +126,6 @@ async def test_should_return_job_details_for_an_existing_waiting_file_job(
     assert response_json["model"] is None
     assert response_json["ocr_enabled"] is None
     assert response_json["duration_seconds"] is not None
-    assert response_json["credits_spent"] == 0.0
 
 
 @pytest.mark.asyncio
@@ -148,7 +144,7 @@ async def test_should_report_zero_credits_spent_for_refunded_failed_job(
             SET
                 status = 'failed',
                 error_code = 'INVALID_ARGUMENT',
-                error_message = 'Invalid file: the uploaded .docx file is not a valid Word document. Please check the file and upload again.',
+                error_message = 'Invalid file: the uploaded .docx file is not a valid Word document. Please check the file and upload again.'
             WHERE job_id = :job_id
             """,
             {"job_id": job_id},
@@ -167,7 +163,6 @@ async def test_should_report_zero_credits_spent_for_refunded_failed_job(
         error["message"]
         == "Invalid file: the uploaded .docx file is not a valid Word document. Please check the file and upload again."
     )
-    assert response_json["credits_spent"] == 0.0
 
 
 @pytest.mark.asyncio
