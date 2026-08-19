@@ -31,6 +31,8 @@ export type ApiKey = {
 export type AttributeEntry = {
   key: string;
   allowedValues: string[] | null;
+  /** Number of documents currently using this attribute key. */
+  usage?: number;
 };
 
 export type Pagination = {
@@ -161,7 +163,7 @@ function extractDetail(body: unknown): string | undefined {
 
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
-  if (init.body !== undefined && !headers.has("Content-Type")) {
+  if (init.body !== undefined && !(init.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
   const response = await fetch(`/api${path}`, {
@@ -192,10 +194,11 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
 }
 
 export type CreateUserInput = {
-  email: string;
-  password: string;
+  email: string | null;
+  password: string | null;
   grade: Grade;
   profile?: ProfileEntry[];
+  sso?: { provider: string; subject: string } | null;
 };
 
 export type UpdateUserInput = {
@@ -289,6 +292,15 @@ export const api = {
     apiRequest<{ deleted: string }>(`/v2/attributes/${encodeURIComponent(key)}`, {
       method: "DELETE",
     }),
+  uploadDocument: (file: File, attributes: Record<string, string[]>) => {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("attributes", JSON.stringify(attributes));
+    return apiRequest<{ job_id: string; status: string } & Record<string, unknown>>(
+      "/v2/documents",
+      { method: "POST", body: form }
+    );
+  },
   documents: (query: DocumentsQuery = {}) => {
     const search = new URLSearchParams();
     if (query.page !== undefined) search.set("page", String(query.page));

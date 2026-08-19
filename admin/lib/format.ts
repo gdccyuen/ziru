@@ -71,6 +71,38 @@ export function joinAllowedValues(values: string[] | null | undefined): string {
   return (values ?? []).join(", ");
 }
 
+export function parseExpiresAtInput(value: string): string | null {
+  const raw = value.trim();
+  if (!raw) return null;
+  const iso = new Date(raw);
+  if (!Number.isNaN(iso.getTime())) return iso.toISOString();
+  const dmY = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[, ]+(\d{1,2}):(\d{2}))?$/);
+  if (dmY) {
+    const [, day, month, year, hour, minute] = dmY;
+    const date = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      hour ? Number(hour) : 0,
+      minute ? Number(minute) : 0
+    );
+    if (!Number.isNaN(date.getTime())) return date.toISOString();
+  }
+  const dMY = raw.match(/^(\d{1,2})-(\d{1,2})-(\d{4})(?:[, ]+(\d{1,2}):(\d{2}))?$/);
+  if (dMY) {
+    const [, day, month, year, hour, minute] = dMY;
+    const date = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      hour ? Number(hour) : 0,
+      minute ? Number(minute) : 0
+    );
+    if (!Number.isNaN(date.getTime())) return date.toISOString();
+  }
+  throw new Error("Use YYYY-MM-DD HH:MM, DD/MM/YYYY HH:MM, or an ISO date");
+}
+
 export function truncate(value: string, maxLength = 48): string {
   if (value.length <= maxLength) return value;
   return `${value.slice(0, maxLength - 1)}…`;
