@@ -38,8 +38,6 @@ WITH scoped_chunks AS (
         dc.path_search_tsv,
         dc.term_search_text,
         d.source_file_name,
-        d.user_id,
-        d.namespace,
         ds.section_path,
         jr.job_id
     FROM document_chunks dc
@@ -50,9 +48,7 @@ WITH scoped_chunks AS (
         ON ds.section_id = dc.section_id
     JOIN job_results jr
         ON jr.id = dc.job_result_id
-    WHERE d.user_id = :user_id
-        AND d.namespace = :namespace
-        AND d.status = 'active'
+    WHERE d.status = 'active'
         {exclude_clause}
         {extra_filters}
 )
@@ -70,14 +66,9 @@ def _build_exclude_clause(exclude_document_ids: list[str]) -> str:
 
 def _build_base_params(
     *,
-    user_id: str,
-    namespace: str,
     exclude_document_ids: list[str],
 ) -> dict[str, Any]:
-    params: dict[str, Any] = {
-        "user_id": user_id,
-        "namespace": namespace,
-    }
+    params: dict[str, Any] = {}
     if exclude_document_ids:
         params["excluded_doc_ids"] = list(exclude_document_ids)
     return params
@@ -143,8 +134,6 @@ def _filter_excluded_sections(
 async def path_channel(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     query: str,
     top_k: int,
     exclude_document_ids: list[str],
@@ -160,8 +149,6 @@ async def path_channel(
     """
     return await _bm25_channel(
         db,
-        user_id=user_id,
-        namespace=namespace,
         query=query,
         top_k=top_k,
         exclude_document_ids=exclude_document_ids,
@@ -176,8 +163,6 @@ async def path_channel(
 async def content_channel(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     query: str,
     top_k: int,
     exclude_document_ids: list[str],
@@ -189,8 +174,6 @@ async def content_channel(
     """Content channel: BM25 over pre-tokenized content search text."""
     return await _bm25_channel(
         db,
-        user_id=user_id,
-        namespace=namespace,
         query=query,
         top_k=top_k,
         exclude_document_ids=exclude_document_ids,
@@ -205,8 +188,6 @@ async def content_channel(
 async def _bm25_channel(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     query: str,
     top_k: int,
     exclude_document_ids: list[str],
@@ -230,8 +211,6 @@ async def _bm25_channel(
         filter_mode=filter_mode,
     )
     params = _build_base_params(
-        user_id=user_id,
-        namespace=namespace,
         exclude_document_ids=exclude_document_ids,
     )
     params.update(extra_params)
@@ -253,8 +232,6 @@ async def _bm25_channel(
 async def term_channel(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     query: str,
     top_k: int,
     exclude_document_ids: list[str],
@@ -282,8 +259,6 @@ async def term_channel(
         filter_mode=filter_mode,
     )
     params = _build_base_params(
-        user_id=user_id,
-        namespace=namespace,
         exclude_document_ids=exclude_document_ids,
     )
     params.update(extra_params)
