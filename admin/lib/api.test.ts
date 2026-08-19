@@ -69,25 +69,31 @@ describe("parseExpiresAtInput", () => {
     expect(parseExpiresAtInput("   ")).toBeNull();
   });
 
+  function parseOrThrow(value: string): Date {
+    const iso = parseExpiresAtInput(value);
+    if (iso === null) throw new Error("expected a parsed date");
+    return new Date(iso);
+  }
+
   it("parses ISO dates", () => {
-    const iso = new Date(parseExpiresAtInput("2026-08-22T22:38:00")!);
+    const iso = parseOrThrow("2026-08-22T22:38:00");
     expect(iso.getFullYear()).toBe(2026);
     expect(iso.getMonth()).toBe(7);
     expect(iso.getDate()).toBe(22);
-    const spaced = new Date(parseExpiresAtInput("2026-08-22 22:38")!);
+    const spaced = parseOrThrow("2026-08-22 22:38");
     expect(spaced.getDate()).toBe(22);
     expect(spaced.getHours()).toBe(22);
   });
 
   it("parses the console's DD/MM/YYYY[,] HH:MM format", () => {
-    const comma = new Date(parseExpiresAtInput("22/8/2026, 22:38")!);
+    const comma = parseOrThrow("22/8/2026, 22:38");
     expect(comma.getFullYear()).toBe(2026);
     expect(comma.getMonth()).toBe(7);
     expect(comma.getDate()).toBe(22);
     expect(comma.getHours()).toBe(22);
-    const space = new Date(parseExpiresAtInput("22/8/2026 22:38")!);
+    const space = parseOrThrow("22/8/2026 22:38");
     expect(space.getDate()).toBe(22);
-    const dateOnly = new Date(parseExpiresAtInput("22/8/2026")!);
+    const dateOnly = parseOrThrow("22/8/2026");
     expect(dateOnly.getDate()).toBe(22);
   });
 
