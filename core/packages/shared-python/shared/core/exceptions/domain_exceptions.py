@@ -148,6 +148,39 @@ class PermissionDeniedException(ZiruException):
         )
 
 
+class PasswordChangeRequiredException(PermissionDeniedException):
+    """The session owner must change their password before continuing. HTTP 403."""
+
+    def __init__(
+        self,
+        user_message: str = "Password change required before continuing",
+        internal_message: Optional[str] = None,
+    ):
+        super().__init__(
+            user_message=user_message,
+            required_permission=None,
+            internal_message=internal_message or user_message,
+        )
+        # Override the canonical code so clients can detect the force-change gate.
+        self.code = ErrorCode.PASSWORD_CHANGE_REQUIRED
+
+
+class NotImplementedException(ZiruException):
+    """Requested feature/provider is not implemented or configured. HTTP 501."""
+
+    def __init__(
+        self,
+        user_message: str = "Not implemented",
+        internal_message: Optional[str] = None,
+    ):
+        super().__init__(
+            code=ErrorCode.NOT_IMPLEMENTED,
+            internal_message=internal_message or user_message,
+            user_message=user_message,
+            details={},
+        )
+
+
 class NotFoundException(ZiruException):
     """
     Resource not found. HTTP 404.

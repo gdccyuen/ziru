@@ -37,6 +37,43 @@ class AppConfig(
         description="Frontend URL for callback redirects",
     )
 
+    # Account bootstrap (P2).
+    ADMIN_BOOTSTRAP_EMAIL: str = Field(
+        default="admin@ziru.local",
+        description="Email of the bootstrap administrator created when users is empty",
+    )
+    ADMIN_BOOTSTRAP_PASSWORD: str = Field(
+        default="P@ss202607",
+        description="Password of the bootstrap administrator (change on first login)",
+    )
+    SESSION_TTL_DAYS: int = Field(
+        default=30, ge=1, description="Session cookie/session-row lifetime in days"
+    )
+    SESSION_COOKIE_SECURE: bool = Field(
+        default=False,
+        description="Mark the ziru_session cookie Secure (requires HTTPS)",
+    )
+
+    # SSO OIDC (P2, ticket 03; Q26/Q28 — admin pre-link only).
+    SSO_OIDC_ISSUER: str = Field(
+        default="", description="OIDC issuer URL; empty disables the OIDC flow"
+    )
+    SSO_OIDC_CLIENT_ID: str = Field(default="", description="OIDC client id")
+    SSO_OIDC_CLIENT_SECRET: str = Field(
+        default="", description="OIDC client secret"
+    )
+    SSO_OIDC_SCOPE: str = Field(
+        default="openid email profile", description="OIDC requested scopes"
+    )
+    SSO_OIDC_REDIRECT_URI: str = Field(
+        default="http://localhost:5005/api/v1/auth/sso/oidc/callback",
+        description="OIDC redirect URI (must match the IdP registration)",
+    )
+    SSO_SUCCESS_REDIRECT: str = Field(
+        default="http://localhost:3000",
+        description="Frontend URL a successful SSO login redirects to",
+    )
+
     def validate_all(self) -> bool:
         """Validate the combined application configuration."""
         validations = [

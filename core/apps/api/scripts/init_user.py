@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared.core.database import engine, get_db_context
 from shared.models.database.api_key import APIKey
 from shared.models.database.user import GRADE_USER, User
+from shared.services.password import hash_password
 from shared.utils.api_keys import generate_api_key, hash_api_key, mask_api_key
 
 _DEFAULT_API_KEY_NAME: str = "standalone-api-key"
@@ -89,17 +90,13 @@ async def _find_or_create_user(
 
     # The account model requires a password hash. A random value keeps the
     # account API-key-usable; password login only works after a real password
-    # is set (P2 account API).
+    # is set through the P2 account API.
     password_value = password or secrets.token_urlsafe(24)
 
-    import hashlib
-
-    # Placeholder hash until the P2 account API lands (then Argon2).
-    placeholder_hash = hashlib.sha256(password_value.encode()).hexdigest()
     user = User(
         id=requested_user_id.strip() or f"user_{uuid4().hex[:24]}",
         email=normalized_email,
-        password_hash=placeholder_hash,
+        password_hash=hash_password(password_value),
         grade=GRADE_USER,
         must_change_password=False,
     )

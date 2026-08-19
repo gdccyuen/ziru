@@ -51,6 +51,7 @@ class ErrorCode(str, Enum):
     OUT_OF_RANGE = "OUT_OF_RANGE"  # 400 - Value outside valid range
     UNAUTHENTICATED = "UNAUTHENTICATED"  # 401 - Missing/invalid credentials
     PERMISSION_DENIED = "PERMISSION_DENIED"  # 403 - Caller lacks permission
+    PASSWORD_CHANGE_REQUIRED = "PASSWORD_CHANGE_REQUIRED"  # 403 - Must change password first
     NOT_FOUND = "NOT_FOUND"  # 404 - Resource does not exist
     ABORTED = "ABORTED"  # 409 - Concurrency conflict
     ALREADY_EXISTS = "ALREADY_EXISTS"  # 409 - Resource already exists
@@ -84,6 +85,7 @@ class ErrorCodeMapper:
         ErrorCode.OUT_OF_RANGE: 400,
         ErrorCode.UNAUTHENTICATED: 401,
         ErrorCode.PERMISSION_DENIED: 403,
+        ErrorCode.PASSWORD_CHANGE_REQUIRED: 403,
         ErrorCode.NOT_FOUND: 404,
         ErrorCode.ABORTED: 409,
         ErrorCode.ALREADY_EXISTS: 409,
