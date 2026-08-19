@@ -101,17 +101,6 @@ class JobMetadataHelper:
         return metadata
 
     @staticmethod
-    def set_document_scope(
-        metadata: Dict[str, Any],
-        *,
-        document_id: str,
-        namespace: str,
-    ) -> None:
-        """Store the effective retrieval document scope."""
-        metadata["document_id"] = document_id
-        metadata["namespace"] = namespace
-
-    @staticmethod
     def set_file_source(metadata: Dict[str, Any], *, source_file_name: str) -> None:
         """Store source metadata for direct file uploads."""
         metadata["source_file_name"] = source_file_name

@@ -11,7 +11,7 @@ from app.services.document_ingestion.parse_result_package import (
 from app.services.document_ingestion.parse_execution import execute_document_parse
 from app.services.document_ingestion.processing_records import (
     record_processing_start,
-    record_skipped_parse_job,
+    record_workload_estimate,
 )
 from app.services.document_ingestion.processing_context import (
     ParseJobContext,
@@ -112,7 +112,7 @@ def _run_parse_job(
             page_count=page_count,
         )
         if oversized_pdf_rejection is not None:
-            record_skipped_parse_job(
+            record_workload_estimate(
                 job_id=job_id,
                 workload_estimate=workload_estimate,
             )
@@ -125,7 +125,7 @@ def _run_parse_job(
             )
             raise oversized_pdf_rejection
 
-        record_skipped_parse_job(
+        record_workload_estimate(
             job_id=job_id,
             workload_estimate=workload_estimate,
         )

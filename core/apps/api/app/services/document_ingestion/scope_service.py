@@ -68,20 +68,19 @@ def raise_document_ingestion_conflict(
     )
 
 
-async def resolve_effective_document_scope(
+async def resolve_effective_document_id(
     db: AsyncSession,
     *,
-    user_id: str,
     document_id: Optional[str],
     repository: DocumentRepository | None = None,
-) -> tuple[str, str]:
-    """Resolve the target document id. Namespace is retired (Q2).
+) -> str:
+    """Resolve the target document id (namespaces are retired, Q2).
 
-    Returns (document_id, namespace) for caller compatibility; namespace is
-    always an empty string.
+    A blank document_id generates a new id; missing or archived documents
+    raise NotFoundException.
     """
     if not document_id:
-        return f"doc_{uuid.uuid4().hex[:12]}", ""
+        return f"doc_{uuid.uuid4().hex[:12]}"
 
     document = await (repository or DocumentRepository()).get_document(
         db,
@@ -93,4 +92,4 @@ async def resolve_effective_document_scope(
             resource_id=document_id,
             internal_message=f"Document not found for update flow: {document_id}",
         )
-    return document.document_id, ""
+    return document.document_id

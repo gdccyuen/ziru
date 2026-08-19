@@ -823,8 +823,8 @@ async def test_should_create_job_for_existing_document_with_blank_namespace(
     ],
     namespace_value: str | None,
 ) -> None:
-    # Namespaces no longer exist (P3): blank update namespaces are accepted
-    # and normalized to the empty string; there is no namespace to inherit.
+    # Namespaces no longer exist (P3): blank update namespaces are accepted;
+    # the effective document scope is the document id only.
     document_id = f"doc_contract_{uuid4().hex[:12]}"
     payload: dict[str, object] = {
         "document_id": document_id,
@@ -846,7 +846,7 @@ async def test_should_create_job_for_existing_document_with_blank_namespace(
     original_request = cast(dict[str, object], job_metadata["original_request"])
 
     assert job_metadata["document_id"] == document_id
-    assert job_metadata["namespace"] == ""
+    assert job_metadata["namespace"] == "default"
     assert original_request["namespace"] == namespace_value
 
 

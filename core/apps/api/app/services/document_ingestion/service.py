@@ -21,7 +21,7 @@ from app.services.document_ingestion.creation_service import (
 from app.services.document_ingestion.scope_service import (
     find_active_job_for_document,
     raise_document_ingestion_conflict,
-    resolve_effective_document_scope,
+    resolve_effective_document_id,
 )
 from app.services.rate_limit.data_structures import CurrentUser
 from app.services.rate_limit.job_admission_service import JobAdmissionService
@@ -123,10 +123,7 @@ class DocumentIngestionService:
                 current_user=current_user,
             )
 
-            await self._job_admission_service.enforce_job_capacity(
-                db=db,
-                current_user=current_user,
-            )
+            await self._job_admission_service.enforce_job_capacity(db=db)
 
             return await self._creation_service.create_job(
                 db,
@@ -292,12 +289,8 @@ class DocumentIngestionService:
                     active_job_id=active_job.job_id,
                 )
 
-        (
-            effective_document_id,
-            effective_namespace,
-        ) = await resolve_effective_document_scope(
+        effective_document_id = await resolve_effective_document_id(
             db,
-            user_id=current_user.user_id,
             document_id=requested_document_id,
         )
 
@@ -313,15 +306,11 @@ class DocumentIngestionService:
                     active_job_id=active_job.job_id,
                 )
 
-        JobMetadataHelper.set_document_scope(
-            job_metadata,
-            document_id=effective_document_id,
-            namespace=effective_namespace,
-        )
+        job_metadata["document_id"] = effective_document_id
         return ResolvedDocumentIngestionScope(
             job_metadata=job_metadata,
             document_id=effective_document_id,
-            namespace=effective_namespace,
+            namespace=JobMetadataHelper.get_namespace(job_metadata) or "default",
         )
 
 

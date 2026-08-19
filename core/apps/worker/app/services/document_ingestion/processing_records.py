@@ -10,15 +10,15 @@ from shared.core.database_sync import get_sync_db_context
 from shared.models.database.job import Job
 
 
-def record_skipped_parse_job(
+def record_workload_estimate(
     *,
     job_id: str,
     workload_estimate: WorkloadEstimate,
 ) -> None:
-    """Persist the workload estimate for a job that is not processed.
+    """Persist the workload estimate (page count) for a job.
 
-    Billing fields were removed with the billing domain (07); only the page
-    count (workload estimation, oversized-PDF policy) is recorded.
+    Used on both the normal and skipped (oversized-PDF) paths; page count
+    feeds the oversized-PDF policy.
     """
     page_count = workload_estimate.page_count
     with get_sync_db_context() as db:
