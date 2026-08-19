@@ -126,6 +126,10 @@ async def _create_rate_limited_developer_api_client(
                 )
                 yield client
     finally:
+        # Restore the wildcard system limit so tests later in the session are
+        # not throttled by the mutated 1/minute default (system_limits is a
+        # preserved static table across contract tests).
+        await _set_default_system_limit(rpm=1000, period="minute")
         await cleanup_contract_runtime_async(remove_test_directories=True)
 
 
