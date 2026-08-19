@@ -6,14 +6,18 @@ from typing import Any
 
 from app.api.dependencies.current_user import require_admin, with_current_user
 from app.services.attributes.attribute_service import (
+    count_attribute_usage,
     insert_dictionary_entry,
     load_attribute_dictionary,
+    load_attribute_usage_counts,
     parse_attribute_values,
     require_dictionary_entry,
     validation_error_422,
 )
 from app.services.rate_limit.data_structures import CurrentUser
 from fastapi import APIRouter, Depends
+
+from shared.core.exceptions.domain_exceptions import ConflictException
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,8 +36,12 @@ class AttributeUpdateRequest(BaseModel):
     allowedValues: list[str] | None = None
 
 
-def _entry_payload(key: str, allowed_values: list[str] | None) -> dict[str, Any]:
-    return {"key": key, "allowedValues": allowed_values}
+def _entry_payload(
+    key: str,
+    allowed_values: list[str] | None,
+    usage: int = 0,
+) -> dict[str, Any]:
+    return {"key": key, "allowedValues": allowed_values, "usage": usage}
 
 
 @router.get("", summary="List the attribute dictionary")
@@ -42,8 +50,13 @@ async def list_attributes(
     db: AsyncSession = Depends(get_db),
 ) -> list[dict[str, Any]]:
     dictionary = await load_attribute_dictionary(db)
+    usage_counts = await load_attribute_usage_counts(db)
     return [
-        _entry_payload(key, allowed_values)
+        _entry_payload(
+            key,
+            allowed_values,
+            usage=usage_counts.get(key, 0),
+        )
         for key, allowed_values in sorted(dictionary.items())
     ]
 
@@ -89,6 +102,15 @@ async def delete_attribute(
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     row = await require_dictionary_entry(db, key=key)
+    usage = await count_attribute_usage(db, key=key)
+    if usage >= 1:
+        raise ConflictException(
+            user_message=f"attribute in use by {usage} document(s)",
+            reason="IN_USE",
+            resource="Attribute key",
+            resource_id=key,
+            internal_message=f"Cannot delete attribute key '{key}': in use by {usage} document(s)",
+        )
     await db.delete(row)
     await db.commit()
     return {"deleted": key}

@@ -23,8 +23,8 @@ class SSOLinkRequest(BaseModel):
 
 
 class CreateUserRequest(BaseModel):
-    email: str = Field(..., min_length=1)
-    password: str = Field(..., min_length=1)
+    email: str | None = None
+    password: str | None = None
     grade: str = "user"
     profile: list[dict[str, Any]] | None = None
     sso: SSOLinkRequest | None = None

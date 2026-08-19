@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.core.exceptions.domain_exceptions import (
@@ -13,6 +13,7 @@ from shared.core.exceptions.domain_exceptions import (
     ValidationException,
 )
 from shared.models.database.attribute_dictionary import AttributeDictionaryEntry
+from shared.models.database.document_attribute import DocumentAttribute
 from shared.services.profile import BUILTIN_ATTRIBUTE_KEYS
 
 
@@ -40,6 +41,27 @@ async def load_attribute_dictionary(
         row.key: list(row.allowed_values) if row.allowed_values else None
         for row in result.scalars().all()
     }
+
+
+async def load_attribute_usage_counts(db: AsyncSession) -> dict[str, int]:
+    """Return {attribute_key: number of distinct documents using it}."""
+    result = await db.execute(
+        select(
+            DocumentAttribute.attr_key,
+            func.count(func.distinct(DocumentAttribute.document_id)),
+        ).group_by(DocumentAttribute.attr_key)
+    )
+    return {key: int(count) for key, count in result.all()}
+
+
+async def count_attribute_usage(db: AsyncSession, *, key: str) -> int:
+    """Count distinct documents currently using an attribute key."""
+    result = await db.execute(
+        select(func.count(func.distinct(DocumentAttribute.document_id))).where(
+            DocumentAttribute.attr_key == key
+        )
+    )
+    return int(result.scalar_one())
 
 
 def validate_attributes(

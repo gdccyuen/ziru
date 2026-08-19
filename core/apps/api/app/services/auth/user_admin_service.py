@@ -32,6 +32,15 @@ def _normalize_profile_or_raise(profile: list[dict[str, Any]]) -> list[dict[str,
     return [{"key": c.key, "values": list(c.values)} for c in constraints]
 
 
+def _validation_422(user_message: str, field: str) -> ValidationException:
+    exc = ValidationException(
+        user_message=user_message,
+        violations=[{"field": field, "description": user_message}],
+    )
+    exc.http_status_code = 422
+    return exc
+
+
 def _validate_grade_or_raise(grade: str) -> None:
     if grade not in GRADES:
         raise ValidationException(
@@ -56,12 +65,19 @@ class UserAdminService:
         sso_provider: str | None = None,
         sso_subject: str | None = None,
     ) -> User:
-        normalized_email = email.strip().lower()
-        if not normalized_email or not password:
-            raise ValidationException(
-                user_message="email and password are required",
-                violations=[{"field": "email", "description": "required"}],
+        normalized_email = email.strip().lower() if email else None
+        sso_provided = bool(sso_provider and sso_subject)
+        if not normalized_email and not sso_provided:
+            raise _validation_422(
+                "email is required unless SSO provider and subject are provided",
+                "email",
             )
+        if normalized_email and not password:
+            raise _validation_422("password is required for email accounts", "password")
+        if not normalized_email:
+            # SSO-only accounts may omit email; derive a deterministic
+            # placeholder so the unique email column stays populated.
+            normalized_email = f"sso-{sso_provider}-{sso_subject}@ziru.local"
         _validate_grade_or_raise(grade)
 
         existing = await db.scalar(
@@ -81,10 +97,10 @@ class UserAdminService:
 
         user = User(
             email=normalized_email,
-            password_hash=hash_password(password),
+            password_hash=hash_password(password) if password else hash_password(secrets.token_urlsafe(32)),
             grade=grade,
             profile=normalized_profile,
-            must_change_password=True,
+            must_change_password=bool(password),
         )
         db.add(user)
         await db.flush()

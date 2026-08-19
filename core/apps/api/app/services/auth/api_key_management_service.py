@@ -196,6 +196,7 @@ class APIKeyManagementService:
                 "created_at": api_key.created_at,
                 "last_used_at": api_key.last_used_at,
                 "expires_at": api_key.expires_at,
+                "user_id": str(api_key.user_id),
             }
             for api_key in api_keys
         ]
