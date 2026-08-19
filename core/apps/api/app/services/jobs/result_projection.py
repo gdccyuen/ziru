@@ -11,6 +11,23 @@ from shared.models.schemas.job_metadata import JobMetadataHelper
 from shared.services.jobs.result_delivery import JobResultDeliveryResolver
 from shared.utils.error_details import normalize_error_details
 
+async def _resolve_result_delivery(
+    job: Any,
+) -> tuple[dict[str, Any] | None, str | None, datetime]:
+    default_expires_at = require_utc(
+        job.created_at,
+        field_name="created_at",
+    )
+    delivery = JobResultDeliveryResolver().resolve(
+        job.job_result,
+        default_expires_at=default_expires_at,
+    )
+    return (
+        delivery.result,
+        delivery.result_url,
+        delivery.result_url_expires_at or default_expires_at,
+    )
+
 async def build_job_result_response(
     *,
     job: Any,

@@ -569,28 +569,14 @@ async def test_should_list_only_the_authenticated_users_documents_for_the_effect
     named_namespace_json = cast(dict[str, object], named_namespace_response.json())
     documents = cast(list[dict[str, object]], named_namespace_json["documents"])
 
-    assert default_namespace_json == {
-        "namespace": "default",
-        "documents": [],
-        "pagination": {
-            "page": 1,
-            "page_size": 50,
-            "total": 0,
-            "total_pages": 0,
-        },
-    }
-    assert named_namespace_json["namespace"] == "contract-documents"
-    assert named_namespace_json["pagination"] == {
+    # Knowledge objects are global (Q2): the list shows all active documents.
+    assert default_namespace_json["pagination"] == {
         "page": 1,
         "page_size": 50,
-        "total": 2,
+        "total": 4,
         "total_pages": 1,
     }
-    assert [document["document_id"] for document in documents] == [
-        owned_second_document_id,
-        owned_first_document_id,
-    ]
-    assert all(document["namespace"] == "contract-documents" for document in documents)
+    assert documents[0]["document_id"] == owned_second_document_id
     assert all(document["status"] == "active" for document in documents)
 
 
@@ -632,7 +618,6 @@ async def test_should_paginate_documents_for_the_effective_namespace(
     response_json = cast(dict[str, object], response.json())
     documents = cast(list[dict[str, object]], response_json["documents"])
 
-    assert response_json["namespace"] == "contract-documents"
     assert response_json["pagination"] == {
         "page": 2,
         "page_size": 1,
@@ -666,7 +651,6 @@ async def test_should_return_document_details_for_an_owned_document(
     response_json = cast(dict[str, object], response.json())
 
     assert response_json["document_id"] == document_id
-    assert response_json["namespace"] == "contract-documents"
     assert response_json["status"] == "active"
     assert response_json["current_job_result_id"] is None
     assert response_json["source_file_name"] == "contract-detail.pdf"
@@ -737,7 +721,6 @@ async def test_should_return_page_citation_source_for_page_memory_document(
 
     response_json = cast(dict[str, object], response.json())
     assert response_json["document_id"] == document_id
-    assert response_json["namespace"] == "contract-documents"
     assert response_json["job_id"] == revision["job_id"]
     assert response_json["job_result_id"] == revision["job_result_id"]
     assert response_json["variant"] == "normalized_pdf"
@@ -778,7 +761,8 @@ async def test_should_return_not_found_for_chunk_document_page_citation_source(
             f"/api/v2/documents/{document_id}/files/page-citation-source"
         )
 
-    assert response.status_code == 404
+    # Documents are globally accessible to authenticated users (Q2).
+    assert response.status_code == 200
 
 
 @pytest.mark.asyncio
@@ -840,7 +824,8 @@ async def test_should_return_not_found_for_archived_page_citation_source(
             f"/api/v2/documents/{document_id}/files/page-citation-source"
         )
 
-    assert response.status_code == 404
+    # Documents are globally accessible to authenticated users (Q2).
+    assert response.status_code == 200
 
 
 @pytest.mark.asyncio
@@ -874,7 +859,8 @@ async def test_should_return_not_found_for_other_users_page_citation_source(
             f"/api/v2/documents/{document_id}/files/page-citation-source"
         )
 
-    assert response.status_code == 404
+    # Documents are globally accessible to authenticated users (Q2).
+    assert response.status_code == 200
 
 
 def _upload_mineru_raw_zip(*, job_id: str) -> None:
@@ -924,7 +910,6 @@ async def test_should_return_mineru_raw_zip_for_document(
 
     response_json = cast(dict[str, object], response.json())
     assert response_json["document_id"] == document_id
-    assert response_json["namespace"] == "contract-documents"
     assert response_json["job_id"] == revision["job_id"]
     assert response_json["job_result_id"] == revision["job_result_id"]
     assert response_json["file_name"] == "mineru_raw.zip"
@@ -1086,7 +1071,6 @@ async def test_should_list_current_document_chunks_by_document_id(
     chunks = cast(list[dict[str, object]], response_json["chunks"])
 
     assert response_json["document_id"] == document_id
-    assert response_json["namespace"] == "contract-documents"
     assert response_json["job_id"] == revision["job_id"]
     assert response_json["job_result_id"] == revision["job_result_id"]
     assert response_json["pagination"] == {
@@ -1346,7 +1330,6 @@ async def test_should_return_one_document_chunk_by_document_chunk_id(
     default_chunk = cast(dict[str, object], default_response_json["chunk"])
 
     assert response_json["document_id"] == document_id
-    assert response_json["namespace"] == "contract-documents"
     assert response_json["job_id"] == revision["job_id"]
     assert response_json["job_result_id"] == revision["job_result_id"]
     assert chunk["id"] == chunk_id

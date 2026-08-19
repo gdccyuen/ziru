@@ -493,6 +493,12 @@ class DocumentService:
             return document_payload(document)
 
         await self._repository.archive_document(db, document=document)
+        await db.run_sync(
+            lambda sync_db: self._graph_service.remove_document_graph(
+                sync_db,
+                document_id=document_id,
+            )
+        )
         await db.commit()
         try:
             await invalidate_retrieval_cache(user_id=user_id)
