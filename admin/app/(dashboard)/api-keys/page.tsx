@@ -43,7 +43,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ApiError, type ApiKey, api, type User } from "@/lib/api";
-import { formatDateTime } from "@/lib/format";
+import { useAuth } from "@/lib/auth-context";
+import { formatDateTime, parseExpiresAtInput } from "@/lib/format";
 
 function CreateKeyDialog({
   users,
@@ -74,12 +75,19 @@ function CreateKeyDialog({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    let iso: string | null = null;
+    try {
+      iso = parseExpiresAtInput(expiresAt);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid expiry date");
+      return;
+    }
     setSubmitting(true);
     try {
       const response = await api.createApiKey({
         user_id: userId,
         name: name.trim(),
-        expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+        expires_at: iso,
       });
       setCreatedKey(response.api_key);
       onCreated();
@@ -136,7 +144,7 @@ function CreateKeyDialog({
                 <SelectContent>
                   {users.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
-                      {user.email}
+                      {user.email ?? user.id}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -155,14 +163,18 @@ function CreateKeyDialog({
               <Label htmlFor="key-expires">Expires at (optional)</Label>
               <Input
                 id="key-expires"
-                type="datetime-local"
+                type="text"
+                placeholder="2026-08-22 22:38 or 22/8/2026, 22:38"
                 value={expiresAt}
                 onChange={(event) => setExpiresAt(event.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                Accepts ISO 8601 or DD/MM/YYYY HH:MM (the core API validates the value).
+              </p>
             </div>
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             <DialogFooter>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" disabled={submitting || userId.length === 0}>
                 {submitting ? "Creating…" : "Create key"}
               </Button>
             </DialogFooter>
@@ -174,6 +186,8 @@ function CreateKeyDialog({
 }
 
 export default function ApiKeysPage() {
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.grade === "administrator";
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,9 +199,14 @@ export default function ApiKeysPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [keysResponse, usersResponse] = await Promise.all([api.apiKeys(), api.users(1, 100)]);
+      const keysResponse = await api.apiKeys();
       setKeys(keysResponse.api_keys);
-      setUsers(usersResponse.users);
+      if (isAdmin) {
+        const usersResponse = await api.users(1, 100);
+        setUsers(usersResponse.users);
+      } else {
+        setUsers([]);
+      }
       setError(null);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to load API keys");
@@ -219,25 +238,35 @@ export default function ApiKeysPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          All API keys in the system; revoke any key at any time.
-        </p>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Create API key
-            </Button>
-          </DialogTrigger>
-        </Dialog>
+      <div className="flex items-center justify-between gap-3">
+        {isAdmin ? (
+          <p className="text-sm text-muted-foreground">
+            All API keys in the system; revoke any key at any time.
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Your API keys, read-only. Contact an administrator to create or revoke keys.
+          </p>
+        )}
+        {isAdmin ? (
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Create API key
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+        ) : null}
       </div>
-      <CreateKeyDialog
-        users={users}
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onCreated={() => void load()}
-      />
+      {isAdmin ? (
+        <CreateKeyDialog
+          users={users}
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+          onCreated={() => void load()}
+        />
+      ) : null}
       <AlertDialog
         open={revokeTarget !== null}
         onOpenChange={(open) => {
@@ -265,7 +294,7 @@ export default function ApiKeysPage() {
       <Card>
         <CardHeader>
           <CardTitle>API keys</CardTitle>
-          <CardDescription>{keys.length} keys total</CardDescription>
+          <CardDescription>{keys.length} key(s) shown</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -278,47 +307,53 @@ export default function ApiKeysPage() {
               <p className="text-sm text-muted-foreground">No API keys yet.</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead>Key</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {keys.map((key) => (
-                  <TableRow key={key.id}>
-                    <TableCell className="font-medium">{key.name}</TableCell>
-                    <TableCell className="text-sm">{key.user_email ?? "—"}</TableCell>
-                    <TableCell>
-                      <code className="text-xs">{key.api_key}</code>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={key.is_active ? "default" : "outline"}>
-                        {key.is_active ? "active" : "disabled"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {formatDateTime(key.created_at)}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {key.expires_at ? formatDateTime(key.expires_at) : "never"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => setRevokeTarget(key)}>
-                        <Trash2 className="mr-1 h-3.5 w-3.5" />
-                        Revoke
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table className="min-w-[860px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Owner</TableHead>
+                    <TableHead>Key</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Expires</TableHead>
+                    {isAdmin ? <TableHead className="text-right">Actions</TableHead> : null}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {keys.map((key) => (
+                    <TableRow key={key.id}>
+                      <TableCell className="font-medium">{key.name}</TableCell>
+                      <TableCell className="max-w-[220px] truncate text-sm">
+                        {key.user_email ?? (isAdmin ? "—" : "you")}
+                      </TableCell>
+                      <TableCell>
+                        <code className="text-xs">{key.api_key}</code>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={key.is_active ? "default" : "outline"}>
+                          {key.is_active ? "active" : "disabled"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                        {formatDateTime(key.created_at)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                        {key.expires_at ? formatDateTime(key.expires_at) : "never"}
+                      </TableCell>
+                      {isAdmin ? (
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm" onClick={() => setRevokeTarget(key)}>
+                            <Trash2 className="mr-1 h-3.5 w-3.5" />
+                            Revoke
+                          </Button>
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

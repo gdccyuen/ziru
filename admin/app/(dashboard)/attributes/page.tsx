@@ -34,7 +34,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ApiError, type AttributeEntry, api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { joinAllowedValues, splitAllowedValues } from "@/lib/format";
 
 type EditorState = {
@@ -93,6 +95,12 @@ function AttributeDialog({
           <DialogTitle>{isEdit ? "Edit attribute" : "Add attribute"}</DialogTitle>
           <DialogDescription>
             Allowed values restrict which values documents and profiles may use.
+            {isEdit ? (
+              <span className="mt-1 block">
+                Note: existing documents keep their current values; this change only affects future
+                validation.
+              </span>
+            ) : null}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -130,6 +138,8 @@ function AttributeDialog({
 }
 
 export default function AttributesPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.grade === "administrator";
   const [entries, setEntries] = useState<AttributeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -175,21 +185,31 @@ export default function AttributesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Attribute dictionary drives validation for document and profile attributes.
-        </p>
-        <Button onClick={() => setEditor({ open: true, entry: null })}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add attribute
-        </Button>
+      <div className="flex items-center justify-between gap-3">
+        {isAdmin ? (
+          <p className="text-sm text-muted-foreground">
+            Attribute dictionary drives validation for document and profile attributes.
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Read-only view: the attribute dictionary is managed by administrators.
+          </p>
+        )}
+        {isAdmin ? (
+          <Button onClick={() => setEditor({ open: true, entry: null })}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add attribute
+          </Button>
+        ) : null}
       </div>
-      <AttributeDialog
-        entry={editor.entry}
-        open={editor.open}
-        onOpenChange={(open) => setEditor((prev) => ({ ...prev, open }))}
-        onSaved={() => void load()}
-      />
+      {isAdmin ? (
+        <AttributeDialog
+          entry={editor.entry}
+          open={editor.open}
+          onOpenChange={(open) => setEditor((prev) => ({ ...prev, open }))}
+          onSaved={() => void load()}
+        />
+      ) : null}
       <AlertDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => {
@@ -230,48 +250,80 @@ export default function AttributesPage() {
               <p className="text-sm text-muted-foreground">No dictionary entries yet.</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Key</TableHead>
-                  <TableHead>Allowed values</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {entries.map((entry) => (
-                  <TableRow key={entry.key}>
-                    <TableCell className="font-mono font-medium">{entry.key}</TableCell>
-                    <TableCell>
-                      {entry.allowedValues && entry.allowedValues.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {entry.allowedValues.map((value) => (
-                            <Badge key={value} variant="secondary">
-                              {value}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">any value</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditor({ open: true, entry })}
-                      >
-                        Edit
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(entry)}>
-                        <Trash2 className="mr-1 h-3.5 w-3.5" />
-                        Delete
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table className="min-w-[760px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Key</TableHead>
+                    <TableHead>Allowed values</TableHead>
+                    <TableHead>In use</TableHead>
+                    {isAdmin ? <TableHead className="text-right">Actions</TableHead> : null}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {entries.map((entry) => {
+                    const usage = entry.usage ?? 0;
+                    return (
+                      <TableRow key={entry.key}>
+                        <TableCell className="font-mono font-medium">{entry.key}</TableCell>
+                        <TableCell>
+                          {entry.allowedValues && entry.allowedValues.length > 0 ? (
+                            <div className="flex max-w-[420px] flex-wrap gap-1">
+                              {entry.allowedValues.map((value) => (
+                                <Badge key={value} variant="secondary">
+                                  {value}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">any value</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={usage > 0 ? "default" : "outline"}>
+                            {usage} document{usage === 1 ? "" : "s"}
+                          </Badge>
+                        </TableCell>
+                        {isAdmin ? (
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditor({ open: true, entry })}
+                            >
+                              Edit
+                            </Button>
+                            <TooltipProvider delayDuration={100}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      disabled={usage > 0}
+                                      onClick={() => setDeleteTarget(entry)}
+                                    >
+                                      <Trash2 className="mr-1 h-3.5 w-3.5" />
+                                      Delete
+                                    </Button>
+                                  </span>
+                                </TooltipTrigger>
+                                {usage > 0 ? (
+                                  <TooltipContent>
+                                    In use by {usage} document{usage === 1 ? "" : "s"} — delete is
+                                    blocked until the attribute is no longer used.
+                                  </TooltipContent>
+                                ) : null}
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                        ) : null}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
