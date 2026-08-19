@@ -13,12 +13,14 @@ from typing import Any
 from uuid import uuid4
 
 from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from shared.models.database.document import Document
+from shared.models.database.document_attribute import DocumentAttribute
 from shared.models.database.job import Job
 from shared.models.database.job_result import JobResult
+from shared.services.profile import BUILTIN_ATTRIBUTE_KEYS
 from shared.models.schemas.job_metadata import JobMetadataHelper
 from shared.services.retrieval.graph.service import DocumentGraphService
 from shared.services.retrieval.publication_content import (
@@ -69,6 +71,7 @@ class RetrievalPublicationService:
         job_result_id: str,
         chunks: list[dict[str, Any]],
         section_summaries: dict[str, str] | None = None,
+        attributes: dict[str, list[str]] | None = None,
     ) -> PublishedDocumentState | None:
         job = db.execute(select(Job).where(Job.job_id == job_id)).scalar_one_or_none()
         if not job:
@@ -81,6 +84,7 @@ class RetrievalPublicationService:
             job_result_id=job_result_id,
             chunks=chunks,
             section_summaries=section_summaries,
+            attributes=attributes,
         )
 
     def _publish_document_state_for_job(
@@ -91,9 +95,15 @@ class RetrievalPublicationService:
         job_result_id: str,
         chunks: list[dict[str, Any]],
         section_summaries: dict[str, str] | None = None,
+        attributes: dict[str, list[str]] | None = None,
     ) -> PublishedDocumentState | None:
 
         job_metadata = job.job_metadata or {}
+        if attributes is None:
+            raw_attributes = job_metadata.get("attributes")
+            attributes = (
+                raw_attributes if isinstance(raw_attributes, dict) else None
+            )
         document_id = job_metadata.get("document_id")
         parse_track = str(job_metadata.get("parse_track") or "chunk")
         source_file_name = job_metadata.get("source_file_name") or job_metadata.get(
@@ -130,6 +140,12 @@ class RetrievalPublicationService:
             db,
             job_result_id=job_result_id,
             document_id=document.document_id,
+        )
+        self._replace_document_attributes(
+            db,
+            document_id=document.document_id,
+            attributes=attributes,
+            user_id=str(job.user_id) if job.user_id else "",
         )
         scope = DocumentPublicationScope(
             document_id=document.document_id,
@@ -197,6 +213,57 @@ class RetrievalPublicationService:
 
         db.flush()
         return document
+
+    def _replace_document_attributes(
+        self,
+        db: Session,
+        *,
+        document_id: str,
+        attributes: dict[str, list[str]] | None,
+        user_id: str,
+    ) -> None:
+        """Replace document_attributes rows and ensure built-ins exist.
+
+        Built-in keys supplied by callers are skipped; createBy/createTime
+        are always (re)created by the system (Q16/Q17).
+        """
+        db.execute(
+            delete(DocumentAttribute).where(
+                DocumentAttribute.document_id == document_id
+            )
+        )
+        rows: list[DocumentAttribute] = []
+        seen: set[tuple[str, str]] = set()
+        for key, values in (attributes or {}).items():
+            if key in BUILTIN_ATTRIBUTE_KEYS or not isinstance(values, list):
+                continue
+            for value in values:
+                pair = (str(key), str(value))
+                if pair in seen:
+                    continue
+                seen.add(pair)
+                rows.append(
+                    DocumentAttribute(
+                        document_id=document_id,
+                        attr_key=pair[0],
+                        attr_value=pair[1],
+                    )
+                )
+        rows.append(
+            DocumentAttribute(
+                document_id=document_id,
+                attr_key="createBy",
+                attr_value=user_id,
+            )
+        )
+        rows.append(
+            DocumentAttribute(
+                document_id=document_id,
+                attr_key="createTime",
+                attr_value=utc_now_naive().isoformat(),
+            )
+        )
+        db.add_all(rows)
 
     def _bind_job_result_document(
         self,

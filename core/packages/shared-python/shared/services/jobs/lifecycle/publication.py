@@ -51,12 +51,18 @@ class SyncJobPublicationFinalizer:
             db,
             job_id=job_id,
         )
+        job = db.execute(select(Job).where(Job.job_id == job_id)).scalar_one_or_none()
+        attributes = None
+        if job is not None and isinstance(job.job_metadata, dict):
+            raw_attributes = job.job_metadata.get("attributes")
+            attributes = raw_attributes if isinstance(raw_attributes, dict) else None
         published_document_state = self._retrieval_publication.publish_document_state(
             db,
             job_id=job_id,
             job_result_id=job_result_id,
             chunks=chunks,
             section_summaries=section_summaries,
+            attributes=attributes,
         )
         if _should_publish_document_graph(published_document_state):
             assert published_document_state is not None
