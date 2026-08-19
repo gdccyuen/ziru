@@ -10,7 +10,13 @@ Committed as `4a1961c` (plus earlier `6703f64`, `759cc70`). Live demo on `main` 
 - Deleted: shared billing/credits/tier/guest/telemetry modules; app billing/guest routes+services; tier_service; worker processing_billing (replaced by processing_records); add_credits script; dashboard-JWT telemetry; middleware telemetry; billing/telemetry contract tests.
 - Rate limiting reduced to Layer-0 system limits + global concurrent-job cap (require_job_capacity on /v1/jobs + /v2/jobs).
 
-## Suite state (mid-overhaul, expected)
+## UPDATE 2026-08-19 — P1 effectively closed
+
+- **core API: 180 passed / 0 failed** (verified independently).
+- **core worker: 173 passed / 2 failed** — the 2 failures are the PRE-EXISTING stale `test_summary_builder` unit tests (fail identically on the pre-overhaul baseline; engine untouched per Q5). Documented exception, triage separately.
+- P3 decoupling is complete: publication, retrieval execution, agentic/workflow, cache, stats, API document flow all owner-less and scope-free.
+
+## Suite state (mid-overhaul, historical)
 - core API: **114 passed / 69 failed** — the failures are v1 document/retrieval flows still writing `user_id`/namespace (P3 rewires them) + a few contract fixtures to update.
 - core worker: **165 passed / 10 failed** (that run predates the users.id column-width fix in `4a1961c` — likely 9 failed on rerun) — 3× Document(user_id=) (P3), 3× S3 bucket env, 3× python3.14 co_qualname util, 2× summary_builder (pre-existing).
 - admin/webui suites: untouched on this branch. Webui (tests/typecheck/lint) green at baseline; admin tests + type-check green, but **admin lint has 2 pre-existing issues** in marketing/landing files (deleted in P5).
