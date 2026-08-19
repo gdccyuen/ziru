@@ -4,6 +4,7 @@ API v1 route registry.
 
 from app.api.v1.routes import (
     api_key,
+    auth,
     demo,
     documents,
     jobs,
@@ -18,6 +19,9 @@ from fastapi import APIRouter
 
 api_router = APIRouter()
 
+
+# Session auth first so /auth/me is not shadowed by GET /auth/{api_key_id}.
+api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
 
 # API Key management
 api_router.include_router(api_key.router, prefix="/auth", tags=["API Key Management"])

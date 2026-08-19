@@ -10,6 +10,7 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.core.config import redis_pool_manager
+from shared.models.database.user import User
 from shared.services.redis.redis_service import RedisService
 from shared.utils.api_keys import hash_api_key
 
@@ -37,6 +38,8 @@ class APIKeyAuthenticationService:
         redis_service = redis_pool_manager.get_redis_service()
         cached_user_id = await self._get_cached_user_id(redis_service, key_hash)
         if cached_user_id is not None:
+            if not await self._live_user_usable(session, cached_user_id):
+                return None
             return cached_user_id
 
         api_key_record = await self._repository.get_by_key_hash(session, key_hash)
@@ -44,6 +47,8 @@ class APIKeyAuthenticationService:
             return None
 
         user_id = str(api_key_record.user_id)
+        if not await self._live_user_usable(session, user_id):
+            return None
         await self._update_last_used_best_effort(
             session,
             redis_service,
@@ -56,6 +61,17 @@ class APIKeyAuthenticationService:
             self._resolve_api_key_cache_ttl_seconds(api_key_record.expires_at),
         )
         return user_id
+
+    @staticmethod
+    async def _live_user_usable(
+        session: AsyncSession,
+        user_id: str,
+    ) -> bool:
+        """Live account check (Q10/Q24): missing or disabled users are rejected."""
+        user = await session.get(User, user_id)
+        if user is None:
+            return False
+        return getattr(user, "disabled", False) is not True
 
     async def invalidate_api_key_user_cache(
         self,

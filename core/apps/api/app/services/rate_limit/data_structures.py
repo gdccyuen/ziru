@@ -12,6 +12,9 @@ class CurrentUser:
     """Identifies the current authenticated user."""
 
     user_id: str
+    # Live account facts attached at auth time (P2/Q10); P3 uses these.
+    grade: str | None = None
+    profile: list | None = None
 
 
 @dataclass(frozen=True)

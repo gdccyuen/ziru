@@ -68,6 +68,11 @@ async def lifespan(app: FastAPI):
         await load_rules(session)
     logger.info("rate limit rules loaded at startup; restart the pod to apply changes")
 
+    # P2: bootstrap the initial administrator when the users table is empty.
+    from app.services.auth.bootstrap_admin import ensure_bootstrap_admin
+
+    await ensure_bootstrap_admin()
+
     mcp_server = getattr(app.state, "retrieval_mcp_server", None)
     mcp_session_manager = getattr(mcp_server, "session_manager", None)
 
