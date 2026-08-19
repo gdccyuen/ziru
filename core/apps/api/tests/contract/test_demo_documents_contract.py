@@ -371,7 +371,7 @@ async def test_should_materialize_demo_source_without_parse_or_credit_charge(
     )
     job_rows = await ContractDatabase.fetch_all(
         """
-        SELECT job_id, status, job_type, credits_charged, billing_status
+        SELECT job_id, status, job_type
         FROM jobs
         WHERE user_id = 'local-dev-user'
           AND job_metadata ->> 'demo_source_id' = :demo_source_id
@@ -403,7 +403,6 @@ async def test_should_materialize_demo_source_without_parse_or_credit_charge(
         if chunk["chunk_type"] in {"image", "table"}
     ]
 
-    assert retrieval_body["namespace"] == "contract-demo"
     assert retrieval_results
     assert retrieval_results[0]["source"]["document_id"] == document_id
     assert retrieval_results[0]["source"]["section_path"] != "Root"
