@@ -8,7 +8,8 @@ Status: **active build plan** (approved 2026-08-18, D1–D4 locked; last updated
 - **P1 — ✅ done** on branch `overhaul` (owner-less v1 document flow rewired; API suite green).
 - **P2 — ✅ done** (account API: login/logout/me/change-password/SSO, admin users CRUD, sessions, API keys; auth hardening incl. uniform 401 and login throttling; security audit clean).
 - **P3 — ✅ done** (v2 knowledge surface: `POST /v2/search`, `GET /v2/documents` browsing, `POST /v2/documents` upload with attributes, `PATCH/DELETE /v2/documents/{id}`, `/v2/attributes` CRUD; profile-scoped fail-closed access matrix; 30 contract tests; API suite 245/0, worker 173 + 2 pre-existing; commits `317ea43` → `fb5636d`).
-- **P4–P7 — pending** (P4 worker hygiene mostly landed during P1; P5 admin console; P6 webui; P7 cutover).
+- **P5 — ✅ done** (admin console reworked: stateless against the core API; billing/credits/usage-costs/marketing/newsletter/guest/auth-callbacks/analytics/better-auth surfaces deleted; login/logout, users, API keys, attribute dictionary, documents, jobs, webhooks, health/overview and read-only settings pages; new admin `/v2/api-keys` endpoints with contract tests; admin lint/type-check/test/build green; API suite 248/0, worker 173 + 2 pre-existing).
+- **P4, P6, P7 — pending** (P4 worker hygiene mostly landed during P1; P6 webui; P7 cutover).
 - **Session rule:** local commits only — no remote pushes until the PM explicitly agrees (`session-rules.md`).
 
 ## What we're building
@@ -22,7 +23,7 @@ References: map `.scratch/decouple-account-knowledge/map.md` · tickets 01–07 
 | Component | Tests | Type-check / lint | Notes |
 |---|---|---|---|
 | core (API + worker + shared) | `cd core/apps/api && uv run pytest` · `cd core/apps/worker && uv run pytest` | `make check` (ruff + pyright) | Contract tests use a local ephemeral PostgreSQL (pytest-postgresql) — no `TEST_DATABASE_URL` needed. Sandbox quirk: run uv with `UV_CACHE_DIR=core/.uv-cache` |
-| admin | `cd admin && pnpm test` (≈108) | `pnpm type-check` · `pnpm lint` | DB-gated tests skip without `TEST_DATABASE_URL` |
+| admin | `cd admin && pnpm test` (9, stateless unit tests) | `pnpm type-check` · `pnpm lint` | Stateless console; no app database |
 | webui | `cd webui && pnpm test` (≈619) | `pnpm typecheck` · `pnpm lint` | Integration tests need `TEST_DATABASE_URL`; e2e via Playwright |
 
 Rule: no phase merges until its suite is green and the previous phase's checks still pass. The engine test suites are the frozen-contract proof (Q5).
