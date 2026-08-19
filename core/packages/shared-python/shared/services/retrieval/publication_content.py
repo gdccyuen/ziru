@@ -136,8 +136,6 @@ def _build_document_chunk(
     return DocumentChunk(
         id=f"dchk_{uuid4().hex[:12]}",
         chunk_id=str(chunk.get("chunk_id") or f"chunk_{uuid4().hex[:12]}"),
-        user_id=scope.user_id,
-        namespace=scope.namespace,
         document_id=scope.document_id,
         job_result_id=scope.job_result_id,
         section_id=section.section_id,
