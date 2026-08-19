@@ -6,6 +6,7 @@ import type * as React from "react";
 
 function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
+    // biome-ignore lint/a11y/useSemanticElements: styled list group
     <div
       role="list"
       data-slot="item-group"

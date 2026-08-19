@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { Badge } from "@/components/ui/badge";
@@ -69,13 +70,26 @@ export default function OverviewPage() {
   }
 
   const stats = [
-    { label: "System status", value: data.health?.status ?? "unavailable" },
-    { label: "Documents", value: data.documentTotal === null ? "—" : String(data.documentTotal) },
+    {
+      label: "System status",
+      value: data.health?.status ?? "unavailable",
+      href: undefined,
+    },
+    {
+      label: "Documents",
+      value: data.documentTotal === null ? "—" : String(data.documentTotal),
+      href: "/documents",
+    },
     {
       label: "Dictionary keys",
       value: data.attributeTotal === null ? "—" : String(data.attributeTotal),
+      href: "/attributes",
     },
-    { label: "Jobs (yours)", value: data.jobTotal === null ? "—" : String(data.jobTotal) },
+    {
+      label: "Jobs (yours)",
+      value: data.jobTotal === null ? "—" : String(data.jobTotal),
+      href: "/jobs",
+    },
   ];
 
   return (
@@ -92,14 +106,26 @@ export default function OverviewPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardHeader>
-              <CardDescription>{stat.label}</CardDescription>
-              <CardTitle className="text-2xl">{stat.value}</CardTitle>
-            </CardHeader>
-          </Card>
-        ))}
+        {stats.map((stat) => {
+          const card = (
+            <Card
+              key={stat.label}
+              className={stat.href ? "h-full transition-colors hover:border-primary/60" : undefined}
+            >
+              <CardHeader>
+                <CardDescription>{stat.label}</CardDescription>
+                <CardTitle className="text-2xl">{stat.value}</CardTitle>
+              </CardHeader>
+            </Card>
+          );
+          return stat.href ? (
+            <Link key={stat.label} href={stat.href} className="block h-full">
+              {card}
+            </Link>
+          ) : (
+            card
+          );
+        })}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
