@@ -523,7 +523,7 @@ def _upload_chunk_asset(*, job_id: str, artifact_ref: str) -> None:
 
 
 @pytest.mark.asyncio
-async def test_should_list_only_the_authenticated_users_documents_for_the_effective_namespace(
+async def test_should_list_all_active_documents_globally(
     developer_api_client_factory: Callable[
         [], AbstractAsyncContextManager[AsyncClient]
     ],
@@ -535,6 +535,9 @@ async def test_should_list_only_the_authenticated_users_documents_for_the_effect
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         owned_first_document_id = f"doc_{uuid4().hex[:12]}"
         owned_second_document_id = f"doc_{uuid4().hex[:12]}"
+        other_namespace_document_id = f"doc_{uuid4().hex[:12]}"
+        other_user_document_id = f"doc_{uuid4().hex[:12]}"
+        archived_document_id = f"doc_{uuid4().hex[:12]}"
         await _insert_document(
             document_id=owned_first_document_id,
             updated_at=now - timedelta(minutes=5),
@@ -544,16 +547,19 @@ async def test_should_list_only_the_authenticated_users_documents_for_the_effect
             updated_at=now,
         )
         await _insert_document(
-            document_id=f"doc_{uuid4().hex[:12]}",
+            document_id=other_namespace_document_id,
             namespace="other-namespace",
+            updated_at=now - timedelta(minutes=3),
         )
         await _insert_document(
-            document_id=f"doc_{uuid4().hex[:12]}",
+            document_id=other_user_document_id,
             user_id=other_user_id,
+            updated_at=now - timedelta(minutes=1),
         )
         await _insert_document(
-            document_id=f"doc_{uuid4().hex[:12]}",
+            document_id=archived_document_id,
             status="archived",
+            updated_at=now - timedelta(minutes=2),
         )
 
         default_namespace_response = await api_client.get("/api/v1/documents")
@@ -577,7 +583,18 @@ async def test_should_list_only_the_authenticated_users_documents_for_the_effect
         "total_pages": 1,
     }
     assert documents[0]["document_id"] == owned_second_document_id
+    assert documents[-1]["document_id"] == owned_first_document_id
+    assert {document["document_id"] for document in documents} == {
+        owned_first_document_id,
+        owned_second_document_id,
+        other_namespace_document_id,
+        other_user_document_id,
+    }
     assert all(document["status"] == "active" for document in documents)
+    assert all(
+        document["document_id"] != archived_document_id
+        for document in documents
+    )
 
 
 @pytest.mark.asyncio
@@ -761,8 +778,8 @@ async def test_should_return_not_found_for_chunk_document_page_citation_source(
             f"/api/v2/documents/{document_id}/files/page-citation-source"
         )
 
-    # Documents are globally accessible to authenticated users (Q2).
-    assert response.status_code == 200
+    # Chunk-track documents have no page-citation source to serve.
+    assert response.status_code == 404
 
 
 @pytest.mark.asyncio
@@ -824,8 +841,8 @@ async def test_should_return_not_found_for_archived_page_citation_source(
             f"/api/v2/documents/{document_id}/files/page-citation-source"
         )
 
-    # Documents are globally accessible to authenticated users (Q2).
-    assert response.status_code == 200
+    # Archived documents are excluded from file/result endpoints.
+    assert response.status_code == 404
 
 
 @pytest.mark.asyncio
@@ -1024,7 +1041,8 @@ async def test_should_return_not_found_for_other_users_mineru_raw_zip(
             f"/api/v2/documents/{document_id}/files/mineru-raw"
         )
 
-    assert response.status_code == 404
+    # Documents are globally accessible to authenticated users (Q2).
+    assert response.status_code == 200
 
 
 @pytest.mark.asyncio
@@ -1481,64 +1499,5 @@ async def test_should_archive_a_document_via_the_legacy_archive_route(
     assert persisted_document["archived_at"] is not None
 
 
-@pytest.mark.asyncio
-async def test_should_list_namespaces_with_document_counts_for_the_authenticated_user(
-    developer_api_client_factory: Callable[
-        [], AbstractAsyncContextManager[AsyncClient]
-    ],
-) -> None:
-    other_user_id = f"contract-user-{uuid4().hex[:12]}"
-
-    async with developer_api_client_factory() as api_client:
-        await ContractDatabase.insert_user(user_id=other_user_id)
-
-        await _insert_document(document_id=f"doc_{uuid4().hex[:12]}", namespace="alpha")
-        await _insert_document(document_id=f"doc_{uuid4().hex[:12]}", namespace="alpha")
-        await _insert_document(document_id=f"doc_{uuid4().hex[:12]}", namespace="beta")
-        await _insert_document(
-            document_id=f"doc_{uuid4().hex[:12]}",
-            namespace="other-user-ns",
-            user_id=other_user_id,
-        )
-        await _insert_document(
-            document_id=f"doc_{uuid4().hex[:12]}",
-            namespace="archived-ns",
-            status="archived",
-        )
-
-        response = await api_client.get("/api/v1/documents/namespaces")
-
-    assert response.status_code == 200
-
-    response_json = cast(dict[str, object], response.json())
-    namespaces = cast(list[dict[str, object]], response_json["namespaces"])
-
-    assert namespaces == [
-        {"namespace": "alpha", "document_count": 2},
-        {"namespace": "beta", "document_count": 1},
-    ]
-
-
-@pytest.mark.asyncio
-async def test_should_return_empty_namespace_list_when_user_has_no_documents(
-    developer_api_client_factory: Callable[
-        [], AbstractAsyncContextManager[AsyncClient]
-    ],
-) -> None:
-    async with developer_api_client_factory() as api_client:
-        other_user_id = f"contract-user-{uuid4().hex[:12]}"
-        await ContractDatabase.insert_user(user_id=other_user_id)
-        await _insert_document(
-            document_id=f"doc_{uuid4().hex[:12]}",
-            namespace="not-mine",
-            user_id=other_user_id,
-        )
-
-        response = await api_client.get("/api/v1/documents/namespaces")
-
-    assert response.status_code == 200
-
-    response_json = cast(dict[str, object], response.json())
-    namespaces = cast(list[dict[str, object]], response_json["namespaces"])
-
-    assert namespaces == []
+# The /v1/documents/namespaces endpoint was removed in the P3 decoupling
+# (namespaces no longer exist); its tests are obsolete and deleted.
