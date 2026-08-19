@@ -70,7 +70,7 @@ async def test_login_with_wrong_password_is_401(
 
 
 @pytest.mark.asyncio
-async def test_disabled_user_login_is_403(
+async def test_disabled_user_login_returns_uniform_401(
     api_client_factory: Callable[
         [], AbstractAsyncContextManager[AsyncClient]
     ],
@@ -101,8 +101,13 @@ async def test_disabled_user_login_is_403(
         )
         response = await _login(client, email, password)
 
-    assert response.status_code == 403
-    assert response.json()["error"]["code"] == "PERMISSION_DENIED"
+    # Disabled accounts must be indistinguishable from bad credentials so the
+    # endpoint does not disclose account existence.
+    assert response.status_code == 401
+    error = cast(dict[str, object], response.json()["error"])
+    assert error["code"] == "UNAUTHENTICATED"
+    assert error["message"] == "Invalid email or password"
+    assert "set-cookie" not in response.headers
 
 
 @pytest.mark.asyncio

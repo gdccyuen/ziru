@@ -70,10 +70,12 @@ async def login(
     email = payload.email.strip().lower()
     result = await db.execute(select(User).where(User.email == email).limit(1))
     user = result.scalar_one_or_none()
-    if user is None or not verify_password(payload.password, user.password_hash):
+    if (
+        user is None
+        or not verify_password(payload.password, user.password_hash)
+        or user.disabled
+    ):
         raise AuthException(user_message="Invalid email or password")
-    if user.disabled:
-        raise PermissionDeniedException(user_message="Account is disabled")
     token = await create_session(db, user.id)
     set_session_cookie(response, token)
     return _user_payload(user)
