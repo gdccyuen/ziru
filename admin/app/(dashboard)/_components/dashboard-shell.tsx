@@ -1,263 +1,273 @@
 "use client";
 
-import { Sidebar } from "@app/(dashboard)/_components/sidebar";
-import { BuyCreditsModal } from "@app/(dashboard)/billing/_components/buy-credits-modal";
-import { LanguageSwitcher } from "@components/language-switcher";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@components/ui/dropdown-menu";
-import { ZiruIcon } from "@components/ui/ziru-icon";
-import type { AuthUser } from "@hooks/use-auth";
-import { useCredits } from "@hooks/use-credits";
-import { trackBuyCreditsClicked } from "@lib/posthog";
-import { setCookie } from "@utils/cookies";
-import { Bell, Menu } from "lucide-react";
-import Image from "next/image";
+  FileText,
+  KeyRound,
+  LayoutDashboard,
+  ListTodo,
+  LogOut,
+  Menu,
+  Moon,
+  Settings,
+  Sun,
+  Tags,
+  Users,
+  Webhook,
+} from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useState } from "react";
+import { LoadingSpinner } from "@/components/common/loading-spinner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ApiError, api } from "@/lib/api";
+import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { gradeLabel } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-type DashboardTitleNamespace = "ApiKeys" | "Settings" | "Usage" | "Webhooks";
+const NAV_ITEMS = [
+  { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/users", label: "Users", icon: Users },
+  { href: "/api-keys", label: "API Keys", icon: KeyRound },
+  { href: "/attributes", label: "Attributes", icon: Tags },
+  { href: "/documents", label: "Documents", icon: FileText },
+  { href: "/jobs", label: "Jobs", icon: ListTodo },
+  { href: "/webhooks", label: "Webhooks", icon: Webhook },
+  { href: "/settings", label: "Settings", icon: Settings },
+] as const;
 
-type DashboardShellProps = {
-  children: React.ReactNode;
-  compactMobileHeader?: boolean;
-  compactTabletHeader?: boolean;
-  creditsIconSrc: string;
-  isBuyCreditsOpen: boolean;
-  mainClassName?: string;
-  titleNamespace: DashboardTitleNamespace;
-  user: AuthUser;
+const PAGE_TITLES: Record<string, string> = {
+  "/": "Overview",
+  "/users": "Users",
+  "/api-keys": "API Keys",
+  "/attributes": "Attribute Dictionary",
+  "/documents": "Documents",
+  "/jobs": "Jobs",
+  "/webhooks": "Webhooks",
+  "/settings": "Settings",
 };
 
-const localeLabels = {
-  en: "English",
-  zh: "中文",
-} as const;
-
-const formatCreditsLabel = (credits: number) => {
-  return credits.toLocaleString(undefined, {
-    maximumFractionDigits: 3,
-  });
-};
-
-const buildBuyCreditsHref = (pathname: string, searchParams: URLSearchParams) => {
-  const params = new URLSearchParams(searchParams.toString());
-  params.set("buy", "true");
-  const nextSearch = params.toString();
-  return nextSearch ? `${pathname}?${nextSearch}` : pathname;
-};
-
-const ThemeButton = () => {
+function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-
   return (
-    <button
+    <Button
       type="button"
-      className="flex h-12 w-12 items-center justify-center text-[#09090b] transition-colors hover:bg-[#f4f4f5] dark:text-[#fafafa] dark:hover:bg-[#27272a]"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+      variant="ghost"
+      size="icon"
       aria-label="Toggle theme"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
     >
-      <ZiruIcon name={isDark ? "theme-light" : "theme-dark"} className="h-[18px] w-[18px]" />
-    </button>
+      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </Button>
   );
-};
+}
 
-const TabletActionsMenu = () => {
-  const locale = useLocale();
-  const router = useRouter();
-  const { resolvedTheme, setTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const nextThemeLabel =
-    locale === "zh" ? (isDark ? "浅色模式" : "深色模式") : isDark ? "Light mode" : "Dark mode";
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="flex h-full w-11 items-center justify-center text-[#09090b] transition-colors hover:bg-[#f4f4f5] dark:text-[#fafafa] dark:hover:bg-[#27272a]"
-          aria-label="Open actions"
-        >
-          <Menu className="h-4 w-4" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[140px] border-[#e4e4e7]">
-        <DropdownMenuItem
-          onClick={() => {
-            void setCookie("NEXT_LOCALE", "en").then(() => router.refresh());
-          }}
-        >
-          English
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => {
-            void setCookie("NEXT_LOCALE", "zh").then(() => router.refresh());
-          }}
-        >
-          中文
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => {
-            setTheme(isDark ? "light" : "dark");
-          }}
-        >
-          {nextThemeLabel}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
-
-const CreditsButton = ({
-  compactTabletHeader = false,
-  iconSrc,
-}: {
-  compactTabletHeader?: boolean;
-  iconSrc: string;
-}) => {
-  const { data: credits } = useCredits();
+function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const buyCreditsHref = buildBuyCreditsHref(
-    pathname,
-    new URLSearchParams(searchParams.toString())
-  );
-
   return (
-    <Link
-      href={buyCreditsHref}
-      onClick={() => trackBuyCreditsClicked("sidebar")}
-      className={[
-        "flex h-10 min-w-[119px] items-center justify-center bg-white text-[12px] font-semibold text-[#292524] shadow-none transition-transform hover:-translate-y-px dark:border-[#3f3f46] dark:bg-[#18181b] dark:text-[#fafafa]",
-        compactTabletHeader
-          ? "gap-[10px] rounded-lg border-x-2 border-t-2 border-b-[6px] border-[#e7e5e4] px-[14px] pb-1 leading-[14px] sm:min-w-[115px] sm:gap-1 sm:rounded-md sm:border-x sm:border-t sm:border-b-[4px] sm:px-3 sm:pb-[3px] sm:leading-[18px] lg:h-12 lg:min-w-[136px] lg:gap-[6px] lg:rounded-lg lg:border-x-2 lg:border-t-2 lg:border-b-[6px] lg:px-[14px] lg:pb-1 lg:text-[14px] lg:leading-5"
-          : "gap-[10px] rounded-lg border-x-2 border-t-2 border-b-[6px] border-[#e7e5e4] px-[14px] pb-1 leading-[14px] sm:min-w-[115px] sm:gap-1.5 sm:px-3 sm:leading-[18px] lg:h-12 lg:min-w-[136px] lg:gap-[6px] lg:px-[14px] lg:text-[14px] lg:leading-5",
-      ].join(" ")}
-    >
-      <Image
-        src={iconSrc}
-        alt=""
-        aria-hidden
-        width={20}
-        height={20}
-        className={
-          compactTabletHeader ? "h-5 w-5 shrink-0 sm:h-4 sm:w-4 lg:h-5 lg:w-5" : "h-5 w-5 shrink-0"
-        }
-      />
-      <span className="font-mono-display">{formatCreditsLabel(credits ?? 0)} Credits</span>
-    </Link>
-  );
-};
-
-const NotificationButton = () => {
-  return (
-    <button
-      type="button"
-      className="flex h-full w-11 items-center justify-center text-[#09090b] transition-colors hover:bg-[#f4f4f5] dark:text-[#fafafa] dark:hover:bg-[#27272a] lg:h-12 lg:w-12"
-      aria-label="Notifications"
-    >
-      <Bell className="h-4 w-4" strokeWidth={1.75} />
-    </button>
-  );
-};
-
-export const DashboardShell = ({
-  children,
-  compactMobileHeader = false,
-  compactTabletHeader = false,
-  creditsIconSrc,
-  isBuyCreditsOpen,
-  mainClassName,
-  titleNamespace,
-  user,
-}: DashboardShellProps) => {
-  const t = useTranslations(titleNamespace);
-  const locale = useLocale();
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const mainClassNameValue: string =
-    mainClassName ??
-    "px-[14px] pb-[22px] pt-[22px] sm:px-[30px] sm:pb-6 sm:pt-[22px] lg:px-12 lg:pt-6";
-
-  return (
-    <div className="min-h-screen bg-[#fafafa] text-[#09090b] dark:bg-[#18181b] dark:text-[#fafafa]">
-      <Sidebar user={user} open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen} />
-
-      <div className="min-w-0 sm:pl-[160px] lg:pl-[200px]">
-        <div className="w-full">
-          <header
-            className={[
-              "flex items-center gap-3 border-b border-[#d4d4d8] bg-[#fafafa] px-4 sm:px-[30px] lg:px-12",
-              "dark:border-[#3f3f46] dark:bg-[#18181b]",
-              compactTabletHeader
-                ? compactMobileHeader
-                  ? "h-12 sm:h-12 lg:h-16"
-                  : "h-16 sm:h-12 lg:h-16"
-                : "h-16",
-            ].join(" ")}
+    <nav className="flex flex-col gap-1 p-3">
+      {NAV_ITEMS.map((item) => {
+        const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
           >
-            <button
-              type="button"
-              className="flex h-full w-11 items-center justify-center text-[#09090b] transition-colors hover:bg-[#f4f4f5] dark:text-[#fafafa] dark:hover:bg-[#27272a] sm:hidden"
-              onClick={() => setMobileSidebarOpen(true)}
-              aria-label="Open menu"
-            >
-              <Menu className="h-4 w-4" />
-            </button>
-            <h1
-              className={[
-                "hidden min-w-0 flex-1 truncate font-bold text-black sm:block",
-                "dark:text-[#fafafa]",
-                compactTabletHeader
-                  ? "sm:text-[16px] sm:leading-[26px] lg:text-[18px] lg:leading-7"
-                  : "text-[18px] leading-7",
-              ].join(" ")}
-            >
-              {t("title")}
-            </h1>
-            <div className="ml-auto flex items-center sm:hidden">
-              <NotificationButton />
-            </div>
-            <div className="hidden items-center sm:flex lg:hidden">
-              <NotificationButton />
-              <TabletActionsMenu />
-            </div>
-            <div className="hidden items-center lg:flex">
-              <LanguageSwitcher>
-                <button
-                  type="button"
-                  className="flex h-12 items-center gap-1 px-4 text-[12px] leading-4 text-[#09090b] transition-colors hover:bg-[#f4f4f5] dark:text-[#fafafa] dark:hover:bg-[#27272a]"
-                >
-                  <span>{localeLabels[locale as keyof typeof localeLabels] || "English"}</span>
-                  <Image
-                    src="/icons/ziru/chevron-down.svg"
-                    alt=""
-                    aria-hidden
-                    width={20}
-                    height={20}
-                    className="h-5 w-5 dark:invert"
-                  />
-                </button>
-              </LanguageSwitcher>
-              <NotificationButton />
-              <ThemeButton />
-            </div>
-            <div className="shrink-0">
-              <CreditsButton compactTabletHeader={compactTabletHeader} iconSrc={creditsIconSrc} />
-            </div>
-          </header>
+            <item.icon className="h-4 w-4" />
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
 
-          <main className={["flex justify-center", mainClassNameValue].join(" ")}>{children}</main>
-        </div>
+function ForcedChangePassword() {
+  const { refresh } = useAuth();
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    if (newPassword !== confirm) {
+      setError("New password and confirmation do not match");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await api.changePassword(oldPassword, newPassword);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to change password");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <main className="flex min-h-dvh items-center justify-center bg-background p-6">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>Change your password</CardTitle>
+          <CardDescription>
+            Your administrator requires a password change before you can use the console.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="old-password">Current password</Label>
+              <Input
+                id="old-password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={oldPassword}
+                onChange={(event) => setOldPassword(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm new password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={confirm}
+                onChange={(event) => setConfirm(event.target.value)}
+              />
+            </div>
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            <Button type="submit" className="w-full" disabled={submitting}>
+              {submitting ? "Updating…" : "Update password"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </main>
+  );
+}
+
+function DashboardContent({ children }: { children: React.ReactNode }) {
+  const { user, loading, error, logout } = useAuth();
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center">
+        <LoadingSpinner size="lg" />
       </div>
+    );
+  }
 
-      {isBuyCreditsOpen ? <BuyCreditsModal /> : null}
+  if (!user) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center p-6">
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle>Unable to load your session</CardTitle>
+            <CardDescription>
+              {error ?? "You are not signed in. Sign in to continue."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/login">
+              <Button className="w-full">Go to login</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (user.must_change_password) {
+    return <ForcedChangePassword />;
+  }
+
+  const title = PAGE_TITLES[pathname] ?? "Ziru Admin";
+
+  return (
+    <div className="flex min-h-dvh">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r bg-card md:flex">
+        <div className="flex h-14 items-center border-b px-4 font-semibold">Ziru Admin</div>
+        <div className="flex-1 overflow-y-auto">
+          <SidebarNav />
+        </div>
+      </aside>
+
+      <div className="flex min-w-0 flex-1 flex-col md:pl-60">
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            aria-label="Open menu"
+            onClick={() => setMobileOpen((open) => !open)}
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+          <h1 className="min-w-0 flex-1 truncate text-lg font-semibold">{title}</h1>
+          <Badge variant="outline" className="hidden sm:inline-flex">
+            {gradeLabel(user.grade)}
+          </Badge>
+          <span className="hidden text-sm text-muted-foreground lg:inline">{user.email}</span>
+          <ThemeToggle />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Sign out"
+            onClick={() => void logout()}
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </header>
+
+        {mobileOpen ? (
+          <div className="border-b bg-card md:hidden">
+            <SidebarNav onNavigate={() => setMobileOpen(false)} />
+          </div>
+        ) : null}
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+      </div>
     </div>
   );
-};
+}
+
+export function DashboardShell({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider>
+      <DashboardContent>{children}</DashboardContent>
+    </AuthProvider>
+  );
+}

@@ -1,5 +1,5 @@
-import type { ZiruIconName } from "@components/ui/ziru-icon";
 import { Tag } from "@components/ui/tag";
+import type { ZiruIconName } from "@components/ui/ziru-icon";
 import { cn } from "@lib/utils";
 import type { ComponentProps } from "react";
 

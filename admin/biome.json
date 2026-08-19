@@ -67,6 +67,7 @@
       "!.junie",
       "!.trae",
       "!public/comparison/**/*.html",
+      "!public/playground-files",
       "!!node_modules",
       "!!.next",
       "!!out",

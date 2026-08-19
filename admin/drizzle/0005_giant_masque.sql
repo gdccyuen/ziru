@@ -1,2 +1,0 @@
-ALTER TABLE "oauthAuthorizationCode" ADD COLUMN "permission" text DEFAULT 'full_access' NOT NULL;--> statement-breakpoint
-ALTER TABLE "oauthRefreshToken" ADD COLUMN "permission" text DEFAULT 'full_access' NOT NULL;

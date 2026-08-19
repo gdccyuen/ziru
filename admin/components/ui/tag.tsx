@@ -1,8 +1,4 @@
-import {
-  ZIRU_ICON_NAMES,
-  ZiruIcon,
-  type ZiruIconName,
-} from "@components/ui/ziru-icon";
+import { ZIRU_ICON_NAMES, ZiruIcon, type ZiruIconName } from "@components/ui/ziru-icon";
 import { cn } from "@lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps, ReactNode } from "react";
