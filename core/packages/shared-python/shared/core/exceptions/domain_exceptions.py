@@ -221,10 +221,9 @@ class RateLimitException(ZiruException):
 
     4xx Error: Developer provides `user_message` that user sees directly.
 
-    Default limits (from docs/limitation.md):
-        - Free tier: 60 RPM
-        - Pro tier: 120 RPM
-        - Ultra tier: 300 RPM
+    Limits come from the current enforcement context:
+        - Layer 0 system limits (per-endpoint matched window)
+        - Global concurrent-job cap (MAX_CONCURRENT_JOBS)
         - Default retry_after: 15 seconds
 
     Details schema:
@@ -236,9 +235,9 @@ class RateLimitException(ZiruException):
         }
     """
 
-    # Default values from docs/limitation.md
+    # Defaults used when a rejection has no window stats
     DEFAULT_RETRY_AFTER = 15  # seconds
-    DEFAULT_LIMIT = 60  # requests per minute (free tier)
+    DEFAULT_LIMIT = 60  # requests per minute (system default)
     DEFAULT_PERIOD = "minute"
 
     def __init__(

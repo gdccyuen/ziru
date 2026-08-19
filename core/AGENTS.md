@@ -33,7 +33,7 @@ core/
 │   ├── api/          # FastAPI REST API (port 5005)
 │   │   ├── app/
 │   │   │   ├── api/v1/routes/   # Endpoint handlers
-│   │   │   ├── services/        # Business logic (auth, ingestion, billing)
+│   │   │   ├── services/        # Business logic (auth, ingestion, retrieval)
 │   │   │   └── repositories/    # Data access layer
 │   │   └── main.py              # Entrypoint, runs migrations on start
 │   ├── worker/       # Celery worker for async document processing
@@ -458,11 +458,14 @@ debug CSVs (`preds_*.csv`) are saved alongside for troubleshooting.
 | Column | Type | Description |
 |:---|:---|:---|
 | `document_id` | `String(36)` PK | `doc_{uuid_hex[:12]}` |
-| `user_id` | `Text` FK → `user.id` | Owner |
-| `namespace` | `String(255)` | Isolation scope (default: `"default"`) |
 | `status` | `String(32)` | `active` / `archived` |
 | `current_job_result_id` | `String(36)` FK | Points to active revision |
 | `source_file_name` | `Text` | Original filename |
+| `document_metadata` | `JSON` | Free-form document metadata |
+| `parse_track` | `String(32)` | Parsing track (`chunk`) |
+| `created_at` | `DateTime` | Creation timestamp |
+| `updated_at` | `DateTime` | Last update timestamp |
+| `archived_at` | `DateTime` | Archive timestamp (nullable) |
 
 #### `document_sections`
 
@@ -476,7 +479,9 @@ debug CSVs (`preds_*.csv`) are saved alongside for troubleshooting.
 | `section_title` | `Text` | Heading text |
 | `section_level` | `Integer` | Depth in hierarchy (1-based) |
 | `summary` | `Text` | Section summary |
+| `section_metadata` | `JSON` | Extra section metadata |
 | `sort_order` | `Integer` | Display order |
+| `created_at` | `DateTime` | Creation timestamp |
 
 #### `document_chunks`
 
@@ -485,9 +490,12 @@ debug CSVs (`preds_*.csv`) are saved alongside for troubleshooting.
 | `id` | `String(36)` PK | `dchk_{uuid_hex[:12]}` |
 | `chunk_id` | `String(64)` | Content hash (deterministic dedup key) |
 | `document_id` | FK → `documents` | Parent document |
+| `job_result_id` | FK → `job_results` | Revision |
 | `section_id` | FK → `document_sections` | Parent section |
 | `chunk_type` | `String(64)` | `text` / `image` / `table` |
 | `content` | `Text` | Chunk content (text/HTML) |
+| `content_lexical_text` | `Text` | Lexical content tokens for search |
+| `path_lexical_text` | `Text` | Lexical path tokens for search |
 | `content_search_text` | `Text` | Pre-tokenized for BM25 content channel |
 | `path_search_text` | `Text` | Pre-tokenized for BM25 path channel |
 | `term_search_text` | `Text` | Pre-tokenized for term/grep channel |
@@ -497,6 +505,7 @@ debug CSVs (`preds_*.csv`) are saved alongside for troubleshooting.
 | `file_path` | `Text` | Asset reference (`images/x.jpg`) |
 | `chunk_metadata` | `JSON` | Keywords, tokens, connect_to, etc. |
 | `sort_order` | `Integer` | Display order |
+| `created_at` | `DateTime` | Creation timestamp |
 
 #### `graph_nodes`
 
@@ -505,7 +514,12 @@ debug CSVs (`preds_*.csv`) are saved alongside for troubleshooting.
 | `node_id` | `String(128)` PK | `doc:{document_id}` |
 | `node_kind` | `String(32)` | `document` (only doc-level nodes) |
 | `owner_document_id` | FK → `documents` | Source document |
+| `job_result_id` | FK → `job_results` | Revision |
+| `ref_document_id` | `String(36)` | Referenced document (nullable) |
+| `ref_section_id` | `String(36)` | Referenced section (nullable) |
 | `properties` | `JSON` | `{source_file_name, top_keywords, chunks_count, types, top_summary}` |
+| `created_at` | `DateTime` | Creation timestamp |
+| `updated_at` | `DateTime` | Last update timestamp |
 
 #### `graph_edges`
 
@@ -514,9 +528,13 @@ debug CSVs (`preds_*.csv`) are saved alongside for troubleshooting.
 | `edge_id` | `String(160)` PK | `related:{doc_a}<->{doc_b}` (sorted pair) |
 | `edge_kind` | `String(32)` | `related` |
 | `source_node_id` / `target_node_id` | FK → `graph_nodes` | Connected docs |
+| `owner_document_id` | FK → `documents` | Source document |
+| `job_result_id` | FK → `job_results` | Revision |
+| `is_directed` | `Boolean` | Always `False` for related edges |
 | `weight` | `Float` | Keyword overlap score (≥ 0.8 threshold) |
 | `properties` | `JSON` | `{shared_keywords, connection_count}` |
-| `is_directed` | `Boolean` | Always `False` for related edges |
+| `created_at` | `DateTime` | Creation timestamp |
+| `updated_at` | `DateTime` | Last update timestamp |
 
 ### Publication Logic
 
@@ -630,8 +648,9 @@ execution; cache is written after successful retrieval.
 
 #### `retrieval_hit_stats`
 
-Tracks per-chunk and per-document retrieval usage. `hit_count` and `last_hit_at`
-feed into `compute_importance_score()` for ranking boost.
+Global, owner-less tracking of per-chunk and per-document retrieval usage.
+`hit_count` and `last_hit_at` feed into `compute_importance_score()` for
+ranking boost.
 
 #### `retrieval_runs` / `retrieval_steps`
 

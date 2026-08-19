@@ -3,7 +3,7 @@
 ## Purpose
 
 Ziru API turns authenticated requests into document ingestion, document
-lifecycle, retrieval, billing, and webhook workflows.
+lifecycle, retrieval, and webhook workflows.
 
 Within this repository, `apps/api` is the coordination layer between HTTP
 adapters and the shared implementations in `packages/shared-python/shared`.
@@ -12,17 +12,43 @@ adapters and the shared implementations in `packages/shared-python/shared`.
 
 ### User
 
-The authenticated owner of jobs, documents, credits, API keys, and webhooks.
+An account in the core identity store (email, password hash, grade, profile,
+`must_change_password`, `disabled`). Users own Jobs, API keys, and webhooks;
+Documents are global knowledge objects, not user-owned.
 
-### Namespace
+### Grade
 
-The isolation scope for retrieval-visible data. The default namespace is
-`default`.
+The account role that decides powers: `administrator`, `librarian`, or
+`user`.
+
+### Profile
+
+The account's attribute constraints — a list of `{key, values}` rules that
+bound which Knowledge Objects the account can see. An empty profile sees
+nothing (fail-closed); administrators bypass profile evaluation.
+
+### Knowledge Object
+
+A global Document: no owner, no namespace. Knowledge Objects carry
+attributes (`attribute_dictionary` keys plus `document_attributes` values);
+`createBy` and `createTime` are system-set built-in attributes.
+
+### Attribute Dictionary
+
+The admin-managed set of attribute keys with optional allowed values.
+Uploaders pick from it when tagging Knowledge Objects, and Profiles are
+built from the same keys.
+
+### createBy / createTime
+
+System-set built-in document attributes that record who created a Knowledge
+Object and when. They are never user-editable.
 
 ### Job
 
 The API-side intake and execution handle for a workflow such as file parsing,
-URL ingestion, or demo source materialization.
+URL ingestion, or demo source materialization. Jobs keep `user_id` (the
+uploader); Documents do not.
 
 ### Job Result
 
@@ -48,8 +74,8 @@ Result response shape.
 
 ### Document
 
-The retrieval-visible knowledge object produced from a Job Result after
-publication.
+The global, retrieval-visible knowledge object produced from a Job Result
+after publication.
 
 ### Document Section
 
@@ -78,14 +104,14 @@ packaging.
 ### Worker Document Processing
 
 The worker-side Document Ingestion coordinator. It prepares task-local source
-files, bills the workload estimate, invokes Worker Document Parsing, builds the
-result package, uploads artifacts, and finalizes the Job.
+files, records the workload estimate, invokes Worker Document Parsing, builds
+the result package, uploads artifacts, and finalizes the Job.
 
 ### Temporary Parse Workspace
 
 The task-local folder set used by Worker Document Processing: input files,
 parser output files, and generated result packages. It is temporary worker
-storage, not a retrieval Namespace or durable document scope.
+storage, not a durable knowledge scope.
 
 ### Parse Output
 
@@ -111,8 +137,8 @@ separate modules.
 
 ### Workload Estimate
 
-The worker-side estimate used for billing and processing metadata. It records
-page count, estimation method, and any fallback reason.
+The worker-side estimate used for workload sizing and processing metadata. It
+records page count, estimation method, and any fallback reason.
 
 ### Parser Input
 
@@ -140,19 +166,17 @@ inference.
 ### Job Admission
 
 The policy checks that must pass before a new Job is created: authentication,
-guest scope, system limits, billing RPM, concurrent job limits, and daily
-quota.
+Layer-0 system limits, and the global concurrent-job cap
+(`MAX_CONCURRENT_JOBS`, default 4; 0 or -1 = unlimited).
 
 ### Job Admission Route Policy
 
-The route-aware part of Job Admission that enforces guest API key scope and
-system limits from plain route-admission context built by HTTP dependency
-adapters.
+The route-aware part of Job Admission that enforces Layer-0 system limits
+from plain route-admission context built by HTTP dependency adapters.
 
 ### Job Admission Capacity
 
-The quota-aware part of Job Admission that enforces billing RPM, concurrent
-jobs, and daily quota.
+The part of Job Admission that enforces the global concurrent-job cap.
 
 ### Publication
 
@@ -166,18 +190,24 @@ Sections and Document Chunks from parsed chunk rows.
 
 ### Retrieval
 
-The query workflow that returns cited evidence from published documents.
+The query workflow that returns cited evidence from the global corpus of
+published Knowledge Objects.
+
+### Global Search
+
+Retrieval over the single global corpus. There is no per-user or
+per-namespace retrieval scope; cache keys and hit statistics are global.
 
 ### Retrieval Query
 
 The typed retrieval request that owns cache-shaping fields and route policy:
-scope, filters, data type, channels, ranking options, and agentic toggle.
+filters, data type, channels, ranking options, and agentic toggle.
 
 ### Workflow Run Request
 
 The agentic Retrieval request passed through planning and step execution. It
-preserves user scope, filters, channel policy, internal recall, and explicit
-ranking policy fields for the workflow path.
+preserves filters, channel policy, internal recall, and explicit ranking
+policy fields for the workflow path.
 
 ### Workflow Step Request
 
@@ -186,8 +216,7 @@ top-k, and data-type overrides while preserving the request policy.
 
 ### Demo Source
 
-An API-owned canonical document shipped with the repository for demo and guest
-flows.
+An API-owned canonical document shipped with the repository for demo flows.
 
 ### Demo Source Validation
 
@@ -197,13 +226,8 @@ doc_nav.json output.
 
 ### Demo Source Materialization
 
-The workflow that copies a Demo Source into a user's Namespace as normal Job,
+The workflow that copies a Demo Source into the global corpus as normal Job,
 Job Result, Document, and Document Chunk records.
-
-### Billing Workflow
-
-The credits purchase, checkout, webhook handling, refund reconciliation, and
-tier refresh flows.
 
 ### API Key Authentication
 
@@ -214,25 +238,6 @@ cache, and schedules best-effort last-used updates.
 
 The user-facing workflow that creates, lists, reads, revokes, and toggles API
 keys.
-
-### Stripe Purchase
-
-The Billing Workflow adapter that creates Stripe payment intents and checkout
-sessions for credits purchases.
-
-### Stripe Credits Settlement
-
-The Billing Workflow adapter that settles successful Stripe checkout and
-payment-intent events into credits, payment records, and tier refreshes.
-
-### Stripe Webhook Reconciliation
-
-The Billing Workflow adapter that verifies Stripe events and reconciles credits,
-payment records, and refunds.
-
-### Guest API Key
-
-A guest-tier API key with a restricted route surface.
 
 ### Webhook Management
 
@@ -277,8 +282,7 @@ workflow calls.
 `apps/api/app/services/*`
 
 These modules coordinate Job Admission, Document Ingestion, document lifecycle,
-Billing Workflow, Demo Source Materialization, webhook handling, and internal
-callbacks.
+Demo Source Materialization, webhook handling, and internal callbacks.
 
 ### Persistence Adapters
 
@@ -291,8 +295,8 @@ These modules own database reads and writes for API-side workflows.
 `packages/shared-python/shared/*`
 
 These modules own the lower-level implementations for publication, retrieval,
-state machines, storage, Redis-backed metadata, billing primitives, and core
-exceptions. Shared Job lifecycle finalization lives under
+state machines, storage, Redis-backed metadata, and core exceptions. Shared
+Job lifecycle finalization lives under
 `packages/shared-python/shared/services/jobs/lifecycle/*`.
 
 ## apps/api Workflow Ownership
@@ -325,8 +329,8 @@ exceptions. Shared Job lifecycle finalization lives under
 - `app/services/rate_limit/*`
 
 `auth.py`, `current_user.py`, and `route_admission.py` are HTTP dependency
-adapters. `job_admission.py` owns only the route-level billing and system-limit
-admission dependencies.
+adapters. `job_admission.py` owns only the route-level system-limit admission
+dependencies.
 
 ### Document Lifecycle
 
@@ -357,13 +361,6 @@ admission dependencies.
 - `app/api/v1/routes/demo.py`
 - `app/services/demo/*`
 - `apps/api/scripts/validate_demo_documents.py`
-
-### Billing Workflow
-
-- `app/api/v1/routes/billing.py`
-- `app/services/billing/*`
-- `app/repositories/payment_record_repository.py`
-- shared billing modules in `packages/shared-python/shared/services/billing/*`
 
 ### API Key Management
 
@@ -420,7 +417,7 @@ side effects.
 - `app/services/document_ingestion/success_finalization.py`
 - `app/services/document_ingestion/workspace.py`
 - `app/services/document_ingestion/parse_result_package.py`
-- `app/services/document_ingestion/processing_billing.py`
+- `app/services/document_ingestion/page_estimator.py`
 
 ### Worker Document Parsing
 
@@ -467,7 +464,8 @@ side effects.
 - State-machine callers that need diagnostics should consume Job Transition
   Outcome; boolean state-machine methods remain compatibility facades.
 - `current_job_result_id` selects the active revision of a Document.
-- Namespace is part of the retrieval contract, not a UI-only label.
+- Documents are global knowledge objects; there is no per-user or
+  per-namespace document scope.
 - Demo Sources should behave like normal Documents after materialization.
-- Billing Workflow and Job Admission shape whether work is allowed to start;
-  they are not worker-only concerns.
+- Job Admission shapes whether work is allowed to start; it is not a
+  worker-only concern.

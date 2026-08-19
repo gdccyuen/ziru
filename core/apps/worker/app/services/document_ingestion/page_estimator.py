@@ -1,7 +1,7 @@
 """
-Page estimator for worker-side Document Ingestion billing.
+Page estimator for worker-side Document Ingestion workload estimation.
 
-Calculates page counts for billing based on:
+Calculates page counts for workload estimation based on:
 - PDF: Physical page count from metadata
 - PPTX: Slide count
 - Text-based (DOC, DOCX, TXT, MD, JSON): Word-based estimation using count_cn_en
@@ -33,16 +33,16 @@ class WorkloadEstimate:
 
 
 class PageEstimator:
-    """Estimate page count for billing purposes."""
+    """Estimate page count for workload estimation purposes."""
 
     @classmethod
     def estimate(cls, file_path: str) -> int:
-        """Estimate the billable page count for a file."""
+        """Estimate the page count for a file."""
         return cls.estimate_workload(file_path).page_count
 
     @classmethod
     def estimate_workload(cls, file_path: str) -> WorkloadEstimate:
-        """Estimate billable workload while keeping fallback policy explicit."""
+        """Estimate workload while keeping fallback policy explicit."""
         path = Path(file_path)
         suffix = path.suffix.lower()
 
@@ -65,7 +65,7 @@ class PageEstimator:
 
         fallback_reason = f"unknown_file_type:{suffix or '<none>'}"
         logger.warning(
-            f"Unknown file type for billing: {suffix}, defaulting to 1 page"
+            f"Unknown file type for page estimation: {suffix}, defaulting to 1 page"
         )
         return WorkloadEstimate(
             page_count=1,
