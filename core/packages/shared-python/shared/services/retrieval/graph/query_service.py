@@ -28,8 +28,6 @@ class GraphQueryService:
         self,
         db: AsyncSession,
         *,
-        user_id: str,
-        namespace: str,
         query: str,
         exclude_document_ids: Iterable[str] = (),
         exclude_sections: Iterable[dict[str, str]] = (),
@@ -40,8 +38,6 @@ class GraphQueryService:
         if query_lc:
             section_matches = await self._find_documents_by_section(
                 db,
-                user_id=user_id,
-                namespace=namespace,
                 query=query_lc,
                 exclude_document_ids=excluded_document_ids,
                 exclude_sections=exclude_sections,
@@ -51,8 +47,6 @@ class GraphQueryService:
 
         return await self._find_documents_by_content(
             db,
-            user_id=user_id,
-            namespace=namespace,
             query=query_lc,
             exclude_document_ids=excluded_document_ids,
         )
@@ -61,8 +55,6 @@ class GraphQueryService:
         self,
         db: AsyncSession,
         *,
-        user_id: str,
-        namespace: str,
         query: str,
         exclude_document_ids: set[str],
         exclude_sections: Iterable[dict[str, str]],
@@ -75,8 +67,6 @@ class GraphQueryService:
                 (Document.document_id == DocumentSection.document_id)
                 & (Document.current_job_result_id == DocumentSection.job_result_id),
             )
-            .where(Document.user_id == user_id)
-            .where(Document.namespace == namespace)
             .where(Document.status == 'active')
             .where(
                 DocumentSection.section_title.ilike(like)
@@ -109,8 +99,6 @@ class GraphQueryService:
         self,
         db: AsyncSession,
         *,
-        user_id: str,
-        namespace: str,
         query: str,
         exclude_document_ids: set[str],
     ) -> list[str]:
@@ -122,8 +110,6 @@ class GraphQueryService:
                 (DocumentChunk.document_id == Document.document_id)
                 & (DocumentChunk.job_result_id == Document.current_job_result_id),
             )
-            .where(Document.user_id == user_id)
-            .where(Document.namespace == namespace)
             .where(Document.status == 'active')
             .where(DocumentChunk.content_lexical_text.ilike(like))
         )
@@ -140,8 +126,6 @@ class GraphQueryService:
         self,
         db: AsyncSession,
         *,
-        user_id: str,
-        namespace: str,
         entry_document_ids: Sequence[str],
         query: str,
         top_k: int,
@@ -164,8 +148,6 @@ class GraphQueryService:
                 DocumentSection.section_id == DocumentChunk.section_id,
             )
             .join(JobResult, JobResult.id == DocumentChunk.job_result_id)
-            .where(Document.user_id == user_id)
-            .where(Document.namespace == namespace)
             .where(Document.status == 'active')
             .where(Document.document_id.in_(list(entry_document_ids)))
             .where(_build_lexical_match_predicate(query))

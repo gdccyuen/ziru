@@ -20,8 +20,7 @@ from shared.models.database.document import Document
 from shared.models.database.job import Job
 from shared.models.database.job_result import JobResult
 from shared.models.schemas.job_metadata import JobMetadataHelper
-from shared.models.schemas.retrieval_namespace import normalize_retrieval_namespace
-from shared.services.retrieval.graph.service import DocumentGraphService, GraphScope
+from shared.services.retrieval.graph.service import DocumentGraphService
 from shared.services.retrieval.publication_content import (
     replace_document_revision_content,
 )
@@ -60,10 +59,7 @@ class RetrievalPublicationService:
         if not document:
             return None
 
-        return ExistingDocumentScope(
-            document_id=document.document_id,
-            namespace=document.namespace,
-        )
+        return ExistingDocumentScope(document_id=document.document_id)
 
     def publish_document_state(
         self,
@@ -98,7 +94,6 @@ class RetrievalPublicationService:
     ) -> PublishedDocumentState | None:
 
         job_metadata = job.job_metadata or {}
-        namespace = normalize_retrieval_namespace(job_metadata.get("namespace"))
         document_id = job_metadata.get("document_id")
         parse_track = str(job_metadata.get("parse_track") or "chunk")
         source_file_name = job_metadata.get("source_file_name") or job_metadata.get(
@@ -115,8 +110,6 @@ class RetrievalPublicationService:
                 f"Skipping document creation for job_id={job.job_id}."
             )
             return PublishedDocumentState(
-                user_id=str(job.user_id),
-                namespace=namespace,
                 document_id=None,
                 skipped_all_duplicate=True,
             )
@@ -126,7 +119,6 @@ class RetrievalPublicationService:
             job=job,
             job_result_id=job_result_id,
             document_id=str(document_id) if document_id else None,
-            namespace=namespace,
             parse_track=parse_track,
             source_file_name=str(source_file_name) if source_file_name else None,
             document_metadata=document_metadata,
@@ -139,10 +131,7 @@ class RetrievalPublicationService:
             job_result_id=job_result_id,
             document_id=document.document_id,
         )
-        namespace = normalize_retrieval_namespace(namespace or document.namespace)
         scope = DocumentPublicationScope(
-            user_id=str(job.user_id),
-            namespace=namespace,
             document_id=document.document_id,
             job_result_id=job_result_id,
             source_file_name=str(source_file_name) if source_file_name else None,
@@ -155,11 +144,7 @@ class RetrievalPublicationService:
         )
 
         db.flush()
-        return PublishedDocumentState(
-            user_id=str(job.user_id),
-            namespace=namespace,
-            document_id=document.document_id,
-        )
+        return PublishedDocumentState(document_id=document.document_id)
 
     def _upsert_document_revision(
         self,
@@ -168,7 +153,6 @@ class RetrievalPublicationService:
         job: Job,
         job_result_id: str,
         document_id: str | None,
-        namespace: str,
         parse_track: str,
         source_file_name: str | None,
         document_metadata: dict[str, Any],
@@ -177,18 +161,13 @@ class RetrievalPublicationService:
         if document_id:
             document = db.execute(
                 select(Document)
-                .where(
-                    Document.document_id == document_id,
-                    Document.user_id == str(job.user_id),
-                )
+                .where(Document.document_id == document_id)
                 .with_for_update()
             ).scalar_one_or_none()
 
         if document is None:
             document = Document(
                 document_id=document_id or f"doc_{uuid4().hex[:12]}",
-                user_id=str(job.user_id),
-                namespace=namespace,
                 status="active",
                 current_job_result_id=job_result_id,
                 source_file_name=source_file_name,
@@ -260,7 +239,6 @@ class RetrievalPublicationService:
     ) -> None:
 
         metadata = job.job_metadata or {}
-        namespace = normalize_retrieval_namespace(metadata.get("namespace"))
         document_id = metadata.get("document_id")
         if not document_id:
             document = db.execute(
@@ -274,8 +252,6 @@ class RetrievalPublicationService:
 
         DocumentGraphService().publish_document_graph(
             db,
-            user_id=str(job.user_id),
-            namespace=namespace,
             document_id=document_id,
             job_result_id=job_result_id,
             top_summary=top_summary,
@@ -285,13 +261,10 @@ class RetrievalPublicationService:
         self,
         db: Session,
         *,
-        user_id: str,
-        namespace: str,
         document_id: str,
     ) -> None:
         DocumentGraphService().remove_document_graph(
             db,
-            scope=GraphScope(user_id=user_id, namespace=namespace),
             document_id=document_id,
         )
 

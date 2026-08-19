@@ -75,8 +75,6 @@ class DocumentSectionPublisher:
                 continue
 
             ancestor_section = DocumentSection(
-                user_id=self._scope.user_id,
-                namespace=self._scope.namespace,
                 document_id=self._scope.document_id,
                 job_result_id=self._scope.job_result_id,
                 parent_section_id=self._get_parent_section_id(path_parts, depth),

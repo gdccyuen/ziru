@@ -16,8 +16,6 @@ from shared.services.retrieval.hydration.row_utils import (
 async def hydrate_referenced_chunk_rows(
     *,
     db: AsyncSession | None,
-    user_id: str,
-    namespace: str,
     refs: list[dict[str, Any]],
     score_by_chunk_id: dict[str, float] | None = None,
 ) -> list[dict[str, Any]]:
@@ -48,8 +46,6 @@ async def hydrate_referenced_chunk_rows(
         )
         .outerjoin(DocumentSection, DocumentSection.section_id == DocumentChunk.section_id)
         .join(JobResult, JobResult.id == DocumentChunk.job_result_id)
-        .where(Document.user_id == user_id)
-        .where(Document.namespace == namespace)
         .where(Document.status == 'active')
         .where(Document.document_id.in_(document_ids))
         .where(DocumentChunk.chunk_id.in_(chunk_ids))

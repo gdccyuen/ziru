@@ -16,8 +16,6 @@ async def hydrate_paths_to_rows(
     db: AsyncSession,
     *,
     path_selections: list[dict[str, Any]],
-    user_id: str,
-    namespace: str,
     document_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Load full chunk rows by section_path or source_chunk_path."""
@@ -54,8 +52,6 @@ async def hydrate_paths_to_rows(
                 db,
                 outline_paths=outline_paths,
                 confidence_by_path=confidence_by_path,
-                user_id=user_id,
-                namespace=namespace,
                 document_id=document_id,
             )
         )
@@ -67,8 +63,6 @@ async def hydrate_paths_to_rows(
                 chunk_paths=chunk_paths,
                 confidence_by_path=confidence_by_path,
                 mode_by_path=mode_by_path,
-                user_id=user_id,
-                namespace=namespace,
                 document_id=document_id,
             )
         )
@@ -83,8 +77,6 @@ async def _hydrate_outline_paths(
     *,
     outline_paths: list[str],
     confidence_by_path: dict[str, float],
-    user_id: str,
-    namespace: str,
     document_id: str | None,
 ) -> list[dict[str, Any]]:
     outline_section_filters = [
@@ -98,8 +90,6 @@ async def _hydrate_outline_paths(
             (DocumentSection.document_id == Document.document_id)
             & (DocumentSection.job_result_id == Document.current_job_result_id),
         )
-        .where(Document.user_id == user_id)
-        .where(Document.namespace == namespace)
         .where(Document.status == 'active')
         .where(or_(*outline_section_filters))
     )
@@ -142,8 +132,6 @@ async def _hydrate_chunk_paths(
     chunk_paths: list[str],
     confidence_by_path: dict[str, float],
     mode_by_path: dict[str, str],
-    user_id: str,
-    namespace: str,
     document_id: str | None,
 ) -> list[dict[str, Any]]:
     section_path_filters = []
@@ -173,8 +161,6 @@ async def _hydrate_chunk_paths(
         )
         .outerjoin(DocumentSection, DocumentSection.section_id == DocumentChunk.section_id)
         .join(JobResult, JobResult.id == DocumentChunk.job_result_id)
-        .where(Document.user_id == user_id)
-        .where(Document.namespace == namespace)
         .where(Document.status == 'active')
         .where(
             or_(

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from dataclasses import dataclass
+from typing import Any
 
-from sqlalchemy import delete, or_, select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from shared.models.database.document import (
@@ -30,16 +30,10 @@ from shared.services.retrieval.graph.keywords import (
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class GraphScope:
-    user_id: str
-    namespace: str
-
-
 def _parse_stored_entities(stored: object) -> set[tuple[str, str]]:
-    """Reconstruct a ``{(type, text)}`` set from a node's stored ``top_entities``.
+    """Reconstruct a (type, text) set from a node's stored top_entities.
 
-    Stored form is a list of ``"type:text"`` strings (or bare ``"text"`` when the
+    Stored form is a list of "type:text" strings (or bare "text" when the
     entity was untyped). Splits on the first colon only, since entity text may
     itself contain colons.
     """
@@ -61,18 +55,13 @@ def _parse_stored_entities(stored: object) -> set[tuple[str, str]]:
 class DocumentGraphService:
     """Write-side graph publication over persisted graph_nodes/graph_edges.
 
-    Aligned with KB's knowledge_graph.json structure:
-    - Only document-level nodes (no section nodes)
-    - Document nodes carry rich metadata: top_keywords, chunks_count, types, top_summary
-    - Edges are keyword-overlap-based cross-document connections with meaningful scores
+    Knowledge objects are standalone (Q2): no user/namespace scope columns.
     """
 
     def publish_document_graph(
         self,
         db: Session,
         *,
-        user_id: str,
-        namespace: str,
         document_id: str,
         job_result_id: str,
         top_summary: str | None = None,
@@ -83,7 +72,6 @@ class DocumentGraphService:
         if document is None:
             return
 
-        # ── Gather chunk metadata for keyword extraction ──
         chunk_meta_rows = list(
             db.execute(
                 select(DocumentChunk.chunk_type, DocumentChunk.chunk_metadata)
@@ -93,10 +81,8 @@ class DocumentGraphService:
         )
         chunk_metadata_list = [row[1] or {} for row in chunk_meta_rows]
 
-        # Compute document-level metadata (aligned with KB knowledge_graph.json files dict)
         top_keywords = compute_tfidf_keywords(chunk_metadata_list)
         new_doc_kws = get_normalized_keyword_set(chunk_metadata_list)
-        # Typed entities (§4.4) — higher-precision cross-document link signal.
         new_doc_entities = get_normalized_entity_set(chunk_metadata_list)
 
         types_breakdown: dict[str, int] = defaultdict(int)
@@ -106,31 +92,20 @@ class DocumentGraphService:
 
         resolved_top_summary = str(top_summary or "").strip()
         if not resolved_top_summary:
-            # Backward compatible fallback for older chunks that still carry
-            # per-chunk document_top_summary copies.
             resolved_top_summary = extract_document_top_summary(chunk_metadata_list)
 
-        # ── Clean up old graph data for this document ──
-        self.remove_document_graph(
-            db,
-            scope=GraphScope(user_id=user_id, namespace=namespace),
-            document_id=document_id,
-        )
+        # Clean up old graph data for this document
+        self.remove_document_graph(db, document_id=document_id)
 
-        # Serialize typed entities as ["type:text", ...] for storage in node props
-        # so peers can reconstruct the set without a separate schema.
         top_entities = sorted(
             f"{etype}:{etext}" if etype else etext
             for etype, etext in new_doc_entities
         )
 
-        # ── Create document-level node (no section nodes — aligned with KB KG) ──
         document_node_id = f"doc:{document_id}"
         db.add(
             GraphNode(
                 node_id=document_node_id,
-                user_id=user_id,
-                namespace=namespace,
                 node_kind='document',
                 owner_document_id=document_id,
                 job_result_id=job_result_id,
@@ -148,13 +123,10 @@ class DocumentGraphService:
         )
         db.flush()
 
-        # ── Keyword-overlap-based cross-document edges ──
-        # Only create edges where keyword overlap score >= threshold.
+        # Cross-document edges (global graph)
         other_doc_nodes = list(
             db.execute(
                 select(GraphNode)
-                .where(GraphNode.user_id == user_id)
-                .where(GraphNode.namespace == namespace)
                 .where(GraphNode.node_kind == 'document')
                 .where(GraphNode.owner_document_id != document_id)
             ).scalars()
@@ -175,14 +147,11 @@ class DocumentGraphService:
                 continue
             score = edge_props.pop('_score')
 
-            # Create edge with meaningful weight and metadata
             peer_doc_id = peer_node.owner_document_id
             edge_pair = tuple(sorted([document_id, peer_doc_id]))
             db.add(
                 GraphEdge(
                     edge_id=f"related:{edge_pair[0]}<->{edge_pair[1]}",
-                    user_id=user_id,
-                    namespace=namespace,
                     edge_kind='related',
                     source_node_id=document_node_id,
                     target_node_id=peer_node.node_id,
@@ -201,6 +170,18 @@ class DocumentGraphService:
             f"chunks={chunks_count}"
         )
 
+    def remove_document_graph(self, db: Session, *, document_id: str) -> None:
+        db.execute(
+            delete(GraphEdge).where(
+                (GraphEdge.owner_document_id == document_id)
+                | (GraphEdge.source_node_id == f"doc:{document_id}")
+                | (GraphEdge.target_node_id == f"doc:{document_id}")
+            )
+        )
+        db.execute(
+            delete(GraphNode).where(GraphNode.owner_document_id == document_id)
+        )
+
     @staticmethod
     def _build_edge_properties(
         *,
@@ -208,15 +189,7 @@ class DocumentGraphService:
         new_doc_kws: set[str],
         peer_entities: set[tuple[str, str]],
         peer_keywords: list,
-    ) -> dict | None:
-        """Decide whether two documents link, preferring typed-entity overlap.
-
-        Returns edge ``properties`` (with a private ``_score`` key) when the pair
-        clears a threshold, else ``None``. Typed entities are tried first; when
-        either side lacks entities we fall back to free-form keyword overlap so
-        documents ingested before §4.4 still link.
-        """
-        # ── Primary: typed-entity overlap ──
+    ) -> dict[str, Any] | None:
         if new_doc_entities and peer_entities:
             shared_entities = new_doc_entities & peer_entities
             if len(shared_entities) >= MIN_ENTITY_OVERLAP:
@@ -237,23 +210,18 @@ class DocumentGraphService:
                         'connection_count': len(shared_entities),
                     }
 
-        # ── Fallback: free-form keyword overlap ──
-        # TODO: Once single-doc entity extraction is stable, migrate this to
-        # typed-entity-only edges and remove the TF-IDF keyword overlap path.
-        # The current keyword overlap rarely produces meaningful cross-doc links
-        # now that entities have replaced free-form keywords in the extraction
-        # pipeline. This won't crash — just means fewer/no cross-doc links until
-        # the graph is upgraded to use entity-based matching exclusively.
         peer_kws: set[str] = set()
         for k in peer_keywords:
             normalized = normalize_keyword(str(k))
             if normalized:
                 peer_kws.add(normalized)
-        if not peer_kws or not new_doc_kws:
+        if not new_doc_kws or not peer_kws:
             return None
+
         shared_kws = new_doc_kws & peer_kws
         if len(shared_kws) < MIN_KEYWORD_OVERLAP:
             return None
+
         score = compute_keyword_score(
             shared_keywords=shared_kws,
             keywords_a=new_doc_kws,
@@ -262,34 +230,10 @@ class DocumentGraphService:
         )
         if score < MIN_SCORE_THRESHOLD:
             return None
+
         return {
             '_score': score,
             'edge_basis': 'keywords',
             'shared_keywords': sorted(shared_kws),
             'connection_count': len(shared_kws),
         }
-
-    def remove_document_graph(
-        self, db: Session, *, scope: GraphScope | None, document_id: str
-    ) -> None:
-        document_node_id = f"doc:{document_id}"
-        edge_delete = delete(GraphEdge).where(
-            or_(
-                GraphEdge.owner_document_id == document_id,
-                GraphEdge.source_node_id == document_node_id,
-                GraphEdge.target_node_id == document_node_id,
-            )
-        )
-        node_delete = delete(GraphNode).where(GraphNode.owner_document_id == document_id)
-        if scope is not None:
-            edge_delete = edge_delete.where(
-                GraphEdge.user_id == scope.user_id,
-                GraphEdge.namespace == scope.namespace,
-            )
-            node_delete = node_delete.where(
-                GraphNode.user_id == scope.user_id,
-                GraphNode.namespace == scope.namespace,
-            )
-        db.execute(edge_delete)
-        db.execute(node_delete)
-        db.flush()
