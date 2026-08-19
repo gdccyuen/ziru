@@ -41,7 +41,9 @@ async def test_get_attributes_for_any_authenticated_account(
     entries = cast(list[dict[str, object]], response.json())
     by_key = {cast(str, entry["key"]): entry for entry in entries}
     assert by_key["division"]["allowedValues"] == ["finance", "sales"]
+    assert by_key["division"]["usage"] == 0
     assert by_key["region"]["allowedValues"] is None
+    assert by_key["region"]["usage"] == 0
 
 
 @pytest.mark.asyncio
@@ -97,6 +99,7 @@ async def test_admin_post_patch_delete_flow(
         assert created.json() == {
             "key": "project",
             "allowedValues": ["alpha", "beta"],
+            "usage": 0,
         }
 
         patched = await client.patch(
@@ -109,7 +112,7 @@ async def test_admin_post_patch_delete_flow(
 
         listed = await client.get("/api/v2/attributes", headers=headers)
         entries = cast(list[dict[str, object]], listed.json())
-        assert {"key": "project", "allowedValues": ["gamma"]} in entries
+        assert {"key": "project", "allowedValues": ["gamma"], "usage": 0} in entries
 
         deleted = await client.delete(
             "/api/v2/attributes/project",
@@ -163,6 +166,47 @@ async def test_builtin_key_rejected(
 
     assert response.status_code == 422
     assert "reserved" in response.json()["error"]["message"]
+
+
+@pytest.mark.asyncio
+async def test_delete_in_use_attribute_returns_409_and_keeps_entry(
+    api_client_factory: Callable[
+        [], AbstractAsyncContextManager[AsyncClient]
+    ],
+) -> None:
+    async with api_client_factory() as client:
+        admin_cookie = await bootstrap_admin(client)
+        headers = _cookie_headers(admin_cookie)
+        await seed_attribute_dictionary({"division": ["finance", "sales"]})
+        await seed_document_with_attributes(
+            document_id="doc_uses_division",
+            attributes={"division": ["finance"]},
+        )
+
+        listed = await client.get("/api/v2/attributes", headers=headers)
+        entries = cast(list[dict[str, object]], listed.json())
+        division = next(entry for entry in entries if entry["key"] == "division")
+        assert division["usage"] == 1
+
+        deleted = await client.delete(
+            "/api/v2/attributes/division",
+            headers=headers,
+        )
+        assert deleted.status_code == 409
+        error = cast(dict[str, object], deleted.json()["error"])
+        assert "in use by 1 document(s)" in cast(str, error["message"])
+
+        # PATCH stays allowed even while the key is in use.
+        patched = await client.patch(
+            "/api/v2/attributes/division",
+            headers=headers,
+            json={"allowedValues": ["finance", "sales", "hr"]},
+        )
+        assert patched.status_code == 200
+
+        after = await client.get("/api/v2/attributes", headers=headers)
+        keys = {cast(str, entry["key"]) for entry in after.json()}
+        assert "division" in keys
 
 
 @pytest.mark.asyncio

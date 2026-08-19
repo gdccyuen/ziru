@@ -364,3 +364,61 @@ async def test_duplicate_provider_subject_conflicts(
 
     assert duplicate.status_code == 409
     assert duplicate.json()["error"]["code"] == "ALREADY_EXISTS"
+
+@pytest.mark.asyncio
+async def test_create_user_email_optional_with_sso(
+    api_client_factory: Callable[
+        [], AbstractAsyncContextManager[AsyncClient]
+    ],
+) -> None:
+    async with api_client_factory() as client:
+        admin_cookie = await _bootstrap_admin(client)
+        response = await client.post(
+            "/api/v2/users",
+            headers=_auth_headers(admin_cookie),
+            json={
+                "grade": "user",
+                "sso": {"provider": "oidc", "subject": "sub-no-email"},
+            },
+        )
+    assert response.status_code == 200, response.text
+    body = cast(dict[str, object], response.json())
+    # A deterministic placeholder keeps the unique email column populated.
+    assert body["email"] == "sso-oidc-sub-no-email@ziru.local"
+    assert body["must_change_password"] is False
+
+
+@pytest.mark.asyncio
+async def test_create_user_without_email_or_sso_returns_422(
+    api_client_factory: Callable[
+        [], AbstractAsyncContextManager[AsyncClient]
+    ],
+) -> None:
+    async with api_client_factory() as client:
+        admin_cookie = await _bootstrap_admin(client)
+        response = await client.post(
+            "/api/v2/users",
+            headers=_auth_headers(admin_cookie),
+            json={"password": "UserPass2026!", "grade": "user"},
+        )
+    assert response.status_code == 422
+    error = cast(dict[str, object], response.json()["error"])
+    assert "email is required" in cast(str, error["message"])
+
+
+@pytest.mark.asyncio
+async def test_create_user_with_email_but_no_password_returns_422(
+    api_client_factory: Callable[
+        [], AbstractAsyncContextManager[AsyncClient]
+    ],
+) -> None:
+    async with api_client_factory() as client:
+        admin_cookie = await _bootstrap_admin(client)
+        response = await client.post(
+            "/api/v2/users",
+            headers=_auth_headers(admin_cookie),
+            json={"email": "no-password@contract.ziru.local", "grade": "user"},
+        )
+    assert response.status_code == 422
+    error = cast(dict[str, object], response.json()["error"])
+    assert "password is required" in cast(str, error["message"])
