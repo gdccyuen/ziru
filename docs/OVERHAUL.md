@@ -5,8 +5,10 @@ Status: **active build plan** (approved 2026-08-18, D1–D4 locked; last updated
 ## Progress
 
 - **P0 — ✅ done** (baseline recorded in `.scratch/decouple-account-knowledge/p0-baseline.md`; branch `overhaul` created; glitch list logged).
-- **P1 — ⏳ in progress** on branch `overhaul` (commits `6703f64` → `4a1961c`): new schema baseline, profile matcher, password policy, billing/guest/tier/telemetry deletion done; **exit not yet met** — see `.scratch/decouple-account-knowledge/p1-status.md` for the honest mid-overhaul suite state (the v1 document flow must be rewired to the owner-less schema before P1 goes green).
-- **P2–P7 — pending.** Several items nominally listed under P2/P3/P4 were pulled forward and already landed in P1 (billing routes, guest removal, `require_job_capacity`, worker `processing_billing` removal).
+- **P1 — ✅ done** on branch `overhaul` (owner-less v1 document flow rewired; API suite green).
+- **P2 — ✅ done** (account API: login/logout/me/change-password/SSO, admin users CRUD, sessions, API keys; auth hardening incl. uniform 401 and login throttling; security audit clean).
+- **P3 — ✅ done** (v2 knowledge surface: `POST /v2/search`, `GET /v2/documents` browsing, `POST /v2/documents` upload with attributes, `PATCH/DELETE /v2/documents/{id}`, `/v2/attributes` CRUD; profile-scoped fail-closed access matrix; 30 contract tests; API suite 245/0, worker 173 + 2 pre-existing; commits `317ea43` → `fb5636d`).
+- **P4–P7 — pending** (P4 worker hygiene mostly landed during P1; P5 admin console; P6 webui; P7 cutover).
 - **Session rule:** local commits only — no remote pushes until the PM explicitly agrees (`session-rules.md`).
 
 ## What we're building
