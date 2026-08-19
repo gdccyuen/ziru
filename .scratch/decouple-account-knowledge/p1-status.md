@@ -2,6 +2,8 @@
 
 Committed as `4a1961c` (plus earlier `6703f64`, `759cc70`). Live demo on `main` untouched.
 
+**Session rule:** local commits only — **no remote pushes until the PM explicitly agrees** (see `session-rules.md`, commit `dbd4615`).
+
 ## Done
 - New clean-start schema baseline (`b0d7c5e05dae`): 28 tables — users (grades/profiles/must-change-password/disabled), sessions, external_identity_links, attribute_dictionary, document_attributes, engine tables with **user_id/namespace removed**; no billing/guest/tier tables.
 - Shared: profile-matching engine (fail-closed, multi-value) + 18 unit tests; configurable password policy + tests; MAX_CONCURRENT_JOBS (default 4) replacing tier admission; S3_RESULTS_BUCKET/FRONTEND_URL moved to AppConfig.
@@ -10,8 +12,8 @@ Committed as `4a1961c` (plus earlier `6703f64`, `759cc70`). Live demo on `main` 
 
 ## Suite state (mid-overhaul, expected)
 - core API: **114 passed / 69 failed** — the failures are v1 document/retrieval flows still writing `user_id`/namespace (P3 rewires them) + a few contract fixtures to update.
-- core worker: **165 passed / 10 failed** — 3× Document(user_id=) (P3), 3× S3 bucket env, 3× python3.14 co_qualname util, 1× summary_builder (pre-existing).
-- admin/webui suites: untouched (still green on main).
+- core worker: **165 passed / 10 failed** (that run predates the users.id column-width fix in `4a1961c` — likely 9 failed on rerun) — 3× Document(user_id=) (P3), 3× S3 bucket env, 3× python3.14 co_qualname util, 2× summary_builder (pre-existing).
+- admin/webui suites: untouched on this branch. Webui (tests/typecheck/lint) green at baseline; admin tests + type-check green, but **admin lint has 2 pre-existing issues** in marketing/landing files (deleted in P5).
 
 ## Next session
 1. **P3 front-load:** update document ingestion/publication + retrieval scoping to the owner-less schema (drop user_id/namespace from Document construction and queries; adapt document/job/retrieval contract tests; then the access-control matrix).
