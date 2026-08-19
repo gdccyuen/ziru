@@ -28,6 +28,7 @@ from shared.services.retrieval.execution.query_request import RetrievalQuery
 async def run_retrieval_query(
     *,
     db: AsyncSession,
+    user_id: str,
     query: str,
     top_k: int,
     exclude_document_ids: list[str],
@@ -47,6 +48,7 @@ async def run_retrieval_query(
     return await RetrievalExecutionPlan(
         RetrievalQuery.from_parameters(
             db=db,
+            user_id=user_id,
             query=query,
             top_k=top_k,
             exclude_document_ids=exclude_document_ids,
@@ -122,6 +124,7 @@ class RetrievalExecutionPlan:
 
         cache_extra = request.build_cache_extra()
         cache_version, cached_response = await _read_cached_response(
+            user_id=request.user_id,
             query=request.query,
             top_k=request.top_k,
             exclude_document_ids=request.exclude_document_ids,
@@ -137,6 +140,7 @@ class RetrievalExecutionPlan:
 
         if cache_version is not None:
             await _write_cached_response(
+                user_id=request.user_id,
                 version=cache_version,
                 query=request.query,
                 top_k=request.top_k,
@@ -161,6 +165,7 @@ class RetrievalExecutionPlan:
 
 async def _read_cached_response(
     *,
+    user_id: str,
     query: str,
     top_k: int,
     exclude_document_ids: list[str],
@@ -170,6 +175,7 @@ async def _read_cached_response(
     cache_version: int | None = None
     try:
         cache_version, cached = await get_cached_retrieval_query_result(
+            user_id=user_id,
             query=query,
             top_k=top_k,
             exclude_document_ids=exclude_document_ids,
@@ -189,6 +195,7 @@ async def _read_cached_response(
 
 async def _write_cached_response(
     *,
+    user_id: str,
     version: int,
     query: str,
     top_k: int,
@@ -199,6 +206,7 @@ async def _write_cached_response(
 ) -> None:
     try:
         await set_cached_retrieval_query_result(
+            user_id=user_id,
             version=version,
             query=query,
             top_k=top_k,
@@ -235,7 +243,7 @@ def _log_retrieval_start(
     logger.info("  🚀 RETRIEVAL PIPELINE START")
     logger.info(f'  query="{query}"')
     logger.info(
-        f"  user={user_id}  top_k={top_k}  chunk_types={chunk_types}"
+        f"  top_k={top_k}  chunk_types={chunk_types}"
     )
     logger.info(
         f"  exclude_docs={exclude_document_ids}  "

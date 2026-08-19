@@ -207,7 +207,7 @@ async def _insert_active_job(
                         job_metadata,
                         version,
                         created_at,
-                        updated_at,
+                        updated_at
                     ) VALUES (
                         :job_id,
                         :job_type,
@@ -217,7 +217,7 @@ async def _insert_active_job(
                         CAST(:job_metadata AS JSON),
                         :version,
                         :created_at,
-                        :updated_at,
+                        :updated_at
                     )
                     """
                 ),
@@ -268,7 +268,6 @@ async def test_should_create_a_waiting_file_job_for_an_authenticated_developer(
         assert job_id.startswith("job_")
         assert response_json["status"] == "waiting-file"
         assert response_json["source_type"] == "file"
-        assert response_json["namespace"] == payload["namespace"]
         assert response_json["data_id"] == payload["data_id"]
         response_document_id = cast(str, response_json["document_id"])
         assert response_document_id.startswith("doc_")
@@ -313,7 +312,6 @@ async def test_should_create_a_waiting_file_job_for_an_authenticated_developer(
         assert job_row["s3_key"] == f"uploads/{job_id}.pdf"
         assert job_row["webhook_enabled"] is False
         assert persisted_document_id.startswith("doc_")
-        assert job_metadata["namespace"] == payload["namespace"]
         assert job_metadata["api_version"] == "v1"
         assert job_metadata["parse_track"] == "chunk"
         assert job_metadata["processing_generation"] == "legacy_chunk"
@@ -336,7 +334,6 @@ async def test_should_create_a_waiting_file_job_for_an_authenticated_developer(
         assert cached_metadata is not None
         assert cached_job_info is not None
         assert cached_metadata["document_id"] == persisted_document_id
-        assert cached_metadata["namespace"] == payload["namespace"]
         assert cached_metadata["api_version"] == "v1"
         assert cached_metadata["parse_track"] == "chunk"
         assert cached_metadata["processing_generation"] == "legacy_chunk"
@@ -377,7 +374,6 @@ async def test_should_create_a_v2_page_memory_job_for_pdf_uploads(
 
     assert response_json["status"] == "waiting-file"
     assert response_json["source_type"] == "file"
-    assert response_json["namespace"] == payload["namespace"]
     assert response_json["data_id"] == payload["data_id"]
     assert response_json["upload_headers"] == {"Content-Type": "application/pdf"}
     assert list_response.status_code == 200
@@ -450,7 +446,6 @@ async def test_v2_created_page_memory_job_can_query_v2_retrieval(
     results = cast(list[dict[str, object]], retrieval_json["results"])
     source = cast(dict[str, object], results[0]["source"])
 
-    assert retrieval_json["namespace"] == payload["namespace"]
     assert retrieval_json["router_used"] == "small_corpus_all"
     assert len(results) == 1
     assert results[0]["chunk_id"] == published_chunk["chunk_id"]
@@ -529,7 +524,6 @@ async def test_should_create_a_waiting_file_job_for_html_uploads(
 
     assert response_json["status"] == "waiting-file"
     assert response_json["source_type"] == "file"
-    assert response_json["namespace"] == payload["namespace"]
     assert response_json["data_id"] == payload["data_id"]
     assert response_json["upload_headers"] == {"Content-Type": "text/html"}
 
@@ -950,7 +944,6 @@ async def test_should_create_a_waiting_file_job_for_a_url_source_and_enqueue_the
         assert requested_urls == [payload["source_url"], payload["source_url"]]
         assert response_json["status"] == "waiting-file"
         assert response_json["source_type"] == "url"
-        assert response_json["namespace"] == payload["namespace"]
         assert response_json["data_id"] == payload["data_id"]
         response_document_id = cast(str, response_json["document_id"])
         assert response_document_id.startswith("doc_")
@@ -971,7 +964,6 @@ async def test_should_create_a_waiting_file_job_for_a_url_source_and_enqueue_the
         assert job_row["s3_key"] == f"uploads/{job_id}.pdf"
         assert job_row["webhook_enabled"] is False
         assert persisted_document_id.startswith("doc_")
-        assert job_metadata["namespace"] == payload["namespace"]
         assert job_metadata["source_type"] == "url"
         assert job_metadata["source_file_name"] == "ziru-upload.pdf"
         assert job_metadata["source_url"] == payload["source_url"]
@@ -989,7 +981,6 @@ async def test_should_create_a_waiting_file_job_for_a_url_source_and_enqueue_the
         assert cached_metadata is not None
         assert cached_job_info is not None
         assert cached_metadata["document_id"] == persisted_document_id
-        assert cached_metadata["namespace"] == payload["namespace"]
         assert cached_metadata["source_type"] == "url"
         assert cached_metadata["source_file_name"] == "ziru-upload.pdf"
         assert cached_metadata["source_url"] == payload["source_url"]

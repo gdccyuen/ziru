@@ -67,7 +67,6 @@ class DocumentNavigationRunner:
         self._state = state
         self._trace = trace
         self._trace_enabled = trace_enabled
-        self._user_id = user_id
         self._query = query
         self._config = config
         self._discovery_by_doc = discovery_by_doc
@@ -217,8 +216,6 @@ class DocumentNavigationRunner:
                     job_result_id=job_result_id,
                     query=self._query,
                     llm_fn=doc_llm_fn,
-                    user_id=self._user_id,
-                    namespace=self._namespace,
                     doc_name=doc_name,
                     scope_path=nav_state.current_scope,
                     budget_snapshot=self._state.ledger.snapshot() if self._state.ledger else None,
@@ -577,8 +574,6 @@ class DocumentNavigationRunner:
             self._db,
             node=root,
             path_selections=unique_selections,
-            user_id=self._user_id,
-            namespace=self._namespace,
             document_id=doc.document_id,
             job_result_id=job_result_id,
         )

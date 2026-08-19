@@ -123,7 +123,7 @@ class DocumentIngestionService:
                 current_user=current_user,
             )
 
-            await self._job_admission_service.enforce_job_creation_capacity(
+            await self._job_admission_service.enforce_job_capacity(
                 db=db,
                 current_user=current_user,
             )
@@ -299,7 +299,6 @@ class DocumentIngestionService:
             db,
             user_id=current_user.user_id,
             document_id=requested_document_id,
-            requested_namespace=cast(str | None, payload.namespace),
         )
 
         if not requested_document_id:

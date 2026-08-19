@@ -9,7 +9,6 @@ from shared.services.retrieval.workflow.types import PlannedStep
 
 @dataclass(frozen=True)
 class WorkflowRunRequest:
-    user_id: str
     query: str
     top_k: int
     exclude_document_ids: list[str]
@@ -46,7 +45,6 @@ class WorkflowRunRequest:
     def for_step(self, step: PlannedStep) -> WorkflowStepRequest:
         step_top_k = step.top_k or self.top_k
         return WorkflowStepRequest(
-            user_id=self.user_id,
             query=step.sub_query,
             top_k=step_top_k,
             exclude_document_ids=self.exclude_document_ids,
@@ -69,7 +67,6 @@ class WorkflowRunRequest:
 
 @dataclass(frozen=True)
 class WorkflowStepRequest:
-    user_id: str
     query: str
     top_k: int
     exclude_document_ids: list[str]

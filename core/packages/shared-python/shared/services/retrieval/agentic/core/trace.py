@@ -59,7 +59,6 @@ class TraceRecorder:
     ) -> None:
         self._db = db
         self._run_id = f'aret_{uuid4().hex[:12]}'
-        self._user_id = user_id
         self._query = query
         self._config = config
         self._top_k = top_k
@@ -83,8 +82,6 @@ class TraceRecorder:
 
             run = RetrievalRun(
                 run_id=self._run_id,
-                user_id=self._user_id,
-                namespace=self._namespace,
                 query=self._query,
                 query_hash=_query_hash(self._query),
                 top_k=self._top_k,

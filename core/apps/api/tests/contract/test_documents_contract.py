@@ -298,6 +298,7 @@ async def _insert_document_revision_with_chunks(
                 text("""
                     INSERT INTO jobs (
                         job_id,
+                        user_id,
                         job_type,
                         status,
                         source_type,
@@ -305,9 +306,10 @@ async def _insert_document_revision_with_chunks(
                         job_metadata,
                         version,
                         created_at,
-                        updated_at,
+                        updated_at
                     ) VALUES (
                         :job_id,
+                        :user_id,
                         'document_ingestion',
                         'done',
                         'url',
@@ -315,13 +317,12 @@ async def _insert_document_revision_with_chunks(
                         CAST(:job_metadata AS JSON),
                         0,
                         :created_at,
-                        :updated_at,
-                        0,
-                        'pending'
+                        :updated_at
                     )
                     """),
                 {
                     "job_id": job_id,
+                    "user_id": user_id,
                     "job_metadata": json.dumps({"document_id": document_id}),
                     "created_at": timestamp,
                     "updated_at": timestamp,

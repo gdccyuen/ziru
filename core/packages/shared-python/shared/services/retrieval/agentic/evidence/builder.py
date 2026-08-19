@@ -204,8 +204,6 @@ async def _fetch_importance_norm_scores(
             RetrievalHitStat.last_hit_at,
             RetrievalHitStat.created_at,
         )
-        .where(RetrievalHitStat.user_id == user_id)
-        .where(RetrievalHitStat.namespace == namespace)
         .where(RetrievalHitStat.hit_kind == "chunk")
         .where(RetrievalHitStat.chunk_id.in_(chunk_ids))
     )

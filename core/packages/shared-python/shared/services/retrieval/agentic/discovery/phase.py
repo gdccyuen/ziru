@@ -33,7 +33,6 @@ async def run_initial_discovery(
     bootstrap_llm_fn: LLMFn | None,
 ) -> list[dict[str, Any]]:
     discovery_kwargs: dict[str, Any] = {
-        "user_id": user_id,
         "query": query,
         "top_k": top_k,
         "exclude_document_ids": exclude_document_ids,

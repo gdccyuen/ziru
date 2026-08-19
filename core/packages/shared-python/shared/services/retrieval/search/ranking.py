@@ -23,8 +23,6 @@ def get_candidate_key(row: dict[str, Any]) -> str:
 async def load_chunk_importance_scores(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     rows: list[dict[str, Any]],
 ) -> dict[str, float]:
     chunk_ids = sorted({
@@ -41,8 +39,6 @@ async def load_chunk_importance_scores(
             RetrievalHitStat.last_hit_at,
             RetrievalHitStat.created_at,
         )
-        .where(RetrievalHitStat.user_id == user_id)
-        .where(RetrievalHitStat.namespace == namespace)
         .where(RetrievalHitStat.hit_kind == 'chunk')
         .where(RetrievalHitStat.chunk_id.in_(chunk_ids))
     )
@@ -178,8 +174,6 @@ def rank_candidates_by_path(
 async def rank_retrieval_candidates(
     db: AsyncSession,
     *,
-    user_id: str,
-    namespace: str,
     discovery_rows: list[dict[str, Any]],
     routed_rows: list[dict[str, Any]],
     top_k: int,
@@ -187,8 +181,6 @@ async def rank_retrieval_candidates(
     try:
         importance_scores = await load_chunk_importance_scores(
             db,
-            user_id=user_id,
-            namespace=namespace,
             rows=[*discovery_rows, *routed_rows],
         )
     except Exception as exc:

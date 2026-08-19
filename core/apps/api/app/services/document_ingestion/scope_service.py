@@ -1,5 +1,8 @@
 """
 Document-scope rules used by document-ingestion workflows.
+
+The overhaul removed namespaces and document ownership (Q2): the only
+remaining scope concern is the active-job uniqueness check per uploader.
 """
 
 from __future__ import annotations
@@ -14,10 +17,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from shared.core.exceptions.domain_exceptions import (
     ConflictException,
     NotFoundException,
-    ValidationException,
 )
 from shared.models.database.job import Job
-from shared.models.schemas.retrieval_namespace import normalize_retrieval_namespace
 
 _ACTIVE_JOB_STATUSES = ("waiting-file", "pending", "running", "converting")
 
@@ -72,17 +73,19 @@ async def resolve_effective_document_scope(
     *,
     user_id: str,
     document_id: Optional[str],
-    requested_namespace: Optional[str],
     repository: DocumentRepository | None = None,
 ) -> tuple[str, str]:
-    effective_requested_namespace = normalize_retrieval_namespace(requested_namespace)
+    """Resolve the target document id. Namespace is retired (Q2).
+
+    Returns (document_id, namespace) for caller compatibility; namespace is
+    always an empty string.
+    """
     if not document_id:
-        return f"doc_{uuid.uuid4().hex[:12]}", effective_requested_namespace
+        return f"doc_{uuid.uuid4().hex[:12]}", ""
 
     document = await (repository or DocumentRepository()).get_document(
         db,
         document_id=document_id,
-        user_id=user_id,
     )
     if document is None or getattr(document, "status", None) == "archived":
         raise NotFoundException(
@@ -90,15 +93,4 @@ async def resolve_effective_document_scope(
             resource_id=document_id,
             internal_message=f"Document not found for update flow: {document_id}",
         )
-    has_requested_namespace = bool(str(requested_namespace or "").strip())
-    if has_requested_namespace and effective_requested_namespace != document.namespace:
-        raise ValidationException(
-            user_message="namespace must match the existing document namespace",
-            violations=[
-                {
-                    "field": "namespace",
-                    "description": "Does not match existing document namespace",
-                }
-            ],
-        )
-    return document.document_id, document.namespace
+    return document.document_id, ""

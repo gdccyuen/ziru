@@ -334,6 +334,7 @@ def configure_contract_environment(
         "S3_ENDPOINT_URL": "",
         "S3_PRIVATE_DOMAIN": "",
         "S3_RESULTS_BUCKET": _CONTRACT_RESULTS_BUCKET,
+        "MAX_CONCURRENT_JOBS": "-1",
         "OBJECT_STORAGE_LOCAL_ROOT": str(_TEST_OBJECT_STORAGE_ROOT),
         "S3_REGION": "us-west-1",
         "S3_USE_SSL": "false",

@@ -108,7 +108,7 @@ class RetrievalAgent:
         state.ledger.total_chunks = total_chunks
         state.ledger.total_docs = total_docs
         trace = TraceRecorder(
-            db, user_id=user_id, namespace=namespace, query=query,
+            db, query=query,
             config=config, top_k=top_k, chunk_types=chunk_types,
             filters={
                 'exclude_document_ids': exclude_document_ids,

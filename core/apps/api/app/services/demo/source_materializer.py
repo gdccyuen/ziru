@@ -146,8 +146,6 @@ class DemoSourceMaterializer:
                 version=0,
                 created_at=timestamp,
                 updated_at=timestamp,
-                credits_charged=0,
-                billing_status="skipped",
             )
         )
         db.add(

@@ -99,6 +99,8 @@ async def _create_rate_limited_developer_api_client(
     configure_contract_environment(monkeypatch, postgresql_process)
     monkeypatch.setenv("RATE_LIMIT_ENABLED", "true" if rate_limit_enabled else "false")
     monkeypatch.setenv("MAX_CONCURRENT_JOBS", str(max_concurrent_jobs))
+    from shared.core.config import settings
+    monkeypatch.setattr(settings, "MAX_CONCURRENT_JOBS", max_concurrent_jobs)
     await prepare_contract_storage()
     await _noop_tier_limits()
     await _set_default_system_limit(
@@ -199,7 +201,7 @@ async def test_should_return_too_many_requests_when_the_authenticated_user_excee
     assert error["code"] == "RESOURCE_EXHAUSTED"
     assert (
         error["message"]
-        == "Too many concurrent requests (1/1 active). Please retry after 30 seconds."
+        == "Too many concurrent jobs (1/1 active). Please retry after 30 seconds."
     )
     assert details == {
         "reason": "RATE_LIMIT_EXCEEDED",
@@ -251,37 +253,7 @@ async def test_should_return_too_many_requests_when_the_jobs_route_exceeds_the_s
 
 @pytest.mark.asyncio
 
-async def test_should_skip_billing_rate_limits_when_billing_is_disabled(
-    monkeypatch: MonkeyPatch,
-    postgresql_proc: PostgreSQLProcess,
-) -> None:
-    first_payload: dict[str, str] = {
-        "namespace": "contract-jobs",
-        "source_type": "file",
-        "file_name": "contract-billing-disabled-first.pdf",
-        "data_id": "contract-job-billing-disabled-first",
-    }
-    second_payload: dict[str, str] = {
-        "namespace": "contract-jobs",
-        "source_type": "file",
-        "file_name": "contract-billing-disabled-second.pdf",
-        "data_id": "contract-job-billing-disabled-second",
-    }
 
-    async with _create_rate_limited_developer_api_client(
-        monkeypatch,
-        postgresql_proc,
-        max_concurrent_jobs=1,
-    ) as api_client:
-        first_response = await api_client.post("/api/v1/jobs", json=first_payload)
-        second_response = await api_client.post("/api/v1/jobs", json=second_payload)
-
-    assert first_response.status_code == 200
-    assert second_response.status_code == 200
-    assert await _count_jobs() == 2
-
-
-@pytest.mark.asyncio
 async def test_should_skip_all_api_rate_limits_when_rate_limits_are_disabled(
     monkeypatch: MonkeyPatch,
     postgresql_proc: PostgreSQLProcess,
@@ -310,5 +282,6 @@ async def test_should_skip_all_api_rate_limits_when_rate_limits_are_disabled(
         second_response = await api_client.post("/api/v1/jobs", json=second_payload)
 
     assert first_response.status_code == 200
-    assert second_response.status_code == 200
-    assert await _count_jobs() == 2
+    # The global concurrent-job cap applies even when rate limits are disabled (Q4).
+    assert second_response.status_code == 429
+    assert await _count_jobs() == 1

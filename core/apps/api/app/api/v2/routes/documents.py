@@ -26,7 +26,7 @@ async def get_document_page_citation_source(
 ) -> dict[str, Any]:
     response = await _document_service.get_document_page_citation_source(
         db,
-        user_id=current_user.user_id,
+
         document_id=document_id,
     )
     if response is None:
@@ -46,7 +46,7 @@ async def get_document_mineru_raw(
 ) -> dict[str, Any]:
     response = await _document_service.get_document_mineru_raw(
         db,
-        user_id=current_user.user_id,
+
         document_id=document_id,
     )
     if response is None:

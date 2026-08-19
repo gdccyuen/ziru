@@ -144,7 +144,6 @@ async def execute_retrieval_query(
     return await run_retrieval_query(
         db=db,
         user_id=current_user.user_id,
-        namespace=normalize_retrieval_namespace(payload.namespace),
         query=payload.query,
         top_k=payload.top_k,
         exclude_document_ids=payload.exclude_document_ids,

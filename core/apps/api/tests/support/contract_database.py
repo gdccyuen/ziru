@@ -108,6 +108,7 @@ class ContractDatabase:
             """
             INSERT INTO api_keys (
                 id,
+                user_id,
                 key_hash,
                 key_mask,
                 name,
@@ -115,6 +116,7 @@ class ContractDatabase:
                 created_at
             ) VALUES (
                 :id,
+                :user_id,
                 :key_hash,
                 :key_mask,
                 :name,
@@ -124,6 +126,7 @@ class ContractDatabase:
             """,
             {
                 "id": api_key_id,
+                "user_id": user_id,
                 "key_hash": api_key_hash,
                 "key_mask": f"{api_key[:8]}...{api_key[-4:]}",
                 "name": f"Contract API Key {user_id}",

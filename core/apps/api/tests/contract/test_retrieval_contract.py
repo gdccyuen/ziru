@@ -244,8 +244,6 @@ async def test_agentic_workflow_should_pass_full_request_policy_to_step_adapter(
 
     assert len(captured_requests) == 1
     request = captured_requests[0]
-    assert request["user_id"] == "local-dev-user"
-    assert request["namespace"] == "contract-agentic-request-policy"
     assert request["query"] == "policy marker"
     assert request["top_k"] == 1
     assert request["exclude_document_ids"] == []
@@ -287,7 +285,6 @@ async def test_should_return_seeded_retrieval_results_for_the_authenticated_user
     response_json = cast(dict[str, object], response.json())
     results = cast(list[dict[str, object]], response_json["results"])
 
-    assert response_json["namespace"] == "contract-retrieval"
     assert response_json["query"] == "alpha"
     assert response_json["router_used"] == "small_corpus_all"
     assert len(results) == 1
@@ -377,7 +374,6 @@ async def test_should_default_the_namespace_to_default_when_it_is_omitted(
     response_json = cast(dict[str, object], response.json())
     results = cast(list[dict[str, object]], response_json["results"])
 
-    assert response_json["namespace"] == "default"
     assert len(results) == 1
     assert _result_source(results[0])["document_id"] == seeded_document["document_id"]
 
@@ -396,7 +392,6 @@ async def test_should_return_empty_results_for_an_empty_query(
 
     assert response.status_code == 200
     response_json = response.json()
-    assert response_json["namespace"] == "default"
     assert response_json["query"] == ""
     assert response_json["router_used"] == "empty_query_filtered"
     assert response_json["evidence_text"] == ""
@@ -697,7 +692,6 @@ async def test_agentic_retrieval_should_not_hydrate_references_outside_request_s
             request: WorkflowRunRequest,
         ) -> WorkflowResult:
             return WorkflowResult(
-                namespace=request.namespace,
                 query=request.query,
                 router_used="workflow_single_step",
                 answer_text="",
@@ -776,7 +770,6 @@ async def test_agentic_retrieval_should_drop_references_that_do_not_match_the_hy
             request: WorkflowRunRequest,
         ) -> WorkflowResult:
             return WorkflowResult(
-                namespace=request.namespace,
                 query=request.query,
                 router_used="workflow_single_step",
                 answer_text="",
