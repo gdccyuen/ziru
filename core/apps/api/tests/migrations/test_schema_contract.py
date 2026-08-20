@@ -273,6 +273,56 @@ def test_agentic_retrieval_trace_schema_matches_orm(migrated_head_engine: Engine
     }.issubset(run_columns)
 
 
+def test_chat_threads_and_messages_tables_exist(
+    migrated_head_engine: Engine,
+) -> None:
+    with migrated_head_engine.begin() as connection:
+        thread_columns = set(
+            connection.execute(
+                text(
+                    """
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_name = 'chat_threads'
+                    """
+                )
+            )
+            .scalars()
+            .all()
+        )
+        message_columns = set(
+            connection.execute(
+                text(
+                    """
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_name = 'chat_messages'
+                    """
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+    assert {
+        "id",
+        "user_id",
+        "title",
+        "filters",
+        "created_at",
+        "updated_at",
+        "archived_at",
+    }.issubset(thread_columns)
+    assert {
+        "id",
+        "thread_id",
+        "role",
+        "content",
+        "citations",
+        "created_at",
+    }.issubset(message_columns)
+
+
 def test_job_results_mineru_raw_s3_key_column_exists(
     migrated_head_engine: Engine,
 ) -> None:

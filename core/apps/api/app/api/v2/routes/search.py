@@ -9,32 +9,20 @@ exclude_document_ids.
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Literal
 
 from app.api.dependencies.current_user import with_current_user
 from app.api.v1.routes.retrieval import (
     ExcludeSection,
-    RetrievalQueryRequest,
     RetrievalQueryResponse,
-    execute_retrieval_query,
-)
-from app.services.attributes.attribute_service import (
-    load_attribute_dictionary,
-    validation_error_422,
 )
 from app.services.rate_limit.data_structures import CurrentUser
+from app.services.search.knowledge_search import run_profile_scoped_search
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.core.database import get_db
-from shared.models.database.user import GRADE_ADMINISTRATOR
-from shared.services.profile import (
-    ProfileConstraint,
-    normalize_profile,
-    resolve_all_active_document_ids,
-    resolve_matching_document_ids,
-)
 
 router = APIRouter(tags=["Search"])
 
@@ -88,79 +76,30 @@ class SearchV2Request(BaseModel):
     )
 
 
-def _empty_evidence_response(query: str) -> dict[str, Any]:
-    """Standard empty evidence contract (no corpus is visible to the caller)."""
-    return {
-        "query": query,
-        "router_used": "empty_corpus_scoped",
-        "evidence_text": "",
-        "answer_text": "",
-        "referenced_chunks": [],
-        "results": [],
-        "stop_reason": None,
-        "failure_reason": None,
-        "decision_trace": None,
-    }
-
-
 @router.post("", response_model=RetrievalQueryResponse, summary="Knowledge search")
 async def search_knowledge(
     payload: SearchV2Request,
     current_user: CurrentUser = Depends(with_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    query = payload.query.strip()
-    if not query:
-        raise validation_error_422("query must be non-empty", "query")
-    if not payload.filters:
-        raise validation_error_422("filters must not be empty", "filters")
-
-    dictionary = await load_attribute_dictionary(db)
-    for item in payload.filters:
-        if item.key not in dictionary:
-            raise validation_error_422(
-                f"unknown attribute key: {item.key}",
-                "filters",
-            )
-
-    is_admin = current_user.grade == GRADE_ADMINISTRATOR
-    constraints: list[ProfileConstraint] = [
-        ProfileConstraint(key=item.key, values=item.values) for item in payload.filters
-    ]
-    if not is_admin:
-        profile = normalize_profile(current_user.profile or [])
-        if not profile:
-            return _empty_evidence_response(query)
-        constraints = list(profile) + constraints
-
-    allowed_document_ids = await resolve_matching_document_ids(db, constraints)
-    if not allowed_document_ids:
-        return _empty_evidence_response(query)
-
-    all_document_ids = await resolve_all_active_document_ids(db)
-    exclude_document_ids = set(payload.exclude_document_ids)
-    exclude_document_ids.update(all_document_ids - allowed_document_ids)
-
-    retrieval_request = RetrievalQueryRequest(
-        query=query,
+    """Knowledge search: profile ∩ filters, fail-closed (P3)."""
+    return await run_profile_scoped_search(
+        db,
+        current_user,
+        query=payload.query,
+        filters=[item.model_dump() for item in payload.filters],
         top_k=payload.top_k,
-        exclude_document_ids=sorted(exclude_document_ids),
-        exclude_sections=payload.exclude_sections,
+        internal_recall_k=payload.internal_recall_k,
+        rerank=payload.rerank,
+        use_agentic=payload.use_agentic,
         chunk_types=payload.chunk_types,
-        signal_paths=payload.signal_paths,
-        filter_mode=payload.filter_mode,
+        exclude_document_ids=payload.exclude_document_ids,
+        exclude_sections=payload.exclude_sections,
         channels=payload.channels,
         channel_weights=payload.channel_weights,
-        rerank=payload.rerank,
         threshold=payload.threshold,
-        internal_recall_k=payload.internal_recall_k,
-        use_agentic=payload.use_agentic,
-    )
-    return await execute_retrieval_query(
-        retrieval_request,
-        current_user,
-        db,
-        llm_config=None,
+        signal_paths=payload.signal_paths,
+        filter_mode=payload.filter_mode,
     )
 
 

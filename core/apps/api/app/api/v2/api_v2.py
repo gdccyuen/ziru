@@ -4,6 +4,7 @@ from app.api.v1.routes import documents as v1_documents
 from app.api.v2.routes import (
     api_keys,
     attributes,
+    chat,
     documents,
     jobs,
     retrieval,
@@ -22,5 +23,6 @@ api_router.include_router(search.router, prefix="/search", tags=["Search"])
 api_router.include_router(attributes.router, prefix="/attributes", tags=["Attributes"])
 api_router.include_router(users.router, prefix="/users", tags=["Users Admin"])
 api_router.include_router(api_keys.router, prefix="/api-keys", tags=["API Keys Admin"])
+api_router.include_router(chat.router, prefix="/chat", tags=["Chat"])
 
 __all__ = ["api_router"]

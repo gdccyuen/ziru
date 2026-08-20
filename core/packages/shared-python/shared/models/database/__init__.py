@@ -11,6 +11,7 @@ from .user import User
 from .api_key import APIKey
 from .external_identity_link import ExternalIdentityLink
 from .session import Session
+from .chat import ChatMessage, ChatThread
 from .document import (
     Document,
     DocumentChunk,
@@ -44,6 +45,8 @@ __all__ = [
     "APIKey",
     "ExternalIdentityLink",
     "Session",
+    "ChatThread",
+    "ChatMessage",
     "Job",
     "JobResult",
     "JobChunk",
