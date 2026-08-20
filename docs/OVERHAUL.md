@@ -1,6 +1,6 @@
 # Ziru Overhaul — Build Plan
 
-Status: **active build plan** (approved 2026-08-18, D1–D4 locked; last updated 2026-08-19). Decisions live in the wayfinder map at `.scratch/decouple-account-knowledge/map.md` (all 7 tickets resolved). This document sequences the build itself.
+Status: **active build plan** (approved 2026-08-18, D1–D4 locked; last updated 2026-08-21). Decisions live in the wayfinder map at `.scratch/decouple-account-knowledge/map.md` (all 7 tickets resolved). This document sequences the build itself.
 
 ## Progress
 
@@ -9,7 +9,7 @@ Status: **active build plan** (approved 2026-08-18, D1–D4 locked; last updated
 - **P2 — ✅ done** (account API: login/logout/me/change-password/SSO, admin users CRUD, sessions, API keys; auth hardening incl. uniform 401 and login throttling; security audit clean).
 - **P3 — ✅ done** (v2 knowledge surface: `POST /v2/search`, `GET /v2/documents` browsing, `POST /v2/documents` upload with attributes, `PATCH/DELETE /v2/documents/{id}`, `/v2/attributes` CRUD; profile-scoped fail-closed access matrix; 30 contract tests; API suite 245/0, worker 173 + 2 pre-existing; commits `317ea43` → `fb5636d`).
 - **P5 — ✅ done** (admin console reworked: stateless against the core API; billing/credits/usage-costs/marketing/newsletter/guest/auth-callbacks/analytics/better-auth surfaces deleted; login/logout, users, API keys, attribute dictionary, documents, jobs, webhooks, health/overview and read-only settings pages; new admin `/v2/api-keys` endpoints with contract tests; admin lint/type-check/test/build green; API suite 248/0, worker 173 + 2 pre-existing).
-- **P4, P6, P7 — pending** (P4 worker hygiene mostly landed during P1; P6 webui; P7 cutover).
+- **P6 — ✅ done** (webui reworked as a stateless core-backed app: auth via core sessions and the `/api` rewrite proxy, forced password change, account menu with grade/profile badge + self-service change-password, Search + Documents views on the evidence contract, chat with per-user threads persisted in new core `/v2/chat` endpoints, thread widget where the workspace switcher used to be, composer auto-grow fix; Better Auth, local users/sessions/OAuth/dashboard-SSO bridge, workspaces/members/namespace/localization, local Drizzle DB, PostHog, and the old workspace UI deleted; API suite 264/0 incl. chat contract tests, webui lint/typecheck/test(19)/build green, worker 173 + 2 pre-existing; commits `1ada1e8` → `7776611`).
 - **Session rule:** local commits only — no remote pushes until the PM explicitly agrees (`session-rules.md`).
 
 ## What we're building
