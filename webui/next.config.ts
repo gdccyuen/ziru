@@ -1,9 +1,19 @@
 import type { NextConfig } from "next";
 
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5005/api";
+
 const nextConfig: NextConfig = {
   output: "standalone",
   cacheComponents: true,
   reactCompiler: true,
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${apiBaseUrl}/:path*`,
+      },
+    ];
+  },
   serverExternalPackages: [
     "pg",
     "@neondatabase/serverless",
@@ -11,9 +21,7 @@ const nextConfig: NextConfig = {
   ],
   allowedDevOrigins: [
     "127.0.0.1",
-    "notebook.local.knowhereto.ai",
-    "notebook.127.0.0.1.nip.io",
-    "dashboard.127.0.0.1.nip.io",
+    "localhost",
   ],
   turbopack: {
     root: process.cwd(),

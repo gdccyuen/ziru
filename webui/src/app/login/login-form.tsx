@@ -1,105 +1,71 @@
-"use client"
+"use client";
 
-import { useActionState, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { loginAction, type LoginActionState } from "./actions"
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ApiError, api } from "@/lib/api";
 
-const initialState: LoginActionState = { error: null }
+export function LoginForm() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-export type LoginProvider = {
-  readonly name: string
-  readonly displayName: string
-}
-
-export function LoginForm({
-  providers = [],
-}: {
-  readonly providers?: readonly LoginProvider[];
-}) {
-  const [state, formAction, isPending] = useActionState(loginAction, initialState);
-  const [oauthProvider, setOauthProvider] = useState<string | null>(null);
-  const [providerError, setProviderError] = useState<string | null>(null);
-
-  async function handleOAuth(provider: string): Promise<void> {
-    setOauthProvider(provider);
-    setProviderError(null);
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setSubmitting(true);
     try {
-      const response = await fetch(`/api/auth/${encodeURIComponent(provider)}/start`);
-      const body = (await response.json()) as { url?: string; message?: string };
-      if (body.url) {
-        const anchor = document.createElement("a");
-        anchor.href = body.url;
-        anchor.click();
-        return;
+      const user = await api.login(email.trim(), password);
+      router.replace(user.must_change_password ? "/force-change-password" : "/");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Login failed. Please try again.");
       }
-      setProviderError(body.message ?? "Sign-in could not be started.");
-      setOauthProvider(null);
-    } catch {
-      setProviderError("Sign-in could not be started.");
-      setOauthProvider(null);
+    } finally {
+      setSubmitting(false);
     }
   }
 
   return (
-    <div className="grid gap-4">
-      {providers.length > 0 ? (
-        <>
-          <div className="grid gap-2">
-            {providers.map((provider) => (
-              <Button
-                key={provider.name}
-                type="button"
-                variant="outline"
-                className="w-full"
-                disabled={oauthProvider !== null}
-                onClick={() => void handleOAuth(provider.name)}
-              >
-                {oauthProvider === provider.name
-                  ? "Redirecting…"
-                  : provider.name === "dashboard"
-                    ? "SSO (Dashboard)"
-                    : `Continue with ${provider.displayName}`}
-              </Button>
-            ))}
-          </div>
-          {providerError ? (
-            <p className="text-xs font-semibold text-destructive">{providerError}</p>
-          ) : null}
-          <Separator className="my-1" />
-        </>
+    <form onSubmit={handleSubmit} className="grid gap-4">
+      <div className="grid gap-1.5">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          autoComplete="email"
+          required
+          placeholder="you@example.com"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+        />
+      </div>
+      <div className="grid gap-1.5">
+        <Label htmlFor="password">Password</Label>
+        <Input
+          id="password"
+          type="password"
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
+      </div>
+      {error ? (
+        <p className="text-sm font-medium text-destructive">{error}</p>
       ) : null}
-      <form action={formAction} className="grid gap-4">
-        <div className="grid gap-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            placeholder="you@example.com"
-          />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-          />
-        </div>
-        {state.error ? (
-          <p className="text-xs font-semibold text-destructive">{state.error}</p>
-        ) : null}
-        <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending ? "Signing in…" : "Sign in"}
-        </Button>
-      </form>
-    </div>
+      <Button type="submit" className="w-full" disabled={submitting}>
+        {submitting ? "Signing in…" : "Sign in"}
+      </Button>
+      <p className="text-center text-xs text-muted-foreground">
+        Sign in with your core Ziru account.
+      </p>
+    </form>
   );
 }

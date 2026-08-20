@@ -1,53 +1,41 @@
-import { NextResponse, type NextRequest } from "next/server"
-import { ziruSessionCookieName } from "@/infrastructure/auth/session-cookie-constants"
+import { NextResponse, type NextRequest } from "next/server";
+
+export const ZIRU_SESSION_COOKIE = "ziru_session";
 
 /**
- * Edge-runtime proxy (renamed from middleware.ts in Next.js 16).
- *
- * Purpose: cheap short-circuit for obviously-anonymous requests to
- * protected routes. If no session cookie is present, redirect to the
- * local login page without making any DB or upstream calls.
- *
- * This is NOT the authoritative auth check. A present cookie is never
- * trusted here — the real verification happens in `src/infrastructure/auth`
- * via the DB session lookup. The proxy only catches the easy case where
- * there's nothing to verify.
+ * Edge proxy: cheap short-circuit for anonymous requests to protected
+ * routes. The real session check happens in the core API on every call;
+ * here we only redirect when there is no session cookie at all.
  */
 
-/**
- * Routes that stay accessible without a session. Everything else under
- * `/` is considered app-protected and will redirect to login when no
- * cookie is present.
- */
 const PUBLIC_PATHS: readonly string[] = [
-  "/",
   "/login",
+  "/force-change-password",
   "/favicon.ico",
-  "/api/internal/health",
-  "/api/sources/reconcile",
-  "/api/auth",
-]
+];
 
-const STATIC_EXTENSIONS = /\.(?:svg|png|jpe?g|gif|webp|ico|woff2?|ttf|eot|css|js|map|txt|xml|webmanifest|json|pdf)$/i
+const STATIC_EXTENSIONS =
+  /\.(?:svg|png|jpe?g|gif|webp|ico|woff2?|ttf|eot|css|js|map|txt|xml|webmanifest|json|pdf)$/i;
 
 function isPublicPath(req: NextRequest): boolean {
-  const pathname = req.nextUrl.pathname
-  if (pathname.startsWith("/_next")) return true
-  if (pathname.startsWith("/api/internal/")) return true
-  if (STATIC_EXTENSIONS.test(pathname)) return true
-  return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))
+  const pathname = req.nextUrl.pathname;
+  if (pathname.startsWith("/_next")) return true;
+  // API paths are proxied to the core API, which enforces auth itself.
+  if (pathname.startsWith("/api/")) return true;
+  if (STATIC_EXTENSIONS.test(pathname)) return true;
+  return PUBLIC_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
 }
 
 export function proxy(req: NextRequest): NextResponse {
-  if (isPublicPath(req)) return NextResponse.next()
+  if (isPublicPath(req)) return NextResponse.next();
 
-  if (req.cookies.get(ziruSessionCookieName)) return NextResponse.next()
+  if (req.cookies.get(ZIRU_SESSION_COOKIE)) return NextResponse.next();
 
-  return NextResponse.redirect(new URL("/login", req.url))
+  return NextResponse.redirect(new URL("/login", req.url));
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|login|favicon.ico).*)",
-  ],
-}
+  matcher: ["/((?!_next/static|_next/image|login|force-change-password|favicon.ico).*)"],
+};
