@@ -615,22 +615,6 @@ export default function DocumentsPage() {
                         <Button variant="ghost" size="sm" onClick={() => setViewTarget(document)}>
                           View
                         </Button>
-                        {document.attributes?.originalFile?.length ? (
-                          <Button variant="ghost" size="sm" asChild>
-                            <a
-                              href={
-                                "/api/v2/documents/" +
-                                encodeURIComponent(document.document_id) +
-                                "/file/original"
-                              }
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              <ExternalLink className="mr-1 h-3.5 w-3.5" />
-                              Original
-                            </a>
-                          </Button>
-                        ) : null}
                         {user?.grade === "administrator" ? (
                           <Button
                             variant="ghost"
@@ -700,49 +684,54 @@ export default function DocumentsPage() {
           </DialogHeader>
           <div className="space-y-2">
             {viewTarget?.attributes && Object.keys(viewTarget.attributes).length > 0 ? (
-              Object.entries(viewTarget.attributes).map(([key, values]) => (
-                <div
-                  key={key}
-                  className="flex items-start justify-between gap-3 rounded-md border p-2"
-                >
-                  <span className="font-mono text-sm font-medium">{key}</span>
-                  {key === "originalFile" && values.length > 0 ? (
-                    <a
-                      href={
-                        "/api/v2/documents/" +
-                        encodeURIComponent(viewTarget.document_id) +
-                        "/file/original"
-                      }
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      view original
-                    </a>
-                  ) : key === "fileHash" && values.length > 0 ? (
-                    <span className="flex items-center gap-1.5 text-right">
-                      <code className="font-mono text-xs text-muted-foreground">
-                        {truncate(values[0], 24)}
-                      </code>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-6"
-                        aria-label="Copy file hash"
-                        onClick={() => void navigator.clipboard?.writeText(values[0])}
+              Object.entries(viewTarget.attributes)
+                .sort(
+                  ([keyA], [keyB]) =>
+                    (keyA === "originalFile" ? 1 : 0) - (keyB === "originalFile" ? 1 : 0)
+                )
+                .map(([key, values]) => (
+                  <div
+                    key={key}
+                    className="flex items-start justify-between gap-3 rounded-md border p-2"
+                  >
+                    <span className="font-mono text-sm font-medium">{key}</span>
+                    {key === "originalFile" && values.length > 0 ? (
+                      <a
+                        href={
+                          "/api/v2/documents/" +
+                          encodeURIComponent(viewTarget.document_id) +
+                          "/file/original"
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
                       >
-                        <Copy className="h-3.5 w-3.5" />
-                      </Button>
-                    </span>
-                  ) : (
-                    <span className="text-right text-sm text-muted-foreground">
-                      {values.join(", ")}
-                    </span>
-                  )}
-                </div>
-              ))
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        view original
+                      </a>
+                    ) : key === "fileHash" && values.length > 0 ? (
+                      <span className="flex items-center gap-1.5 text-right">
+                        <code className="font-mono text-xs text-muted-foreground">
+                          {truncate(values[0], 24)}
+                        </code>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-6"
+                          aria-label="Copy file hash"
+                          onClick={() => void navigator.clipboard?.writeText(values[0])}
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                      </span>
+                    ) : (
+                      <span className="text-right text-sm text-muted-foreground">
+                        {values.join(", ")}
+                      </span>
+                    )}
+                  </div>
+                ))
             ) : (
               <p className="text-sm text-muted-foreground">No attributes.</p>
             )}
