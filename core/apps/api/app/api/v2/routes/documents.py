@@ -167,7 +167,6 @@ async def _create_document_from_json(
     payload = JobCreateBase(
         source_type="url",
         source_url=url,
-        namespace=_optional_string(raw.get("namespace")),
         document_id=_optional_string(raw.get("document_id")),
     )
     job_response = await _document_ingestion_service.create_v1_job(
@@ -221,7 +220,6 @@ async def _create_document_from_multipart(
     payload = JobCreateBase(
         source_type="file",
         file_name=filename,
-        namespace=_optional_string(form.get("namespace")),
         document_id=_optional_string(form.get("document_id")),
     )
     job_response = await _document_ingestion_service.create_v1_job(

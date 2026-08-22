@@ -44,7 +44,6 @@ UploadHeaders = dict[str, str]
 class ResolvedDocumentIngestionScope:
     job_metadata: JobMetadata
     document_id: str
-    namespace: str
 
 
 class DocumentIngestionCreationService:
@@ -196,7 +195,6 @@ class DocumentIngestionCreationService:
             job=job,
             source_type="file",
             data_id=payload.data_id,
-            namespace=scope.namespace,
             document_id=scope.document_id,
             upload_url=upload_url,
             upload_headers=upload_headers,
@@ -269,7 +267,6 @@ class DocumentIngestionCreationService:
             job=job,
             source_type="url",
             data_id=payload.data_id,
-            namespace=scope.namespace,
             document_id=scope.document_id,
         )
 
@@ -286,7 +283,6 @@ def _build_job_response(
     job: Job,
     source_type: str,
     data_id: str | None,
-    namespace: str | None = None,
     document_id: str | None = None,
     upload_url: str | None = None,
     upload_headers: UploadHeaders | None = None,
@@ -297,7 +293,6 @@ def _build_job_response(
         status=to_job_status_value(job.status),
         source_type=source_type,
         data_id=data_id,
-        namespace=namespace,
         document_id=document_id,
         created_at=job.created_at,
         upload_url=upload_url,

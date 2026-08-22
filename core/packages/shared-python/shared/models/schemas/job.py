@@ -58,11 +58,6 @@ class JobCreateBase(BaseModel):
         json_schema_extra={"additionalProperties": False},
     )
 
-    namespace: Optional[str] = Field(
-        None,
-        max_length=255,
-        description="Retrieval namespace; defaults to default",
-    )
     document_id: Optional[str] = Field(
         None, description="Existing document ID for update flows"
     )
@@ -111,7 +106,6 @@ class JobResponse(BaseModel):
     """Job-creation response."""
 
     job_id: str = Field(..., description="Job ID")
-    namespace: Optional[str] = Field(None, description="Effective namespace")
     document_id: Optional[str] = Field(None, description="Linked document ID")
     status: Literal[
         "pending", "waiting-file", "running", "converting", "done", "failed"
@@ -151,7 +145,6 @@ class JobResultResponse(BaseModel):
     """Job status query response (for GET /jobs/{job_id}/result)"""
 
     job_id: str = Field(..., description="Job ID")
-    namespace: Optional[str] = Field(None, description="Effective retrieval namespace")
     document_id: Optional[str] = Field(None, description="Linked document ID")
     status: Literal[
         "pending", "waiting-file", "running", "converting", "done", "failed"

@@ -5,7 +5,6 @@ API v1 route registry.
 from app.api.v1.routes import (
     api_key,
     auth,
-    demo,
     documents,
     jobs,
     qstash_callbacks,
@@ -26,13 +25,8 @@ api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
 # API Key management
 api_router.include_router(api_key.router, prefix="/auth", tags=["API Key Management"])
 
-# Guest registration
-
 # Unified Jobs routes
 api_router.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])
-
-# Demo documents
-api_router.include_router(demo.router, prefix="/demo", tags=["Demo Documents"])
 
 # Retrieval
 api_router.include_router(retrieval.router, prefix="/retrieval", tags=["Retrieval"])

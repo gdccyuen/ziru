@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from shared.models.schemas.llm_config import LLMConfig, parse_llm_config
 from shared.models.schemas.page_memory_config import PageMemoryConfig
-from shared.models.schemas.retrieval_namespace import normalize_retrieval_namespace
 from shared.utils.security_utils import mask_api_key
 
 
@@ -66,7 +65,6 @@ class JobMetadataHelper:
         **kwargs,
     ) -> Dict[str, Any]:
         """Build metadata from a public job request."""
-        namespace = normalize_retrieval_namespace(request.namespace)
         resolved_page_memory_config: Dict[str, Any] | None
         if isinstance(page_memory_config, PageMemoryConfig):
             resolved_page_memory_config = page_memory_config.to_dict()
@@ -82,7 +80,6 @@ class JobMetadataHelper:
         metadata = {
             "original_request": _dump_public_request(request),
             "api_version": api_version,
-            "namespace": namespace,
             "document_id": request.document_id,
             "parse_track": parse_track,
             "processing_generation": processing_generation,
@@ -146,14 +143,6 @@ class JobMetadataHelper:
         """Return stored parsing parameters as a dictionary."""
         parsing_params = JobMetadataHelper.get_field(metadata, "parsing_params", {})
         return parsing_params if isinstance(parsing_params, dict) else {}
-
-    @staticmethod
-    def get_namespace(
-        metadata: Optional[Dict[str, Any]], default: str | None = None
-    ) -> str | None:
-        """Return the retrieval namespace stored in metadata."""
-        namespace = JobMetadataHelper.get_string_field(metadata, "namespace", default)
-        return normalize_retrieval_namespace(namespace) if namespace is not None else None
 
     @staticmethod
     def get_document_id(metadata: Optional[Dict[str, Any]]) -> str | None:

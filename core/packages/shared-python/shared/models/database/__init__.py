@@ -25,7 +25,6 @@ from .document import (
 from .document_attribute import DocumentAttribute
 from .attribute_dictionary import AttributeDictionaryEntry
 from .document_page_plan import DocumentPagePlan
-from .demo_materialization import DemoMaterialization
 from .job import Job
 from .job_result import JobChunk, JobResult
 from .parse_agent import ParseRun, ParseStep
@@ -56,7 +55,6 @@ __all__ = [
     "DocumentAttribute",
     "AttributeDictionaryEntry",
     "DocumentPagePlan",
-    "DemoMaterialization",
     "GraphNode",
     "GraphEdge",
     "RetrievalHitStat",

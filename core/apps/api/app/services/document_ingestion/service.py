@@ -310,7 +310,6 @@ class DocumentIngestionService:
         return ResolvedDocumentIngestionScope(
             job_metadata=job_metadata,
             document_id=effective_document_id,
-            namespace=JobMetadataHelper.get_namespace(job_metadata) or "default",
         )
 
 

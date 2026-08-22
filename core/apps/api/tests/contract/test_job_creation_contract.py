@@ -846,8 +846,9 @@ async def test_should_create_job_for_existing_document_with_blank_namespace(
     original_request = cast(dict[str, object], job_metadata["original_request"])
 
     assert job_metadata["document_id"] == document_id
-    assert job_metadata["namespace"] == "default"
-    assert original_request["namespace"] == namespace_value
+    # Namespace is fully retired (P3/P7): never stored in metadata.
+    assert "namespace" not in job_metadata
+    assert "namespace" not in original_request
 
 
 @pytest.mark.asyncio
