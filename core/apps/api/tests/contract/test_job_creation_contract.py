@@ -64,7 +64,6 @@ async def _publish_contract_chunk_for_job(
     *,
     job_id: str,
     document_id: str,
-    namespace: str,
     source_file_name: str,
     parse_track: str,
     section_path: str,
@@ -77,8 +76,6 @@ async def _publish_contract_chunk_for_job(
 
     await ContractDatabase.insert_document(
         document_id=document_id,
-        user_id="local-dev-user",
-        namespace=namespace,
         source_file_name=source_file_name,
         parse_track=parse_track,
     )
@@ -101,8 +98,6 @@ async def _publish_contract_chunk_for_job(
     )
     await ContractDatabase.insert_document_section(
         section_id=section_id,
-        user_id="local-dev-user",
-        namespace=namespace,
         document_id=document_id,
         job_result_id=job_result_id,
         section_path=section_path,
@@ -110,8 +105,6 @@ async def _publish_contract_chunk_for_job(
     )
     await ContractDatabase.insert_document_chunk(
         chunk_id=chunk_id,
-        user_id="local-dev-user",
-        namespace=namespace,
         document_id=document_id,
         job_result_id=job_result_id,
         section_id=section_id,
@@ -248,7 +241,6 @@ async def test_should_create_a_waiting_file_job_for_an_authenticated_developer(
     ],
 ) -> None:
     payload: dict[str, object] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "contract-upload.pdf",
         "data_id": "contract-job-file-upload",
@@ -360,7 +352,6 @@ async def test_should_create_a_v2_page_memory_job_for_pdf_uploads(
     ],
 ) -> None:
     payload: dict[str, object] = {
-        "namespace": "contract-jobs-v2",
         "source_type": "file",
         "file_name": "contract-v2-upload.pdf",
         "data_id": "contract-v2-page-memory-upload",
@@ -412,7 +403,6 @@ async def test_v2_created_page_memory_job_can_query_v2_retrieval(
     ],
 ) -> None:
     payload: dict[str, object] = {
-        "namespace": "contract-jobs-v2-retrieval",
         "source_type": "file",
         "file_name": "contract-v2-retrieval.pdf",
         "data_id": "contract-v2-retrieval-upload",
@@ -429,7 +419,6 @@ async def test_v2_created_page_memory_job_can_query_v2_retrieval(
         published_chunk = await _publish_contract_chunk_for_job(
             job_id=job_id,
             document_id=document_id,
-            namespace=cast(str, payload["namespace"]),
             source_file_name=cast(str, payload["file_name"]),
             parse_track="page_memory",
             section_path=section_path,
@@ -439,7 +428,6 @@ async def test_v2_created_page_memory_job_can_query_v2_retrieval(
         retrieval_response = await api_client.post(
             "/api/v2/retrieval/query",
             json={
-                "namespace": payload["namespace"],
                 "query": "v2 page-memory retrieval policy marker",
                 "top_k": 1,
                 "chunk_types": ["page"],
@@ -473,7 +461,6 @@ async def test_should_create_a_v2_chunk_job_for_non_page_memory_formats(
     ],
 ) -> None:
     payload: dict[str, object] = {
-        "namespace": "contract-jobs-v2",
         "source_type": "file",
         "file_name": "contract-v2-upload.docx",
         "data_id": "contract-v2-docx-upload",
@@ -513,7 +500,6 @@ async def test_should_create_a_waiting_file_job_for_html_uploads(
     expected_s3_key: str,
 ) -> None:
     payload: dict[str, object] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": file_name,
         "data_id": data_id,
@@ -549,7 +535,6 @@ async def test_should_return_invalid_argument_when_file_mode_job_is_missing_file
     ],
 ) -> None:
     payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "data_id": "contract-job-missing-file-name",
     }
@@ -584,7 +569,6 @@ async def test_should_return_invalid_argument_when_file_mode_job_uses_an_unsuppo
     ],
 ) -> None:
     payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "contract-upload.exe",
         "data_id": "contract-job-unsupported-file-type",
@@ -620,7 +604,6 @@ async def test_should_require_authorization_when_creating_a_job(
     api_client_factory: Callable[[], AbstractAsyncContextManager[AsyncClient]],
 ) -> None:
     payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "contract-upload.pdf",
         "data_id": "contract-job-missing-authorization",
@@ -647,7 +630,6 @@ async def test_should_reject_a_malformed_authorization_header_when_creating_a_jo
     api_client_factory: Callable[[], AbstractAsyncContextManager[AsyncClient]],
 ) -> None:
     payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "contract-upload.pdf",
         "data_id": "contract-job-malformed-authorization",
@@ -677,7 +659,6 @@ async def test_should_reject_authenticated_user_id_missing_from_user_table(
 ) -> None:
     user_id = f"contract-missing-user-{uuid4().hex[:12]}"
     payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "contract-upload.pdf",
         "data_id": "contract-job-missing-user",
@@ -715,7 +696,6 @@ async def test_should_return_conflict_when_creating_a_job_for_a_document_with_an
 
     payload: dict[str, str] = {
         "document_id": document_id,
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "conflict-upload.pdf",
         "data_id": "contract-job-conflict",
@@ -754,7 +734,6 @@ async def test_should_return_not_found_when_creating_a_job_for_an_unknown_docume
 ) -> None:
     payload: dict[str, str] = {
         "document_id": f"doc_missing_{uuid4().hex[:12]}",
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "missing-document-upload.pdf",
         "data_id": "contract-job-missing-document",
@@ -789,7 +768,6 @@ async def test_should_return_not_found_when_creating_a_job_for_an_archived_docum
 
     payload: dict[str, str] = {
         "document_id": document_id,
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "archived-document-upload.pdf",
         "data_id": "contract-job-archived-document",
@@ -828,7 +806,6 @@ async def test_should_create_job_for_existing_document_with_blank_namespace(
     document_id = f"doc_contract_{uuid4().hex[:12]}"
     payload: dict[str, object] = {
         "document_id": document_id,
-        "namespace": namespace_value,
         "source_type": "file",
         "file_name": "replacement-upload.pdf",
         "data_id": "contract-document-update",
@@ -859,7 +836,6 @@ async def test_should_create_a_waiting_file_job_for_a_url_source_and_enqueue_the
     ],
 ) -> None:
     payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "url",
         "source_url": "https://example.com/contracts/ziru-upload",
         "data_id": "contract-job-url-upload",
@@ -1011,7 +987,6 @@ async def test_should_accept_an_http_webhook_url_when_creating_a_file_job_in_pro
 ) -> None:
     webhook_url = "http://hooks.example.test/notify"
     payload: dict[str, object] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "contract-upload.pdf",
         "data_id": "contract-job-http-webhook",
@@ -1054,7 +1029,6 @@ async def test_should_accept_a_private_url_source_when_creating_a_url_job_in_loc
 ) -> None:
     source_url = "http://127.0.0.1/contracts/local-private.pdf"
     payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "url",
         "source_url": source_url,
         "data_id": "contract-job-url-local-private-host",
@@ -1141,7 +1115,6 @@ async def test_should_reject_url_source_when_url_resolves_to_private_network(
     ],
 ) -> None:
     payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "url",
         "source_url": "https://files.example.test/contracts/private.pdf",
         "data_id": "contract-job-url-private-host",
@@ -1188,7 +1161,6 @@ async def test_should_reject_a_url_source_when_file_type_detection_redirects_to_
     ],
 ) -> None:
     payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "url",
         "source_url": "https://example.com/contracts/ziru-upload",
         "data_id": "contract-job-url-private-redirect",
@@ -1251,7 +1223,6 @@ async def test_should_confirm_upload_and_start_processing_for_a_waiting_file_job
     ],
 ) -> None:
     payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "confirm-upload.pdf",
         "data_id": "contract-job-confirm-upload",
@@ -1327,7 +1298,6 @@ async def test_should_preserve_retryable_confirm_upload_transition_rejection(
     ],
 ) -> None:
     payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "confirm-upload-retry.pdf",
         "data_id": "contract-job-confirm-upload-retry",

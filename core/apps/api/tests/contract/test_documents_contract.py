@@ -565,7 +565,6 @@ async def test_should_list_all_active_documents_globally(
         default_namespace_response = await api_client.get("/api/v1/documents")
         named_namespace_response = await api_client.get(
             "/api/v1/documents",
-            params={"namespace": "contract-documents"},
         )
 
     assert default_namespace_response.status_code == 200
@@ -624,7 +623,6 @@ async def test_should_paginate_documents_for_the_effective_namespace(
         response = await api_client.get(
             "/api/v1/documents",
             params={
-                "namespace": "contract-documents",
                 "page": 2,
                 "page_size": 1,
             },

@@ -165,13 +165,11 @@ async def test_should_return_too_many_requests_when_the_authenticated_user_excee
     postgresql_proc: PostgreSQLProcess,
 ) -> None:
     first_payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "contract-rate-limit-first.pdf",
         "data_id": "contract-job-rate-limit-first",
     }
     second_payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "contract-rate-limit-second.pdf",
         "data_id": "contract-job-rate-limit-second",
@@ -219,13 +217,11 @@ async def test_should_return_too_many_requests_when_the_jobs_route_exceeds_the_s
     postgresql_proc: PostgreSQLProcess,
 ) -> None:
     first_payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "contract-system-limit-first.pdf",
         "data_id": "contract-job-system-limit-first",
     }
     second_payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "contract-system-limit-second.pdf",
         "data_id": "contract-job-system-limit-second",
@@ -258,13 +254,11 @@ async def test_should_skip_all_api_rate_limits_when_rate_limits_are_disabled(
     postgresql_proc: PostgreSQLProcess,
 ) -> None:
     first_payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "contract-rate-limits-disabled-first.pdf",
         "data_id": "contract-job-rate-limits-disabled-first",
     }
     second_payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "contract-rate-limits-disabled-second.pdf",
         "data_id": "contract-job-rate-limits-disabled-second",

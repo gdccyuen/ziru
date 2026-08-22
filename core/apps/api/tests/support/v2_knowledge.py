@@ -153,8 +153,6 @@ async def seed_document_with_attributes(
     await ensure_user_exists(user_id)
     await ContractDatabase.insert_document(
         document_id=document_id,
-        user_id=user_id,
-        namespace=namespace,
         status=status,
         source_file_name=source_file_name or f"{document_id}.pdf",
     )
@@ -197,8 +195,6 @@ async def seed_retrieval_document_with_attributes(
     )
     await ContractDatabase.insert_document(
         document_id=document_id,
-        user_id=user_id,
-        namespace=namespace,
         source_file_name=source_file_name,
     )
     await ContractDatabase.insert_job_result(
@@ -220,8 +216,6 @@ async def seed_retrieval_document_with_attributes(
     )
     await ContractDatabase.insert_document_section(
         section_id=section_id,
-        user_id=user_id,
-        namespace=namespace,
         document_id=document_id,
         job_result_id=job_result_id,
         section_path=section_path,
@@ -229,8 +223,6 @@ async def seed_retrieval_document_with_attributes(
     )
     await ContractDatabase.insert_document_chunk(
         chunk_id=chunk_id,
-        user_id=user_id,
-        namespace=namespace,
         document_id=document_id,
         job_result_id=job_result_id,
         section_id=section_id,

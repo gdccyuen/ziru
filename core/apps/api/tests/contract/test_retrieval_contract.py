@@ -37,19 +37,10 @@ async def _seed_retrieval_document(
 
     await ContractDatabase.insert_job(
         job_id=job_id,
-        user_id=user_id,
-        status="done",
-        source_type="file",
-        job_metadata={
-            "document_id": document_id,
-            "namespace": namespace,
-            "source_type": "file",
-        },
+        user_id="local-dev-user",
     )
     await ContractDatabase.insert_document(
         document_id=document_id,
-        user_id=user_id,
-        namespace=namespace,
         source_file_name=source_file_name,
     )
     await ContractDatabase.insert_job_result(
@@ -71,8 +62,6 @@ async def _seed_retrieval_document(
     )
     await ContractDatabase.insert_document_section(
         section_id=section_id,
-        user_id=user_id,
-        namespace=namespace,
         document_id=document_id,
         job_result_id=job_result_id,
         section_path=section_path,
@@ -80,8 +69,6 @@ async def _seed_retrieval_document(
     )
     await ContractDatabase.insert_document_chunk(
         chunk_id=resolved_chunk_id,
-        user_id=user_id,
-        namespace=namespace,
         document_id=document_id,
         job_result_id=job_result_id,
         section_id=section_id,
@@ -115,8 +102,6 @@ async def _seed_retrieval_chunk_for_existing_document(
 
     await ContractDatabase.insert_document_section(
         section_id=section_id,
-        user_id=user_id,
-        namespace=namespace,
         document_id=document["document_id"],
         job_result_id=document["job_result_id"],
         section_path=section_path,
@@ -124,8 +109,6 @@ async def _seed_retrieval_chunk_for_existing_document(
     )
     await ContractDatabase.insert_document_chunk(
         chunk_id=chunk_id,
-        user_id=user_id,
-        namespace=namespace,
         document_id=document["document_id"],
         job_result_id=document["job_result_id"],
         section_id=section_id,
@@ -225,7 +208,6 @@ async def test_agentic_workflow_should_pass_full_request_policy_to_step_adapter(
         response = await api_client.post(
             "/api/v1/retrieval/query",
             json={
-                "namespace": "contract-agentic-request-policy",
                 "query": "policy marker",
                 "top_k": 1,
                 "chunk_types": ["page"],
@@ -274,7 +256,6 @@ async def test_should_return_seeded_retrieval_results_for_the_authenticated_user
         response = await api_client.post(
             "/api/v1/retrieval/query",
             json={
-                "namespace": "contract-retrieval",
                 "query": "alpha",
                 "top_k": 10,
             },
@@ -325,7 +306,6 @@ async def test_page_chunk_result_includes_all_query_snippets(
         response = await api_client.post(
             "/api/v1/retrieval/query",
             json={
-                "namespace": "contract-retrieval",
                 "query": "Gordon",
                 "top_k": 10,
             },
@@ -387,7 +367,7 @@ async def test_should_return_empty_results_for_an_empty_query(
     async with developer_api_client_factory() as api_client:
         response = await api_client.post(
             "/api/v1/retrieval/query",
-            json={"namespace": "default", "query": "   "},
+            json={"query": ""},
         )
 
     assert response.status_code == 200
@@ -424,7 +404,6 @@ async def test_retrieval_should_use_classic_topk_when_agentic_is_false(
         response = await api_client.post(
             "/api/v1/retrieval/query",
             json={
-                "namespace": "contract-agentic-only",
                 "query": "same ranking marker",
                 "top_k": 1,
                 "use_agentic": False,
@@ -465,7 +444,6 @@ async def test_agentic_retrieval_should_reference_root_only_document_content(
         response = await api_client.post(
             "/api/v1/retrieval/query",
             json={
-                "namespace": "contract-root-retrieval",
                 "query": "diluted earnings marker",
                 "top_k": 1,
                 "use_agentic": True,
@@ -526,7 +504,6 @@ async def test_agentic_retrieval_should_reference_discovery_content_when_navigat
         response = await api_client.post(
             "/api/v1/retrieval/query",
             json={
-                "namespace": "contract-discovery-fallback",
                 "query": "EBITDA margin marker",
                 "top_k": 1,
                 "use_agentic": True,
@@ -642,7 +619,6 @@ async def test_agentic_retrieval_should_not_send_table_artifacts_to_vlm(
         response = await api_client.post(
             "/api/v1/retrieval/query",
             json={
-                "namespace": "contract-agentic-table-vlm-filter",
                 "query": "budget 1000 Flat inspect_evidence_score_mean",
                 "top_k": 1,
                 "chunk_types": ["table"],
@@ -737,7 +713,6 @@ async def test_agentic_retrieval_preserves_references_to_any_document_globally(
         response = await api_client.post(
             "/api/v1/retrieval/query",
             json={
-                "namespace": "contract-visible-scope",
                 "query": "visible",
                 "top_k": 1,
                 "use_agentic": True,
@@ -829,7 +804,6 @@ async def test_agentic_retrieval_should_drop_references_that_do_not_match_the_hy
         response = await api_client.post(
             "/api/v1/retrieval/query",
             json={
-                "namespace": "contract-reference-section-match",
                 "query": "visible",
                 "top_k": 1,
                 "use_agentic": True,
@@ -927,7 +901,6 @@ async def test_agentic_workflow_should_preserve_references_with_the_same_chunk_i
         response = await api_client.post(
             "/api/v1/retrieval/query",
             json={
-                "namespace": "contract-shared-chunk-id",
                 "query": "show both shared references",
                 "top_k": 1,
                 "use_agentic": True,
@@ -1038,7 +1011,6 @@ async def test_agentic_workflow_should_preserve_references_with_the_same_chunk_i
         response = await api_client.post(
             "/api/v1/retrieval/query",
             json={
-                "namespace": "contract-shared-section-chunk-id",
                 "query": "show both shared section references",
                 "top_k": 1,
                 "use_agentic": True,
@@ -1078,7 +1050,6 @@ async def test_should_return_request_validation_failure_for_an_invalid_channel(
         response = await api_client.post(
             "/api/v1/retrieval/query",
             json={
-                "namespace": "default",
                 "query": "alpha",
                 "channels": ["invalid-channel"],
             },
@@ -1124,7 +1095,6 @@ async def test_should_exclude_matching_document_ids_from_the_response(
         response = await api_client.post(
             "/api/v1/retrieval/query",
             json={
-                "namespace": "contract-retrieval",
                 "query": "retrieval",
                 "exclude_document_ids": [excluded_document["document_id"]],
             },
@@ -1164,7 +1134,6 @@ async def test_should_exclude_matching_sections_from_the_response(
         response = await api_client.post(
             "/api/v1/retrieval/query",
             json={
-                "namespace": "contract-retrieval",
                 "query": "section",
                 "exclude_sections": [
                     {

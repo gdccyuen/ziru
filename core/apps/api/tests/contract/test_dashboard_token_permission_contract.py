@@ -60,7 +60,6 @@ async def test_read_only_dashboard_token_can_read_but_cannot_parse_or_archive(
 ) -> None:
     document_id = f"doc_permission_{uuid4().hex[:12]}"
     payload: dict[str, str] = {
-        "namespace": "contract-permission",
         "source_type": "file",
         "file_name": "contract-read-only.pdf",
         "data_id": f"contract-read-only-{uuid4().hex[:12]}",
@@ -70,8 +69,6 @@ async def test_read_only_dashboard_token_can_read_but_cannot_parse_or_archive(
         user_id = await _seed_dashboard_user()
         await ContractDatabase.insert_document(
             document_id=document_id,
-            user_id=user_id,
-            namespace="contract-permission",
         )
 
         with use_dashboard_jwks_token(
@@ -108,7 +105,6 @@ async def test_dashboard_token_without_permission_claim_keeps_full_access(
     monkeypatch: MonkeyPatch,
 ) -> None:
     payload: dict[str, str] = {
-        "namespace": "contract-permission",
         "source_type": "file",
         "file_name": "contract-full-access.pdf",
         "data_id": f"contract-full-access-{uuid4().hex[:12]}",

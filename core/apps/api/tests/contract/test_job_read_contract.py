@@ -12,7 +12,6 @@ from tests.support.contract_database import ContractDatabase
 
 async def _create_waiting_file_job(api_client: AsyncClient) -> dict[str, object]:
     payload: dict[str, str] = {
-        "namespace": "contract-jobs",
         "source_type": "file",
         "file_name": "contract-read.pdf",
         "data_id": f"contract-job-read-{uuid4().hex[:12]}",
