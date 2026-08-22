@@ -14,16 +14,16 @@ LLM workflow.
 
 Ziru is a fork of [Knowhere](https://github.com/Ontos-AI/knowhere) by
 Ontos-AI (Apache-2.0). The fork keeps the core algorithm — document hierarchy
-reconstruction and agentic retrieval — while rebuilding the account model,
-namespace isolation, and document organization around a simpler self-hosted
-philosophy.
+reconstruction and agentic retrieval — while rebuilding the account model
+(grades + fail-closed profiles) and organizing documents as global knowledge
+objects with attributes around a simpler self-hosted philosophy.
 
 ## Repository Layout
 
 | Directory | Component | Stack |
 |---|---|---|
 | `core/` | Ziru API — document ingestion, parsing, graph construction, and agentic retrieval (API + Celery worker + shared library) | Python / FastAPI |
-| `admin/` | Ziru Dashboard — manage API usage, API keys, optional billing, webhooks, and document-processing jobs | Next.js |
+| `admin/` | Ziru Admin Console — manage users, API keys, the attribute dictionary, documents, webhooks, and processing jobs | Next.js |
 | `webui/` | Ziru WebUI — upload documents, explore parsed content, and ask questions | Next.js |
 | `deploy/` | Ziru Self-Hosted — Docker Compose stack packaging the whole platform | Docker |
 | `MinerU/` | Vendored MinerU document parser (see its license for terms) | Python |

@@ -46,9 +46,8 @@ Object and when. They are never user-editable.
 
 ### Job
 
-The API-side intake and execution handle for a workflow such as file parsing,
-URL ingestion, or demo source materialization. Jobs keep `user_id` (the
-uploader); Documents do not.
+The API-side intake and execution handle for a workflow such as file parsing
+or URL ingestion. Jobs keep `user_id` (the uploader); Documents do not.
 
 ### Job Result
 
@@ -214,21 +213,6 @@ policy fields for the workflow path.
 The per-step projection of a Workflow Run Request. It applies step-level query,
 top-k, and data-type overrides while preserving the request policy.
 
-### Demo Source
-
-An API-owned canonical document shipped with the repository for demo flows.
-
-### Demo Source Validation
-
-The repeatable script workflow that validates Demo Source catalog metadata,
-canonical chunks, citation projection, original file size, and regenerated
-doc_nav.json output.
-
-### Demo Source Materialization
-
-The workflow that copies a Demo Source into the global corpus as normal Job,
-Job Result, Document, and Document Chunk records.
-
 ### API Key Authentication
 
 The auth-time workflow that validates API keys, reads and writes the API-key
@@ -282,7 +266,7 @@ workflow calls.
 `apps/api/app/services/*`
 
 These modules coordinate Job Admission, Document Ingestion, document lifecycle,
-Demo Source Materialization, webhook handling, and internal callbacks.
+webhook handling, and internal callbacks.
 
 ### Persistence Adapters
 
@@ -355,12 +339,6 @@ dependencies.
 - `packages/shared-python/shared/services/retrieval/agentic/discovery/*`
 - `packages/shared-python/shared/services/retrieval/agentic/navigation/*`
 - `packages/shared-python/shared/services/retrieval/agentic/evidence/*`
-
-### Demo Source Materialization
-
-- `app/api/v1/routes/demo.py`
-- `app/services/demo/*`
-- `apps/api/scripts/validate_demo_documents.py`
 
 ### API Key Management
 
@@ -466,6 +444,5 @@ side effects.
 - `current_job_result_id` selects the active revision of a Document.
 - Documents are global knowledge objects; there is no per-user or
   per-namespace document scope.
-- Demo Sources should behave like normal Documents after materialization.
 - Job Admission shapes whether work is allowed to start; it is not a
   worker-only concern.

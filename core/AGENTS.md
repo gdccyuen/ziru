@@ -32,7 +32,7 @@ core/
 ├── apps/
 │   ├── api/          # FastAPI REST API (port 5005)
 │   │   ├── app/
-│   │   │   ├── api/v1/routes/   # Endpoint handlers
+│   │   │   ├── api/v1/routes/ + api/v2/routes/   # Endpoint handlers
 │   │   │   ├── services/        # Business logic (auth, ingestion, retrieval)
 │   │   │   └── repositories/    # Data access layer
 │   │   └── main.py              # Entrypoint, runs migrations on start
@@ -41,7 +41,6 @@ core/
 │   │   │   ├── services/document_parser/  # All parser modules
 │   │   │   └── services/workload/         # Celery task handlers
 │   │   └── worker.py                      # Celery entrypoint
-│   ├── web/          # Frontend (this monorepo's admin/ dashboard)
 │   └── docs/         # Internal documentation
 ├── packages/
 │   └── shared-python/shared/    # Shared library (pip: ziru-shared)
@@ -56,6 +55,8 @@ core/
 │       └── utils/               # Generic text, chunk, and API helpers
 └── deploy/                      # Docker Compose & deployment scripts
 ```
+> Frontends live at the repo root, not under `core/`: `admin/` (console) and `webui/`.
+
 
 > **SDKs live in standalone repos:**
 > - Ziru API SDKs are published separately from this monorepo.
