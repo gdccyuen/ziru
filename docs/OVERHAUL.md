@@ -117,3 +117,6 @@ Single sign-on across admin console (:3000) and webui (:3001) is by design: one 
 
 ## Release marker
 - Cutover push approved by PM at 2026-08-23T02:40:27Z (UTC), main @ 00057d3.
+
+## Push protocol (2026-08-23, PM approved)
+Default thereafter: the agent prepares exact push commands; the PM runs them in their own Terminal (Option 1 - keychain access). Agent-side token/URL pushes only on explicit PM request.
