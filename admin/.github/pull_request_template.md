@@ -1,7 +1,7 @@
 ## Summary
 
 - describe the change
-- describe any UI, auth, billing, API integration, or deployment impact
+- describe any UI, auth, API integration, or deployment impact
 - link the related issue or task
 
 ## Verification
