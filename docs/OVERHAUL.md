@@ -114,3 +114,6 @@ Rule: no phase merges until its suite is green and the previous phase's checks s
 5. All three suites green; demo documents re-uploaded and searchable per profile; feel-test clean.
 ## Post-cutover decision Q33 (2026-08-22, PM approved)
 Single sign-on across admin console (:3000) and webui (:3001) is by design: one ziru_session cookie on the hostname (browser cookies ignore ports), one core session store, logout everywhere. Deployment note: on separate hosts in production, shared login requires an intentionally configured shared cookie domain + SameSite; per-app sessions rejected (double login, split identity).
+
+## Release marker
+- Cutover push approved by PM at 2026-08-23T02:40:27Z (UTC), main @ 00057d3.
