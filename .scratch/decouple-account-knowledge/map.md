@@ -69,3 +69,6 @@ The map is done when the route is clear — every decision above "just build it"
 - Cosmetic branding tasks (e.g. dark logo variant).
 - New parsers, new retrieval algorithms, or changes to the engine — frozen by Q5.
 - Deployment-level service split (account service vs knowledge service) — code-level split only (Q2).
+
+## Q33 (2026-08-22, PM approved) - Shared session across apps
+Single sign-on across admin console (:3000) and webui (:3001) is BY DESIGN: one ziru_session cookie on the hostname (cookies ignore ports), one core session store, logout everywhere. Deployment note: on separate hosts in production, shared login requires an intentionally configured shared cookie domain + SameSite settings; per-app sessions rejected (double login, split identity).

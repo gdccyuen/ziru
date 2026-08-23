@@ -112,3 +112,5 @@ Rule: no phase merges until its suite is green and the previous phase's checks s
 3. Knowledge domain: attribute-based, fail-closed access proven by the access matrix; engine algorithms untouched; telemetry fully removed (D4).
 4. Dashboard stateless console; WebUI chat-first with filtered document view and per-user threads.
 5. All three suites green; demo documents re-uploaded and searchable per profile; feel-test clean.
+## Post-cutover decision Q33 (2026-08-22, PM approved)
+Single sign-on across admin console (:3000) and webui (:3001) is by design: one ziru_session cookie on the hostname (browser cookies ignore ports), one core session store, logout everywhere. Deployment note: on separate hosts in production, shared login requires an intentionally configured shared cookie domain + SameSite; per-app sessions rejected (double login, split identity).
