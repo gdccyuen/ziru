@@ -58,9 +58,34 @@ import { formatDateTime, truncate } from "@/lib/format";
 
 type FilterRow = { id: string; key: string; value: string };
 type UploadRow = { id: string; key: string; values: string };
+type UploadFileStatus = "queued" | "uploading" | "done" | "failed";
+type UploadFileEntry = {
+  id: string;
+  file: File;
+  status: UploadFileStatus;
+  jobId?: string;
+  error?: string;
+};
+
+const MAX_UPLOAD_FILES = 20;
+
+const UPLOAD_STATUS_LABELS: Record<UploadFileStatus, string> = {
+  queued: "Queued",
+  uploading: "Uploading…",
+  done: "Done",
+  failed: "Failed",
+};
+
+const UPLOAD_STATUS_CLASSES: Record<UploadFileStatus, string> = {
+  queued: "text-muted-foreground",
+  uploading: "text-primary",
+  done: "text-green-600",
+  failed: "text-destructive",
+};
 
 let filterSequence = 0;
 let uploadSequence = 0;
+let fileSequence = 0;
 
 function nextFilterId(): string {
   filterSequence += 1;
@@ -72,11 +97,31 @@ function nextUploadId(): string {
   return `upload-row-${uploadSequence}`;
 }
 
+function nextFileId(): string {
+  fileSequence += 1;
+  return `upload-file-${fileSequence}`;
+}
+
 function splitValues(values: string): string[] {
   return values
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function buildUploadSummary(
+  uploadedCount: number,
+  failures: { name: string; reason: string }[]
+): string {
+  if (failures.length === 0) return `${uploadedCount} uploaded`;
+  const failedList = failures.map((failure) => `${failure.name} — ${failure.reason}`).join("; ");
+  return `${uploadedCount} uploaded, ${failures.length} failed: ${failedList}`;
 }
 
 function toggleValue(values: string, value: string): string {
@@ -159,31 +204,82 @@ function UploadDocumentDialog({
   open,
   onOpenChange,
   onUploaded,
+  onBatchComplete,
   dictionary,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUploaded: (jobId: string) => void;
+  onBatchComplete: (summary: string) => void;
   dictionary: AttributeEntry[];
 }) {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<UploadFileEntry[]>([]);
   const [rows, setRows] = useState<UploadRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
 
   const reset = () => {
-    setFile(null);
+    setFiles([]);
     setRows([]);
     setError(null);
     setJobId(null);
+    setSubmitting(false);
+  };
+
+  const prevOpen = useRef(open);
+  useEffect(() => {
+    if (open && !prevOpen.current) {
+      setFiles([]);
+      setRows([]);
+      setError(null);
+      setJobId(null);
+      setSubmitting(false);
+    }
+    prevOpen.current = open;
+  }, [open]);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    const nonEmpty = selected.filter((file) => file.size > 0);
+    const skippedEmpty = selected.length - nonEmpty.length;
+    if (nonEmpty.length === 0) {
+      setError(skippedEmpty > 0 ? "Empty files are skipped — choose files with content." : null);
+      return;
+    }
+    const existingKeys = new Set(
+      files.map(
+        (entry) => `${entry.file.name}\u0000${entry.file.size}\u0000${entry.file.lastModified}`
+      )
+    );
+    const fresh = nonEmpty.filter(
+      (file) => !existingKeys.has(`${file.name}\u0000${file.size}\u0000${file.lastModified}`)
+    );
+    const slots = Math.max(0, MAX_UPLOAD_FILES - files.length);
+    const toAdd = fresh.slice(0, slots);
+    if (fresh.length > slots) {
+      setError(
+        `Up to ${MAX_UPLOAD_FILES} files can be uploaded in one batch — ${fresh.length - slots} file(s) not added.`
+      );
+    } else if (skippedEmpty > 0) {
+      setError(`Skipped ${skippedEmpty} empty file(s).`);
+    } else {
+      setError(null);
+    }
+    if (toAdd.length > 0) {
+      setFiles((prev) => [
+        ...prev,
+        ...toAdd.map((file) => ({ id: nextFileId(), file, status: "queued" as const })),
+      ]);
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    if (!file) {
-      setError("Choose a file to upload");
+    if (files.length === 0) {
+      setError("Choose at least one file to upload");
       return;
     }
     const attributes: Record<string, string[]> = {};
@@ -192,13 +288,43 @@ function UploadDocumentDialog({
       const values = splitValues(row.values);
       if (key && values.length > 0) attributes[key] = values;
     }
+    const batch = files;
+    const updateStatus = (
+      id: string,
+      status: UploadFileStatus,
+      extra?: { jobId?: string; error?: string }
+    ) => {
+      setFiles((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, status, ...extra } : item))
+      );
+    };
     setSubmitting(true);
     try {
-      const result = await api.uploadDocument(file, attributes);
-      setJobId(result.job_id);
-      onUploaded(result.job_id);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to upload document");
+      const uploadedJobIds: string[] = [];
+      const failures: { name: string; reason: string }[] = [];
+      for (const entry of batch) {
+        updateStatus(entry.id, "uploading");
+        try {
+          const result = await api.uploadDocument(entry.file, attributes);
+          updateStatus(entry.id, "done", { jobId: result.job_id });
+          uploadedJobIds.push(result.job_id);
+        } catch (err) {
+          const reason = err instanceof ApiError ? err.message : "Failed to upload document";
+          updateStatus(entry.id, "failed", { error: reason });
+          failures.push({ name: entry.file.name, reason });
+        }
+      }
+      if (batch.length === 1) {
+        if (failures.length === 0) {
+          const resultJobId = uploadedJobIds[0];
+          setJobId(resultJobId);
+          onUploaded(resultJobId);
+        } else {
+          setError(failures[0].reason);
+        }
+      } else {
+        onBatchComplete(buildUploadSummary(uploadedJobIds.length, failures));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -210,7 +336,8 @@ function UploadDocumentDialog({
         <DialogHeader>
           <DialogTitle>Upload document</DialogTitle>
           <DialogDescription>
-            Attach a file and optional dictionary attributes. A parse job is started immediately.
+            Attach one or more files and optional dictionary attributes. A parse job is started
+            immediately for each file.
           </DialogDescription>
         </DialogHeader>
         {jobId ? (
@@ -235,13 +362,69 @@ function UploadDocumentDialog({
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="upload-file">File</Label>
+              <Label htmlFor="upload-file">Files</Label>
               <Input
                 id="upload-file"
                 type="file"
+                multiple
                 required
-                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                disabled={submitting}
+                onChange={handleFileChange}
               />
+              {files.length > 0 ? (
+                <ul className="max-h-56 space-y-1.5 overflow-y-auto">
+                  {files.map((entry) => (
+                    <li
+                      key={entry.id}
+                      className="flex items-start justify-between gap-2 rounded-md border p-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium" title={entry.file.name}>
+                          {entry.file.name}
+                        </p>
+                        <p
+                          className="truncate text-xs text-muted-foreground"
+                          title={
+                            entry.status === "done" && entry.jobId
+                              ? `${formatFileSize(entry.file.size)} — job ${entry.jobId}`
+                              : undefined
+                          }
+                        >
+                          {formatFileSize(entry.file.size)}
+                          {entry.status === "done" && entry.jobId ? ` — job ${entry.jobId}` : ""}
+                        </p>
+                        {entry.status === "failed" && entry.error ? (
+                          <p className="text-xs text-destructive">{entry.error}</p>
+                        ) : null}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        {entry.status === "uploading" ? (
+                          <LoadingSpinner size="sm" className="text-primary" />
+                        ) : null}
+                        <span
+                          className={`text-xs font-medium ${UPLOAD_STATUS_CLASSES[entry.status]}`}
+                        >
+                          {UPLOAD_STATUS_LABELS[entry.status]}
+                        </span>
+                        {!submitting ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-6"
+                            aria-label={`Remove ${entry.file.name}`}
+                            onClick={() =>
+                              setFiles((prev) => prev.filter((item) => item.id !== entry.id))
+                            }
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label>Attributes</Label>
@@ -324,7 +507,11 @@ function UploadDocumentDialog({
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             <DialogFooter>
               <Button type="submit" disabled={submitting}>
-                {submitting ? "Uploading…" : "Upload"}
+                {submitting
+                  ? "Uploading…"
+                  : files.length > 1
+                    ? `Upload ${files.length} files`
+                    : "Upload"}
               </Button>
             </DialogFooter>
           </form>
@@ -536,7 +723,12 @@ export default function DocumentsPage() {
                 {uploadNotice ? (
                   <p className="text-sm text-muted-foreground">{uploadNotice}</p>
                 ) : null}
-                <Button onClick={() => setUploadOpen(true)}>
+                <Button
+                  onClick={() => {
+                    setUploadNotice(null);
+                    setUploadOpen(true);
+                  }}
+                >
                   <Upload className="mr-2 h-4 w-4" />
                   Upload document
                 </Button>
@@ -658,12 +850,14 @@ export default function DocumentsPage() {
 
       <UploadDocumentDialog
         open={uploadOpen}
-        onOpenChange={(open) => {
-          setUploadOpen(open);
-          if (!open) setUploadNotice(null);
-        }}
+        onOpenChange={setUploadOpen}
         onUploaded={(jobId) => {
           setUploadNotice(`Upload accepted — job ${jobId} (see Jobs page)`);
+          void load(1);
+        }}
+        onBatchComplete={(summary) => {
+          setUploadNotice(summary);
+          setUploadOpen(false);
           void load(1);
         }}
         dictionary={dictionary}
