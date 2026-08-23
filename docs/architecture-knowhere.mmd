@@ -1,0 +1,31 @@
+flowchart TB
+  subgraph K["KNOWHERE — multiple repos (Ontos-AI)"]
+    direction TB
+    subgraph PEOPLE["People"]
+      OWNER["Account (API-key owner)"]
+      GUEST["Guest (restricted tier)"]
+    end
+    subgraph REPOS["Repositories"]
+      DASHBOARD["knowhere-dashboard<br/>API keys · billing · webhooks"]
+      NOTEBOOK["knowhere-notebook<br/>upload · explore · LLM answers"]
+      SDK["knowhere-python-sdk · knowhere-node-sdk"]
+      SELFHOST["knowhere-self-hosted (compose)"]
+    end
+    subgraph ENGINE["Engine (knowhere repo)"]
+      API2["FastAPI :5005"]
+      WORKER2["Celery worker"]
+      RETRIEVAL2["Retrieval — BM25 3-channel + agentic"]
+    end
+    KNOWLEDGE2["Document — OWNED<br/>user_id + namespace (per-user silo)"]
+    STORE2[("PostgreSQL · S3 · Redis · ~/.knowhere")]
+    DASHBOARD --> OWNER
+    DASHBOARD --> GUEST
+    NOTEBOOK -->|workspace binds user + namespace| KNOWLEDGE2
+    SDK --> API2
+    NOTEBOOK --> API2
+    API2 --> WORKER2 --> RETRIEVAL2
+    RETRIEVAL2 --> KNOWLEDGE2
+    KNOWLEDGE2 --> STORE2
+    OWNER -.->|sees own documents only| KNOWLEDGE2
+    GUEST -.->|restricted route surface| KNOWLEDGE2
+  end

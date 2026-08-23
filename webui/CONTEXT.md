@@ -1,263 +1,75 @@
 # Ziru WebUI Domain Context
 
-This file names the product concepts used by the Ziru WebUI codebase. Use these
-terms when naming modules, tests, and route workflows.
+The Ziru WebUI is the stateless end-user app for searching and chatting
+against the shared Ziru knowledge engine. This file names the product
+concepts; implementation detail lives in `AGENTS.md` and `core/CONTEXT.md`.
 
-## Workspace
+## Core Terms
 
-A Workspace is the WebUI-owned tenant container that binds one user to one
-document domain: it stores local source metadata, chat threads, and the pair
-`(ziruKeyLabel, namespace)` — the configured API key (domain) that
-authenticates Ziru API access, and the Ziru namespace under that domain
-whose documents the workspace's sources live in. One workspace per
-(user, keyLabel, namespace) tuple. The active workspace is selected by the
-`ziru-ws` cookie (falls back to the user's first workspace, then a legacy
-`ziru-<uuid>` default). Legacy rows with a null key label use the default
-key and keep working unchanged.
+### User
 
-## Ziru Key Label
+An account in the core identity store. The WebUI never creates users — an
+administrator provisions them in the admin console.
 
-A Ziru Key Label identifies one configured Ziru API key (a "domain").
-Since Phase 3, keys are managed per workspace through the "API keys…" dialog:
-stored AES-256-GCM encrypted in the `ziru_api_keys` table and decrypted
-on demand by `ensureApiKeyForWorkspace`. `workspaces.active_ziru_api_key_id`
-selects the active key. The `config/ziru-keys.json` file (or
-`ZIRU_API_KEY` env as a single `"default"` key) remains as a bootstrap
-fallback for fresh deployments. The API never exposes full keys to the
-browser — only masked labels (`sk_8aB••••GVB8`).
+### Grade
 
-## Workspace Shell
+The account role — `administrator`, `librarian`, or `user` — that decides what
+the account can do.
 
-The Workspace Shell is the client-side orchestrator for the WebUI work
-surface. It composes Source selection, Parsed Chunk pagination, Chat Thread
-state, Citation focus, and panel layout into the visible two-panel layout
-(sources | chat) with a full-screen chunks overlay.
+### Profile
 
-## Workspace Shell Layout
+The account's attribute constraints (a list of `{key, values}` rules) that
+bound which Knowledge Objects the account can see. An empty profile sees
+nothing (fail-closed); administrators bypass profile evaluation.
 
-The Workspace Shell Layout is the render-only module for desktop and mobile
-workspace panels. It receives already-derived state and callbacks from the
-Workspace Shell and should not own route calls, SWR keys, or workflow state.
+### Knowledge Object
 
-## Workspace Client
+A global document: no owner and no namespace. It carries attributes plus
+system-set built-ins (`createBy`, `createTime`, `fileHash`, `originalFile`).
+_Avoid_: workspace, source, namespace (pre-fork concepts)
 
-The Workspace Client is the browser-side adapter for WebUI route calls and
-SWR keys. UI modules should depend on this adapter instead of constructing
-route paths or mutation request shapes inline.
+### Attribute
 
-## Workspace Desktop Panels
+A key/value tag on a Knowledge Object, or a rule inside a Profile.
 
-Workspace Desktop Panels is the hook that owns browser measurements and resize
-drag state for the two desktop panels (sources | chat). Pure resize math stays
-in Workspace Shell State.
+### Attribute Dictionary
 
-## Workspace Resize Handle Workflow
+The admin-managed set of attribute keys with optional allowed values.
+Uploaders pick from it when tagging Knowledge Objects, and Profiles are built
+from the same keys.
 
-Workspace Resize Handle Workflow owns desktop resize-handle pointer lifecycle:
-starting drag gestures, tracking pointermove deltas, and cleaning up window
-listeners on pointerup.
+### Search Query
 
-## Workspace Selected Chunks
+A user's evidence search: query text plus attribute filters and tuning
+(topK, recallK, rerank).
 
-Workspace Selected Chunks is the hook that owns selected Source chunk paging,
-prefetched Citation Focus chunks, and "load more" state. The Workspace Shell
-uses it as derived workflow state instead of owning SWRInfinite details inline.
+### Evidence Answer
 
-## Source
+The retrieval engine's response: ranked, cited evidence with citations — never
+free-form LLM prose.
+_Avoid_: answer, response (when meaning synthesized text)
 
-A Source is a document visible in the WebUI sources panel. The WebUI persists
-source metadata locally, while parsed content and retrieval live in the Ziru API.
-Sources are soft-deleted with `deletedAt` rather than removed.
+### Citation
 
-## Source Repository
+Metadata connecting an Evidence Answer to a specific retrieval result or chunk.
 
-The Source Repository is a stable facade over smaller persistence modules. It
-composes Source row lifecycle and Source Parse Result artifact metadata
-without exposing those internal modules to route services.
+### Chat Thread
 
-## Source Library Localization
+A per-user conversation of turns — a user message plus the persisted Evidence
+Answer — stored by the core API.
 
-Source Library Localization is the workflow that turns Ziru API-owned library
-documents into WebUI Source rows for a Workspace. Listing and SSR eagerly
-localize compatible-namespace documents (via `localizeRemoteLibrarySources`)
-before chunks, archive, selection, or retrieval flows act on them. Only
-genuinely new documents are upserted — existing DB rows are pre-filtered to
-avoid redundant writes.
+### Session
 
-## Source Upload
+The login state carried by the `ziru_session` cookie; enforced by the core API
+on every request.
 
-A Source Upload is the workflow that turns either a browser `File` or a
-Vercel Blob staged object into a Ziru parsing job plus local source row.
-Large files should use the Blob-backed path instead of a Server Action upload.
+### API Key
 
-## Source Upload Contract
+An `sk_`-prefixed credential, created by an administrator for a user. The
+WebUI shows a user their own keys read-only.
 
-The Source Upload Contract names the repository and Ziru API client shapes used
-by upload workflows. Persistence adapters can depend on the contract without
-importing the user-upload workflow implementation.
+## Explicitly out of scope
 
-## Source Row
-
-A Source Row is the sidebar item for one Source. It owns include/exclude,
-selection, status display, and local archive affordances for that one Source.
-
-## Source Upload Dialog
-
-The Source Upload Dialog is the upload UI for authenticated users. It renders
-the upload controls and delegates file selection, drag-and-drop selection,
-submission state, and upload errors to the Source Upload Dialog Workflow.
-
-## Source Upload Dialog Workflow
-
-Source Upload Dialog Workflow owns browser upload dialog behavior: open state,
-selected file state, drag-and-drop selection, upload submission, friendly error
-messages, duplicate-submit prevention, and post-upload cleanup.
-
-## Source Original Preview
-
-Source Original Preview is the browser-side read-only view for a Source's
-original file. Its model owns file classification, preview limits, download URL
-rules, and PDF sizing math; request helpers own file reads so the component
-can stay focused on rendering.
-
-## Source Original PDF Workflow
-
-Source Original PDF Workflow owns browser PDF preview behavior: loading the
-`react-pdf` module, setting the PDF worker, measuring page width, loading page
-aspect ratios, and tracking visible pages for lazy rendering.
-
-## Source Original DOCX Workflow
-
-Source Original DOCX Workflow owns browser DOCX preview behavior: loading the
-source bytes, importing the DOCX renderer, falling back to Mammoth HTML
-conversion, sanitizing rendered output, and cleaning up in-flight work.
-
-## Source Original Text Workflow
-
-Source Original Text Workflow owns browser text and Markdown preview behavior:
-loading source text, tracking URL-scoped load state, and cleaning up in-flight
-text requests.
-
-## Parsed Chunk
-
-A Parsed Chunk is a document chunk returned by the Ziru document chunks
-API. Parsed chunks can have parser chunk IDs, asset paths, page numbers,
-summary, keywords, and connection metadata. Table chunks have their HTML
-fetched server-side from `assetUrl` and set as `content` (via
-`enrichChunksWithAssetUrls`) because the Ziru list endpoint puts a
-summary string in `content`, not the table HTML.
-
-## Parsed Chunk Card
-
-A Parsed Chunk Card renders one Parsed Chunk. It owns chunk source metadata,
-content rendering, summaries, keywords, artifact references, and sanitized
-table HTML for that card only.
-
-## Chat Thread
-
-A Chat Thread is a persisted WebUI conversation within one Workspace. Chat
-threads are soft-deleted without deleting their messages.
-
-## Chat Panel Workflow
-
-Chat Panel Workflow owns browser chat panel behavior: chat history sheet open
-state, new-chat actions, delete confirmation state, and archive confirmation
-callbacks.
-
-## Chat Repository
-
-The Chat Repository is a stable facade over Chat Thread lifecycle, Chat Message
-persistence, and Citation persistence normalization.
-
-## Chat Message
-
-A Chat Message is a persisted user or assistant message in a Chat Thread.
-Assistant messages can store citation metadata, but should not persist full
-source chunk text.
-
-## Chat Message List Workflow
-
-Chat Message List Workflow owns browser message-list behavior: virtual row
-counts, thinking-progress row placement, viewport measurement, and automatic
-scrolling to the latest row.
-
-## Citation
-
-A Citation is the metadata that connects an assistant answer to a retrieval
-result. Fresh answers can include chunk content for focusing the UI; persisted
-history stores only citation metadata.
-
-## Citation Focus
-
-Citation Focus is the workflow that maps a Citation back to a Source and Parsed
-Chunk, optionally loading all chunks for that Source when paged chunks are not
-enough to focus the answer evidence.
-
-## Retrieval Query
-
-A Retrieval Query is the text sent to Ziru retrieval. It can be generated
-from the latest user question plus recent chat context so Ziru receives a
-self-contained query. Retrieval runs with `useAgentic: true`, `rerank: true`,
-and `internalRecallK: 30` so the LLM reranker compensates for BM25 keyword
-ranking. The harness system prompt teaches the agent to craft BM25-friendly
-queries: distinctive keywords, query expansion with synonyms/domain terms, and
-multiple focused `retrieve` calls for multi-part or ambiguous questions.
-
-## Retrieval Overrides
-
-Retrieval Overrides are optional per-request tuning values that the chat
-composer sends in the chat request body as `retrievalParams`: the `rerank`
-switch and the `internalRecallK` / `topK` sliders. Each present field replaces
-the equivalent hardcoded default — or, for `topK`, the harness-chosen per-query
-value — inside `buildRetrievalQueryParams`. The request schema validates and
-clamps them server-side.
-
-## Retrieval Trace
-
-A Retrieval Trace is the transient record of every Retrieval Query issued while
-answering one user question: query text, namespace, hit count, cited chunk
-count, and top scores. It is attached to a fresh assistant Chat Message view
-and rendered by `ChatRetrievalTrace` under the sources section, but it is never
-persisted to the Chat Message row — reloading the thread drops it.
-
-## Prompt Template
-
-A Prompt Template is a canned `{ id, title, prompt }` analysis prompt offered
-by the composer's wand-icon Templates menu. Templates are loaded at runtime
-from `public/data/chat-prompt-templates.json` by `usePromptTemplates`, so
-self-hosted deployments can override them by bind-mounting their own JSON into
-the container without a rebuild.
-
-## WebUI Auth
-
-WebUI Auth is the WebUI's own identity system (ADR 0010). A `User` is a
-row in the `users` table; login credentials attach via `AccountLink` rows
-(one per provider, `password_hash` for the "password" provider). A `Session`
-is a DB row whose id rides the `ziru-session` cookie (HttpOnly, 30-day
-TTL); `getCurrentUser` joins sessions × users on every request. Users are
-admin-provisioned (no public signup); login is the local `/login` Server
-Action and logout deletes the session row. `ZIRU_API_KEY` /
-`ZIRU_KEYS_FILE` still short-circuit to the development user as a
-bootstrap.
-
-## Ziru Credential
-
-A Ziru Credential is the API key used to call the Ziru API. It is resolved
-per workspace by `ensureApiKeyForWorkspace`
-(`src/integrations/ziru-credentials.ts`): the workspace's
-`ziruKeyLabel` picks a key from `config/ziru-keys.json` (falling
-back to `ZIRU_API_KEY` env). The admin JWT path was removed in the
-Phase 2 hard-cut — the WebUI never requests or stores admin JWT tokens.
-
-## Route Service
-
-A Route Service is a domain module that owns route workflow behavior and
-returns route-ready data. Next.js route handlers should stay thin HTTP
-adapters: parse HTTP primitives, call a Route Service, and serialize the
-result.
-
-## Route Context
-
-Route Context is the small request-scoped adapter passed from Next.js route
-handlers into Route Services. It contains HTTP-derived values such as the
-incoming cookie header and keeps those primitives out of domain workflow code.
+- No billing, credits, tiers, guest accounts, or telemetry.
+- No local database — all state lives in the core API.
+- No free-form LLM answer generation, streaming, or SSE.

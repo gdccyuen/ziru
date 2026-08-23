@@ -1,0 +1,30 @@
+flowchart TB
+  subgraph Z["ZIRU — one monorepo"]
+    direction TB
+    subgraph PEOPLE["People (grades)"]
+      ADMIN["Administrator"]
+      LIBRARIAN["Librarian"]
+      USER["User"]
+    end
+    subgraph FRONTENDS["Frontends"]
+      CONSOLE["Admin console (admin/)<br/>provision users · grades · profiles · API keys · attribute dictionary"]
+      WEBUI["WebUI (webui/) — stateless<br/>search + evidence chat · proxy to API"]
+    end
+    subgraph ENGINE["Knowledge engine (core/)"]
+      API["FastAPI :5005"]
+      WORKER["Celery worker — parse documents"]
+      RETRIEVAL["Retrieval — BM25 3-channel + agentic<br/>(frozen: same as Knowhere)"]
+    end
+    KNOWLEDGE["Knowledge Objects — GLOBAL<br/>no owner · no namespace<br/>attributes + createBy / createTime"]
+    STORE[("PostgreSQL · S3 · Redis")]
+    CONSOLE --> ADMIN
+    ADMIN -->|provisions| LIBRARIAN
+    ADMIN -->|provisions| USER
+    WEBUI --> API
+    API --> WORKER --> RETRIEVAL
+    RETRIEVAL --> KNOWLEDGE
+    KNOWLEDGE --> STORE
+    ADMIN -.->|sees all — bypasses profile| KNOWLEDGE
+    LIBRARIAN -.->|sees what profile allows| KNOWLEDGE
+    USER -.->|sees what profile allows — fail-closed| KNOWLEDGE
+  end
