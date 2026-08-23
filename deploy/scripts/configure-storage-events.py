@@ -11,6 +11,27 @@ from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 
 
+def _deprecatedEnv(oldName: str, newName: str) -> None:
+    """One-release backward compatibility for renamed environment variables."""
+    oldValue = os.getenv(oldName)
+    if oldValue is None:
+        return
+
+    if not os.getenv(newName):
+        os.environ[newName] = oldValue
+        print(
+            f"DEPRECATION WARNING: {oldName} is deprecated; "
+            f"use {newName} instead.",
+            file=sys.stderr,
+        )
+    else:
+        print(
+            f"DEPRECATION WARNING: both {oldName} and {newName} are set; "
+            f"{newName} takes precedence.",
+            file=sys.stderr,
+        )
+
+
 def getEndpointUrl() -> str:
     return os.getenv("SELF_HOSTED_AWS_ENDPOINT_URL") or os.getenv("S3_ENDPOINT_URL", "")
 
@@ -71,14 +92,17 @@ def getCorsAllowedOrigins() -> list[str]:
         ]
 
     origins = {
-        "http://localhost:3000",
         "http://localhost:5005",
-        os.getenv("DASHBOARD_PUBLIC_URL", ""),
+        os.getenv("ADMIN_PUBLIC_URL", ""),
+        os.getenv("WEBUI_PUBLIC_URL", ""),
     }
-    dashboardHostPort = os.getenv("DASHBOARD_HOST_PORT", "")
+    adminHostPort = os.getenv("ADMIN_HOST_PORT", "")
+    webuiHostPort = os.getenv("WEBUI_HOST_PORT", "")
     apiHostPort = os.getenv("API_HOST_PORT", "")
-    if dashboardHostPort:
-        origins.add(f"http://localhost:{dashboardHostPort}")
+    if adminHostPort:
+        origins.add(f"http://localhost:{adminHostPort}")
+    if webuiHostPort:
+        origins.add(f"http://localhost:{webuiHostPort}")
     if apiHostPort:
         origins.add(f"http://localhost:{apiHostPort}")
     return sorted(origin for origin in origins if origin)
@@ -168,6 +192,9 @@ def ensureSubscription(snsClient: BaseClient, topicArn: str) -> None:
 
 
 def main() -> int:
+    _deprecatedEnv("DASHBOARD_PUBLIC_URL", "ADMIN_PUBLIC_URL")
+    _deprecatedEnv("DASHBOARD_HOST_PORT", "ADMIN_HOST_PORT")
+
     s3Client = createClient("s3")
     snsClient = createClient("sns")
     bucketNames = getBucketNames()

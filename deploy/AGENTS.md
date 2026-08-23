@@ -2,12 +2,12 @@
 
 ## What this repo is (and is not)
 
-This repo **only packages** Ziru for self-hosted Docker Compose deployment. It contains **no application code**. The API, worker, and dashboard source live in this monorepo's `core/` and `admin/` and are staged in at build time:
+This repo **only packages** Ziru for self-hosted Docker Compose deployment. It contains **no application code**. The API, worker, and admin console source live in this monorepo's `core/` and `admin/` (the WebUI lives in `webui/` and is built separately — see the webui compose service note below) and are staged in at build time:
 
 - `core/` — Python API + Celery worker (`apps/api`, `apps/worker`, `packages/shared-python`)
-- `admin/` — Next.js dashboard
+- `admin/` — Next.js admin console
 
-Do not look for or edit app logic here. Changes to API/worker/dashboard behavior must be made in `core/` or `admin/`. This repo's surface is: `Dockerfile`, `compose.yaml`, `.env.defaults`, `scripts/`, `docs/`, `.github/workflows/`.
+Do not look for or edit app logic here. Changes to API/worker/admin console behavior must be made in `core/` or `admin/`; WebUI changes go in `webui/`. This repo's surface is: `Dockerfile`, `compose.yaml`, `.env.defaults`, `scripts/`, `docs/`, `.github/workflows/`.
 
 ## Verification
 
@@ -17,7 +17,7 @@ There is **no test, lint, typecheck, or format toolchain** in this repo — do n
 ./scripts/smoke-test.sh
 ```
 
-It brings up the full stack under `COMPOSE_PROJECT_NAME=ziru-self-hosted-smoke` on shifted ports (dashboard `13000`, API `15005`, postgres `15432`, redis `16379`, localstack `14566`) and polls `/login` + `/health` for up to 90×2s.
+It brings up the full stack under `COMPOSE_PROJECT_NAME=ziru-self-hosted-smoke` on shifted ports (admin console `13000`, API `15005`, postgres `15432`, redis `16379`, localstack `14566`) and polls `/login` + `/health` for up to 90×2s.
 
 For shell/Python script edits, sanity-check with `bash -n scripts/*.sh` and `python3 -m py_compile scripts/*.py`.
 
@@ -29,7 +29,7 @@ The Dockerfile copies from `.build/sources/{core,admin}/`, which is gitignored a
 ./scripts/prepare-sources.sh
 ```
 
-By default it expects sibling checkouts at `../core` and `../admin` (archive of `HEAD`). Override with `ZIRU_API_SOURCE` / `ZIRU_API_REF` / `ZIRU_DASHBOARD_SOURCE` / `ZIRU_DASHBOARD_REF`. Then `docker build .`.
+By default it expects sibling checkouts at `../core` and `../admin` (archive of `HEAD`). Override with `ZIRU_API_SOURCE` / `ZIRU_API_REF` / `ZIRU_ADMIN_SOURCE` / `ZIRU_ADMIN_REF`. Then `docker build .`.
 
 ## Image publishing
 
@@ -39,7 +39,7 @@ Currently **disabled** (`.github/workflows/publish-image.yml.disabled`): it push
 
 `compose.yaml` loads `.env.defaults` (committed, **do not put secrets here**) then `.env` (operator overrides, gitignored) via `env_file`. The README tells operators to create a small `.env` with only overrides.
 
-Runtime defaults are layered further by `scripts/entrypoint.sh` via `setDefault` and several values are **derived** (e.g. `API_DATABASE_URL` from `POSTGRES_*`, `NEXT_PUBLIC_APP_URL` from `DASHBOARD_PUBLIC_URL`, `CELERY_REDIS_URL` from `REDIS_*`). When changing a default, check both `.env.defaults` and `entrypoint.sh` — the entrypoint can override what's in the file. Full variable reference: `docs/configuration.md`.
+Runtime defaults are layered further by `scripts/entrypoint.sh` via `setDefault` and several values are **derived** (e.g. `API_DATABASE_URL` from `POSTGRES_*`, `NEXT_PUBLIC_APP_URL` from `ADMIN_PUBLIC_URL`, `CELERY_REDIS_URL` from `REDIS_*`). When changing a default, check both `.env.defaults` and `entrypoint.sh` — the entrypoint can override what's in the file. Full variable reference: `docs/configuration.md`. The legacy `DASHBOARD_*` env names still work for one release via a deprecation shim in `entrypoint.sh` (and the other scripts).
 
 Auto-generated secrets (`SECRET_KEY`, `BETTER_AUTH_SECRET`, `USERS_VERIFY_*`, `USERS_RESET_PASSWORD_*`) are persisted in the `ziru_secrets` volume at `/data/secrets/`; deleting that volume regenerates them.
 
@@ -50,19 +50,19 @@ The image runs **three processes** in one container via `scripts/entrypoint.sh` 
 1. wait for postgres → ensure extensions (`uuid-ossp`, `pg_trgm`)
 2. wait for redis
 3. create S3 buckets (`scripts/create-storage-buckets.py`)
-4. run dashboard drizzle migrations
+4. run admin drizzle migrations
 5. start API (`apps/api/main.py`, port 5005) → wait for `/health`
 6. configure S3 event notifications + SNS subscription (`scripts/configure-storage-events.py`) — runs after API so the webhook target is up
 7. start worker (`apps/worker/worker.py`)
-8. start dashboard (`next start`, port 3000)
+8. start admin console (`next start`, container port 3000)
 
-Container exits if any of the three processes exits. Healthcheck hits both `:3000/login` and `:5005/health`.
+Container exits if any of the three processes exits. Healthcheck hits both `:3000/login` and `:5005/health` (container-internal ports; host mappings default to admin console `81`, WebUI `80` — elevated privileges needed on Linux for 80 — and API `5005`).
 
 Two separate venvs are built in the image: `/opt/ziru/venvs/api` and `/opt/ziru/venvs/worker`. Both install from the upstream `uv.lock` with `uv sync --locked --no-dev`.
 
 ## Compose services
 
-`app` (the combined image), `postgres:15-alpine`, `redis:7-alpine`, `localstack:3.8` (S3/SNS/SQS/IAM/STS with persistence). All host ports bind `127.0.0.1` by default; set `*_HOST_BIND=0.0.0.0` to expose. Named volumes persist data across `docker compose down`.
+`app` (the combined image), `webui` (built from `../webui` — not yet staged into the deploy image or the publish pipeline; see README), `postgres:15-alpine`, `redis:7-alpine`, `localstack:3.8` (S3/SNS/SQS/IAM/STS with persistence). All host ports bind `127.0.0.1` by default; set `*_HOST_BIND=0.0.0.0` to expose. Named volumes persist data across `docker compose down`. Dev servers stay on 3000 (admin) / 3001 (webui).
 
 LocalStack is reachable at `localhost.localstack.cloud:4566` (network alias) for S3 operations; `S3_ENDPOINT_URL` defaults to that host so presigned URLs work from inside the container.
 

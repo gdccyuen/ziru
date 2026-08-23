@@ -10,9 +10,12 @@ Docker Compose reads `.env.defaults` first, then reads `.env`. `.env.defaults` i
 
 | Variable | Usage | Example values |
 | --- | --- | --- |
-| `DASHBOARD_PUBLIC_URL` | Public Dashboard URL opened by users in their browser. Also used for login, signup, and callback validation. | `http://localhost:3000`, `https://ziru.example.com` |
-| `DASHBOARD_HOST_BIND` | Host interface bound by the Dashboard port. Defaults to localhost. Use `0.0.0.0` only when the Dashboard must be reachable from outside the host. | `127.0.0.1`, `0.0.0.0` |
-| `DASHBOARD_HOST_PORT` | Host port mapped to the Dashboard. | `3000`, `8080` |
+| `ADMIN_PUBLIC_URL` | Public admin console URL opened by users in their browser. Also used for login, signup, and callback validation. | `http://localhost:81`, `https://ziru.example.com` |
+| `ADMIN_HOST_BIND` | Host interface bound by the admin console port. Defaults to localhost. Use `0.0.0.0` only when the admin console must be reachable from outside the host. | `127.0.0.1`, `0.0.0.0` |
+| `ADMIN_HOST_PORT` | Host port mapped to the admin console. | `81`, `8080` |
+| `WEBUI_PUBLIC_URL` | Public WebUI URL opened by users in their browser. Used for login and storage CORS. | `http://localhost:80`, `https://ziru.example.com` |
+| `WEBUI_HOST_BIND` | Host interface bound by the WebUI port. Defaults to localhost. Use `0.0.0.0` only when the WebUI must be reachable from outside the host. | `127.0.0.1`, `0.0.0.0` |
+| `WEBUI_HOST_PORT` | Host port mapped to the WebUI. The default `80` requires elevated privileges on Linux. | `80`, `8080` |
 | `API_HOST_BIND` | Host interface bound by the API port. Defaults to localhost. Use `0.0.0.0` only when the API must be reachable from outside the host. | `127.0.0.1`, `0.0.0.0` |
 | `API_HOST_PORT` | Host port mapped to the API. | `5005` |
 | `POSTGRES_HOST_BIND` | Host interface bound by the PostgreSQL port. Keep the default unless an external database client must connect directly. | `127.0.0.1`, `0.0.0.0` |
@@ -22,6 +25,12 @@ Docker Compose reads `.env.defaults` first, then reads `.env`. `.env.defaults` i
 | `LOCALSTACK_HOST_BIND` | Host interface bound by the LocalStack port. Keep the default unless external S3-compatible tooling must connect directly. | `127.0.0.1`, `0.0.0.0` |
 | `LOCALSTACK_HOST_PORT` | Host port mapped to the LocalStack S3-compatible service. | `4566` |
 | `ZIRU_IMAGE` | Ziru self-hosted Docker image. | `ghcr.io/gdccyuen/ziru:latest` |
+| `WEBUI_IMAGE` | WebUI image used by the `webui` compose service. Not yet published; compose builds from `../webui` until one exists. | `ghcr.io/gdccyuen/ziru-webui:latest` |
+
+> Default host ports: admin console `81`, WebUI `80`, API `5005`. Port 80 needs
+> elevated privileges on Linux; set `WEBUI_HOST_PORT` if you cannot bind it.
+> The dev servers keep their own ports during development: admin console
+> `3000`, WebUI `3001`.
 
 For networks where GHCR is slow or unavailable, use the Aliyun registry image:
 
@@ -116,13 +125,13 @@ EMBEDDING_MODEL=text-embedding-v4
 | `ILOVEAPI_TOKEN_DAILY_LIMIT` | Daily file limit for each iLoveAPI project. | `250` |
 | `ILOVEAPI_MAX_CONCURRENT` | Maximum concurrent iLoveAPI conversions. | `5` |
 
-## Dashboard, Auth, and Branding
+## Admin Console, WebUI, Auth, and Branding
 
 | Variable | Usage | Example values |
 | --- | --- | --- |
-| `NEXT_PUBLIC_APP_URL` | Public Dashboard URL. Derived from `DASHBOARD_PUBLIC_URL` when unset. | `https://ziru.example.com` |
+| `NEXT_PUBLIC_APP_URL` | Public admin console URL. Derived from `ADMIN_PUBLIC_URL` when unset. | `https://ziru.example.com` |
 | `BETTER_AUTH_URL` | Better Auth callback and trusted-origin URL. Derived from `NEXT_PUBLIC_APP_URL` when unset. | `https://ziru.example.com` |
-| `NEXT_PUBLIC_API_URL` | Dashboard base URL for proxying API requests. The single-container default uses the local API. | `http://127.0.0.1:5005/api` |
+| `NEXT_PUBLIC_API_URL` | Admin console base URL for proxying API requests. The single-container default uses the local API; the WebUI compose service points it at `http://app:5005/api`. | `http://127.0.0.1:5005/api` |
 | `NEXT_PUBLIC_AUTH_BASE_URL` | Better Auth route prefix. | `/api/auth` |
 | `PASSWORD_LOGIN_ENABLED` | Whether to show password login on the login page. Enabled by default for self-hosted deployments. | `true` |
 | `BETTER_AUTH_SECRET` | Better Auth secret. When unset, startup generates one and stores it in the volume. | `a-random-secret-at-least-32-chars` |
@@ -133,16 +142,16 @@ EMBEDDING_MODEL=text-embedding-v4
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth login. | `...` |
 | `APPLE_CLIENT_ID` / `APPLE_CLIENT_SECRET` | Reserved Apple OAuth configuration. | `...` |
 | `RESEND_API_KEY` | Resend API key for magic link and password reset emails. | `re_...` |
-| `RESEND_FROM` | Sender used by Dashboard auth emails. | `Ziru <noreply@example.com>` |
+| `RESEND_FROM` | Sender used by admin console auth emails. | `Ziru <noreply@example.com>` |
 | `RESEND_FROM_EMAIL` | Sender email used by API emails. | `noreply@example.com` |
 | `RESEND_FROM_NAME` | Sender name used by API emails. | `Ziru` |
 | `RESEND_MAX_RETRIES` | Maximum retry count for sending Resend emails from the API. | `3` |
 | `RESEND_RETRY_DELAY` | Retry delay for sending Resend emails from the API, in seconds. | `1.0` |
-| `COMPANY_NAME` | Runtime brand name shown by the Dashboard. | `Ziru AI` |
-| `SIMPLE_COMPANY_NAME` | Runtime short brand name shown by the Dashboard. | `Ziru` |
+| `COMPANY_NAME` | Runtime brand name shown by the admin console and WebUI. | `Ziru AI` |
+| `SIMPLE_COMPANY_NAME` | Runtime short brand name shown by the admin console and WebUI. | `Ziru` |
 | `ICP_NUMBER` | ICP record number shown in the footer when set. | `ICP ...` |
 | `ICP_URL` | ICP record link. | `https://beian.miit.gov.cn/` |
-| `DEV_EXTERNAL_API_AUTHORIZATION` | Fixed `Authorization` header used by Dashboard development proxy requests. Do not set in production. | `Bearer dev-token` |
+| `DEV_EXTERNAL_API_AUTHORIZATION` | Fixed `Authorization` header used by admin console development proxy requests. Do not set in production. | `Bearer dev-token` |
 
 ## Database
 
@@ -150,13 +159,13 @@ EMBEDDING_MODEL=text-embedding-v4
 | --- | --- | --- |
 | `POSTGRES_PASSWORD` | Root password for the bundled PostgreSQL service. | `root123` |
 | `API_DATABASE_URL` | PostgreSQL async URL used by the API. Derived from bundled PostgreSQL settings by default. | `postgresql+asyncpg://root:root123@postgres:5432/ziru` |
-| `DASHBOARD_DATABASE_URL` | PostgreSQL URL used by the Dashboard. Derived from bundled PostgreSQL settings by default. | `postgresql://root:root123@postgres:5432/ziru` |
-| `DATABASE_URL` | Used by upstream API/Dashboard development paths. Self-hosted deployments usually do not set it directly. | `postgresql+asyncpg://...` |
+| `ADMIN_DATABASE_URL` | PostgreSQL URL used by the admin console. Derived from bundled PostgreSQL settings by default. | `postgresql://root:root123@postgres:5432/ziru` |
+| `DATABASE_URL` | Used by upstream API/admin development paths. Self-hosted deployments usually do not set it directly. | `postgresql+asyncpg://...` |
 | `DB_SSL_MODE` | PostgreSQL SSL mode. | `disable`, `require`, `verify-full` |
 | `DB_SSL_CERT` | PostgreSQL client certificate path. | `/path/to/client-cert.pem` |
 | `DB_SSL_KEY` | PostgreSQL client private key path. | `/path/to/client-key.pem` |
 | `DB_SSL_ROOT_CERT` | PostgreSQL CA certificate path. | `/path/to/ca.pem` |
-| `UNSAFE_DB_SSL_ENABLED` | Dashboard database SSL switch for deployment compatibility. | `true` |
+| `UNSAFE_DB_SSL_ENABLED` | Admin console database SSL switch for deployment compatibility. | `true` |
 | `DB_POOL_SIZE` | API database connection pool size. | `20` |
 | `DB_MAX_OVERFLOW` | Maximum overflow connections for the API database pool. | `30` |
 | `DB_POOL_RECYCLE` | Database connection recycle interval, in seconds. | `1800` |
@@ -219,7 +228,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `SELF_HOSTED_CONFIGURE_STORAGE_EVENTS` | Whether startup configures upload events automatically. | `true` |
 | `SELF_HOSTED_S3_EVENT_TOPIC_NAME` | LocalStack SNS topic name. | `ziru-s3-upload-events` |
 | `SELF_HOSTED_S3_EVENT_WEBHOOK_URL` | S3 upload event callback URL to the API. | `http://app:5005/v1/internal/s3-events` |
-| `SELF_HOSTED_STORAGE_CORS_ALLOWED_ORIGINS` | Allowed bucket CORS origins, comma-separated. Empty values automatically include local Dashboard/API URLs. | `https://ziru.example.com` |
+| `SELF_HOSTED_STORAGE_CORS_ALLOWED_ORIGINS` | Allowed bucket CORS origins, comma-separated. Empty values automatically include local admin console/WebUI/API URLs. | `https://ziru.example.com` |
 | `SELF_HOSTED_AWS_ENDPOINT_URL` | AWS endpoint used by the self-hosted storage initialization script. Uses `S3_ENDPOINT_URL` when empty. | `http://localstack:4566` |
 
 ## File Processing and Retrieval
@@ -376,17 +385,17 @@ flags such as `billing_enabled` and `rate_limit_enabled`.
 | `APP_DESCRIPTION` | API description. | `Document ingestion, retrieval, and MCP backend` |
 | `ALGORITHM` | JWT signing algorithm. | `HS256` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | API access token validity period, in minutes. | `10080` |
-| `API_STANDALONE_MODE_ENABLED` | API-only mode. Combined self-hosted deployments should keep this `false` so the Dashboard initializes user tables. | `false` |
-| `NODE_ENV` | Dashboard Node environment. | `production` |
-| `DASHBOARD_PORT` | Dashboard internal container port. Usually do not change it. | `3000` |
+| `API_STANDALONE_MODE_ENABLED` | API-only mode. Combined self-hosted deployments should keep this `false` so the admin console initializes user tables. | `false` |
+| `NODE_ENV` | Admin console Node environment. | `production` |
+| `ADMIN_PORT` | Admin console internal container port. Usually do not change it. | `3000` |
 | `API_PORT` | API internal container port. Usually do not change it. | `5005` |
-| `INTERNAL_DASHBOARD_ENDPOINT` | Internal Dashboard URL used by the API. | `http://127.0.0.1:3000` |
+| `INTERNAL_ADMIN_ENDPOINT` | Internal admin console URL used by the API. | `http://127.0.0.1:81` |
 | `SELF_HOSTED_SECRETS_PATH` | Directory where generated secrets are stored. | `/data/secrets` |
 | `SELF_HOSTED_WAIT_ATTEMPTS` | Maximum attempts while waiting for startup dependencies. | `60` |
 | `SELF_HOSTED_WAIT_DELAY_SECONDS` | Retry delay while waiting for startup dependencies, in seconds. | `2` |
 | `SELF_HOSTED_INIT_POSTGRES_EXTENSIONS` | Whether startup creates PostgreSQL extensions automatically. | `true` |
-| `HTTPS_PROXY` / `HTTP_PROXY` | Outbound proxy for Dashboard auth/email requests and similar calls. | `http://127.0.0.1:7890` |
-| `SKIP_ENV_VALIDATION` | Skip Dashboard env schema validation during builds or special debugging. Do not set in production. | `1` |
+| `HTTPS_PROXY` / `HTTP_PROXY` | Outbound proxy for admin console auth/email requests and similar calls. | `http://127.0.0.1:7890` |
+| `SKIP_ENV_VALIDATION` | Skip admin console env schema validation during builds or special debugging. Do not set in production. | `1` |
 
 ## Compatibility Fields
 
@@ -407,7 +416,7 @@ These fields are retained for legacy code paths or internal path conventions. Mo
 ## Example: Public Domain Deployment
 
 ```bash
-DASHBOARD_PUBLIC_URL=https://ziru.example.com
+ADMIN_PUBLIC_URL=https://ziru.example.com
 MINERU_API_KEYS=your-mineru-api-key
 DS_KEY=your-deepseek-api-key
 ```

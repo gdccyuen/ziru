@@ -7,7 +7,7 @@ services:
       - path: .env
         required: false
     ports:
-      - "${DASHBOARD_HOST_BIND:-127.0.0.1}:${DASHBOARD_HOST_PORT:-3000}:3000"
+      - "${ADMIN_HOST_BIND:-127.0.0.1}:${ADMIN_HOST_PORT:-81}:3000"
       - "${API_HOST_BIND:-127.0.0.1}:${API_HOST_PORT:-5005}:5005"
     depends_on:
       postgres:
@@ -20,6 +20,29 @@ services:
       - ziru_user_data:/data/users
       - ziru_model_cache:/data/models
       - ziru_secrets:/data/secrets
+
+  webui:
+    # The WebUI is not yet staged into the deploy image (deploy/Dockerfile
+    # builds core + admin only). Compose builds it from the monorepo's
+    # webui/Dockerfile until a published image exists; set WEBUI_IMAGE in
+    # .env once the image is published.
+    image: ${WEBUI_IMAGE:-ghcr.io/gdccyuen/ziru-webui:latest}
+    build:
+      context: ../webui
+    env_file:
+      - path: .env.defaults
+        required: true
+      - path: .env
+        required: false
+    environment:
+      # The WebUI proxies /api/* to the core API over the compose network.
+      NEXT_PUBLIC_API_URL: http://app:5005/api
+    command: ["node", "server.js"]
+    ports:
+      - "${WEBUI_HOST_BIND:-127.0.0.1}:${WEBUI_HOST_PORT:-80}:3000"
+    depends_on:
+      app:
+        condition: service_started
 
   postgres:
     image: postgres:15-alpine

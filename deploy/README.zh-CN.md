@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-Ziru Self-Hosted 使用 Docker Compose 打包 Ziru 的自托管部署：Ziru API、worker、Dashboard 与 WebUI 一栈拉起。
+Ziru Self-Hosted 使用 Docker Compose 打包 Ziru 的自托管部署：Ziru API、worker、管理后台（Admin Console）与 WebUI 一栈拉起。
 
 ## 准备工作
 
@@ -49,18 +49,20 @@ ALI_API_KEYS=dashscope-key-1,dashscope-key-2
 
 本地访问默认不需要修改其他配置。宿主机端口默认只绑定到 `127.0.0.1`。
 
-如果通过本机反向代理对外访问，保持默认绑定即可，同时把 `DASHBOARD_PUBLIC_URL` 改成用户浏览器实际打开的地址：
+如果通过本机反向代理对外访问，保持默认绑定即可，同时把 `ADMIN_PUBLIC_URL` 改成用户浏览器实际打开的地址：
 
 ```bash
-DASHBOARD_PUBLIC_URL=https://ziru.example.com
+ADMIN_PUBLIC_URL=https://ziru.example.com
 ```
 
-如果 `DASHBOARD_PUBLIC_URL` 和浏览器地址不一致，登录或注册可能失败。
+如果 `ADMIN_PUBLIC_URL` 和浏览器地址不一致，登录或注册可能失败。
+`WEBUI_PUBLIC_URL` 对 WebUI 起同样的作用（用于存储 CORS）。
 
 如果需要让其他机器直接访问宿主机端口，只开放必要的公开服务：
 
 ```bash
-DASHBOARD_HOST_BIND=0.0.0.0
+ADMIN_HOST_BIND=0.0.0.0
+WEBUI_HOST_BIND=0.0.0.0
 API_HOST_BIND=0.0.0.0
 ```
 
@@ -73,17 +75,25 @@ API_HOST_BIND=0.0.0.0
 docker compose up -d
 ```
 
-打开 Dashboard：
+访问服务：
 
-```text
-http://localhost:3000/login
-```
+| 服务 | 地址 |
+| --- | --- |
+| 管理后台（Admin Console） | http://localhost:81/login |
+| WebUI | http://localhost:80 |
+| API 健康检查 | http://localhost:5005/health |
 
-API 健康检查：
+默认端口可通过 `.env` 中的 `ADMIN_HOST_PORT`、`WEBUI_HOST_PORT` 和 `API_HOST_PORT`
+调整。Linux 上绑定 80 端口需要提升权限——如果无法绑定，请把 `WEBUI_HOST_PORT`
+改成高位端口（例如 8080）。开发期间 dev server 仍使用自己的端口：管理后台 3000，
+WebUI 3001。
 
-```text
-http://localhost:5005/health
-```
+`webui` compose 服务目前只是初步接线：WebUI **尚未并入 deploy 镜像**
+（`deploy/Dockerfile` 只构建 API、worker 和管理后台）。当前 compose 会从
+`../webui`（`webui/Dockerfile`）构建 webui 服务；等 `ziru-webui` 镜像发布后，
+在 `.env` 中设置 `WEBUI_IMAGE` 即可改用发布镜像。该服务将 `/api/*` 代理到
+核心 API（`NEXT_PUBLIC_API_URL=http://app:5005/api`）；它在 deploy 中的构建/发布
+与环境接线尚未完成。
 
 ## API 使用
 

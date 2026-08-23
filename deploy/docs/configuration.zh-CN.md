@@ -10,9 +10,12 @@ Docker Compose 会先读取 `.env.defaults`，再读取 `.env`。`.env.defaults`
 
 | 变量 | 用途 | 示例值 |
 | --- | --- | --- |
-| `DASHBOARD_PUBLIC_URL` | 用户浏览器访问 Dashboard 的公开地址，也用于登录、注册和回调校验。 | `http://localhost:3000`、`https://ziru.example.com` |
-| `DASHBOARD_HOST_BIND` | Dashboard 端口绑定的宿主机网卡地址。默认只绑定本机；只有需要从宿主机外部直连 Dashboard 时才使用 `0.0.0.0`。 | `127.0.0.1`、`0.0.0.0` |
-| `DASHBOARD_HOST_PORT` | Dashboard 映射到宿主机的端口。 | `3000`、`8080` |
+| `ADMIN_PUBLIC_URL` | 用户浏览器访问管理后台的公开地址，也用于登录、注册和回调校验。 | `http://localhost:81`、`https://ziru.example.com` |
+| `ADMIN_HOST_BIND` | 管理后台端口绑定的宿主机网卡地址。默认只绑定本机；只有需要从宿主机外部直连管理后台时才使用 `0.0.0.0`。 | `127.0.0.1`、`0.0.0.0` |
+| `ADMIN_HOST_PORT` | 管理后台映射到宿主机的端口。 | `81`、`8080` |
+| `WEBUI_PUBLIC_URL` | 用户浏览器访问 WebUI 的公开地址，用于登录与存储 CORS。 | `http://localhost:80`、`https://ziru.example.com` |
+| `WEBUI_HOST_BIND` | WebUI 端口绑定的宿主机网卡地址。默认只绑定本机；只有需要从宿主机外部直连 WebUI 时才使用 `0.0.0.0`。 | `127.0.0.1`、`0.0.0.0` |
+| `WEBUI_HOST_PORT` | WebUI 映射到宿主机的端口。默认 `80` 在 Linux 上需要提升权限。 | `80`、`8080` |
 | `API_HOST_BIND` | API 端口绑定的宿主机网卡地址。默认只绑定本机；只有需要从宿主机外部直连 API 时才使用 `0.0.0.0`。 | `127.0.0.1`、`0.0.0.0` |
 | `API_HOST_PORT` | API 映射到宿主机的端口。 | `5005` |
 | `POSTGRES_HOST_BIND` | PostgreSQL 端口绑定的宿主机网卡地址。除非外部数据库客户端必须直连，否则保持默认值。 | `127.0.0.1`、`0.0.0.0` |
@@ -22,6 +25,11 @@ Docker Compose 会先读取 `.env.defaults`，再读取 `.env`。`.env.defaults`
 | `LOCALSTACK_HOST_BIND` | LocalStack 端口绑定的宿主机网卡地址。除非外部 S3 兼容工具必须直连，否则保持默认值。 | `127.0.0.1`、`0.0.0.0` |
 | `LOCALSTACK_HOST_PORT` | LocalStack S3 兼容存储映射到宿主机的端口。 | `4566` |
 | `ZIRU_IMAGE` | Ziru 自托管镜像。 | `ghcr.io/gdccyuen/ziru:latest` |
+| `WEBUI_IMAGE` | `webui` compose 服务使用的 WebUI 镜像。尚未发布；在镜像发布前 compose 会从 `../webui` 构建。 | `ghcr.io/gdccyuen/ziru-webui:latest` |
+
+> 默认宿主机端口：管理后台 `81`、WebUI `80`、API `5005`。Linux 上绑定 80 端口
+> 需要提升权限；如果无法绑定，请设置 `WEBUI_HOST_PORT`。开发期间 dev server
+> 仍使用自己的端口：管理后台 `3000`、WebUI `3001`。
 
 国内网络可使用阿里云镜像：
 
@@ -116,13 +124,13 @@ EMBEDDING_MODEL=text-embedding-v4
 | `ILOVEAPI_TOKEN_DAILY_LIMIT` | 每个 iLoveAPI 项目的每日文件上限。 | `250` |
 | `ILOVEAPI_MAX_CONCURRENT` | iLoveAPI 并发转换上限。 | `5` |
 
-## Dashboard、认证和品牌
+## 管理后台、WebUI、认证和品牌
 
 | 变量 | 用途 | 示例值 |
 | --- | --- | --- |
-| `NEXT_PUBLIC_APP_URL` | Dashboard 公开地址；未设置时由 `DASHBOARD_PUBLIC_URL` 派生。 | `https://ziru.example.com` |
+| `NEXT_PUBLIC_APP_URL` | 管理后台公开地址；未设置时由 `ADMIN_PUBLIC_URL` 派生。 | `https://ziru.example.com` |
 | `BETTER_AUTH_URL` | Better Auth 回调和可信来源地址；未设置时由 `NEXT_PUBLIC_APP_URL` 派生。 | `https://ziru.example.com` |
-| `NEXT_PUBLIC_API_URL` | Dashboard 代理到 API 的 base URL。单容器默认用本机 API。 | `http://127.0.0.1:5005/api` |
+| `NEXT_PUBLIC_API_URL` | 管理后台代理到 API 的 base URL。单容器默认用本机 API；webui compose 服务指向 `http://app:5005/api`。 | `http://127.0.0.1:5005/api` |
 | `NEXT_PUBLIC_AUTH_BASE_URL` | Better Auth 路由前缀。 | `/api/auth` |
 | `PASSWORD_LOGIN_ENABLED` | 是否在登录页显示密码登录入口。自托管默认开启。 | `true` |
 | `BETTER_AUTH_SECRET` | Better Auth 密钥；未设置时首次启动自动生成并保存到 volume。 | `a-random-secret-at-least-32-chars` |
@@ -133,16 +141,16 @@ EMBEDDING_MODEL=text-embedding-v4
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth 登录。 | `...` |
 | `APPLE_CLIENT_ID` / `APPLE_CLIENT_SECRET` | 预留 Apple OAuth 配置。 | `...` |
 | `RESEND_API_KEY` | Resend 邮件服务 Key，用于 magic link 和重置密码邮件。 | `re_...` |
-| `RESEND_FROM` | Dashboard 认证邮件发件人。 | `Ziru <noreply@example.com>` |
+| `RESEND_FROM` | 管理后台认证邮件发件人。 | `Ziru <noreply@example.com>` |
 | `RESEND_FROM_EMAIL` | API 邮件发件邮箱。 | `noreply@example.com` |
 | `RESEND_FROM_NAME` | API 邮件发件名称。 | `Ziru` |
 | `RESEND_MAX_RETRIES` | API 发送 Resend 邮件的最大重试次数。 | `3` |
 | `RESEND_RETRY_DELAY` | API 发送 Resend 邮件的重试间隔，单位秒。 | `1.0` |
-| `COMPANY_NAME` | Dashboard 运行时品牌名称。 | `Ziru AI` |
-| `SIMPLE_COMPANY_NAME` | Dashboard 运行时品牌简称。 | `Ziru` |
+| `COMPANY_NAME` | 管理后台与 WebUI 运行时品牌名称。 | `Ziru AI` |
+| `SIMPLE_COMPANY_NAME` | 管理后台与 WebUI 运行时品牌简称。 | `Ziru` |
 | `ICP_NUMBER` | ICP 备案号，填写后页脚显示。 | `沪ICP备...号` |
 | `ICP_URL` | ICP 备案链接。 | `https://beian.miit.gov.cn/` |
-| `DEV_EXTERNAL_API_AUTHORIZATION` | Dashboard 开发环境转发 API 请求时使用的固定 `Authorization` 头。生产环境不要设置。 | `Bearer dev-token` |
+| `DEV_EXTERNAL_API_AUTHORIZATION` | 管理后台开发环境转发 API 请求时使用的固定 `Authorization` 头。生产环境不要设置。 | `Bearer dev-token` |
 
 ## 数据库
 
@@ -150,13 +158,13 @@ EMBEDDING_MODEL=text-embedding-v4
 | --- | --- | --- |
 | `POSTGRES_PASSWORD` | 内置 PostgreSQL 的 root 密码。 | `root123` |
 | `API_DATABASE_URL` | API 使用的 PostgreSQL async URL；默认由内置 PostgreSQL 配置派生。 | `postgresql+asyncpg://root:root123@postgres:5432/ziru` |
-| `DASHBOARD_DATABASE_URL` | Dashboard 使用的 PostgreSQL URL；默认由内置 PostgreSQL 配置派生。 | `postgresql://root:root123@postgres:5432/ziru` |
-| `DATABASE_URL` | 上游 API/Dashboard 开发模式使用；自托管通常不用直接设置。 | `postgresql+asyncpg://...` |
+| `ADMIN_DATABASE_URL` | 管理后台使用的 PostgreSQL URL；默认由内置 PostgreSQL 配置派生。 | `postgresql://root:root123@postgres:5432/ziru` |
+| `DATABASE_URL` | 上游 API/管理后台开发模式使用；自托管通常不用直接设置。 | `postgresql+asyncpg://...` |
 | `DB_SSL_MODE` | PostgreSQL SSL 模式。 | `disable`、`require`、`verify-full` |
 | `DB_SSL_CERT` | PostgreSQL 客户端证书路径。 | `/path/to/client-cert.pem` |
 | `DB_SSL_KEY` | PostgreSQL 客户端私钥路径。 | `/path/to/client-key.pem` |
 | `DB_SSL_ROOT_CERT` | PostgreSQL CA 证书路径。 | `/path/to/ca.pem` |
-| `UNSAFE_DB_SSL_ENABLED` | Dashboard 数据库 SSL 开关，供部署环境兼容使用。 | `true` |
+| `UNSAFE_DB_SSL_ENABLED` | 管理后台数据库 SSL 开关，供部署环境兼容使用。 | `true` |
 | `DB_POOL_SIZE` | API 数据库连接池大小。 | `20` |
 | `DB_MAX_OVERFLOW` | API 数据库连接池最大溢出连接数。 | `30` |
 | `DB_POOL_RECYCLE` | 数据库连接回收间隔，单位秒。 | `1800` |
@@ -219,7 +227,7 @@ EMBEDDING_MODEL=text-embedding-v4
 | `SELF_HOSTED_CONFIGURE_STORAGE_EVENTS` | 启动时自动配置上传事件。 | `true` |
 | `SELF_HOSTED_S3_EVENT_TOPIC_NAME` | LocalStack SNS topic 名称。 | `ziru-s3-upload-events` |
 | `SELF_HOSTED_S3_EVENT_WEBHOOK_URL` | S3 上传事件回调到 API 的 URL。 | `http://app:5005/v1/internal/s3-events` |
-| `SELF_HOSTED_STORAGE_CORS_ALLOWED_ORIGINS` | Bucket CORS 允许来源，逗号分隔；为空时自动包含本地 Dashboard/API 地址。 | `https://ziru.example.com` |
+| `SELF_HOSTED_STORAGE_CORS_ALLOWED_ORIGINS` | Bucket CORS 允许来源，逗号分隔；为空时自动包含本地管理后台/WebUI/API 地址。 | `https://ziru.example.com` |
 | `SELF_HOSTED_AWS_ENDPOINT_URL` | 自托管存储初始化脚本使用的 AWS endpoint；为空时使用 `S3_ENDPOINT_URL`。 | `http://localstack:4566` |
 
 ## 文件处理和检索
@@ -363,17 +371,17 @@ TELEMETRY_ENABLED=false
 | `APP_DESCRIPTION` | API 描述。 | `Document ingestion, retrieval, and MCP backend` |
 | `ALGORITHM` | JWT 签名算法。 | `HS256` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | API access token 有效期，单位分钟。 | `10080` |
-| `API_STANDALONE_MODE_ENABLED` | API-only 模式。组合自托管应保持 `false`，由 Dashboard 初始化用户表。 | `false` |
-| `NODE_ENV` | Dashboard Node 环境。 | `production` |
-| `DASHBOARD_PORT` | 容器内部 Dashboard 端口。通常不要改。 | `3000` |
+| `API_STANDALONE_MODE_ENABLED` | API-only 模式。组合自托管应保持 `false`，由管理后台初始化用户表。 | `false` |
+| `NODE_ENV` | 管理后台 Node 环境。 | `production` |
+| `ADMIN_PORT` | 容器内部管理后台端口。通常不要改。 | `3000` |
 | `API_PORT` | 容器内部 API 端口。通常不要改。 | `5005` |
-| `INTERNAL_DASHBOARD_ENDPOINT` | API 内部访问 Dashboard 的地址。 | `http://127.0.0.1:3000` |
+| `INTERNAL_ADMIN_ENDPOINT` | API 内部访问管理后台的地址。 | `http://127.0.0.1:81` |
 | `SELF_HOSTED_SECRETS_PATH` | 自动生成密钥的保存目录。 | `/data/secrets` |
 | `SELF_HOSTED_WAIT_ATTEMPTS` | 启动时等待依赖的最大尝试次数。 | `60` |
 | `SELF_HOSTED_WAIT_DELAY_SECONDS` | 启动时等待依赖的重试间隔。 | `2` |
 | `SELF_HOSTED_INIT_POSTGRES_EXTENSIONS` | 启动时自动创建 PostgreSQL 扩展。 | `true` |
-| `HTTPS_PROXY` / `HTTP_PROXY` | Dashboard auth/email 等出站请求代理。 | `http://127.0.0.1:7890` |
-| `SKIP_ENV_VALIDATION` | Dashboard 构建或特殊调试时跳过 env schema 校验。生产运行不要设置。 | `1` |
+| `HTTPS_PROXY` / `HTTP_PROXY` | 管理后台 auth/email 等出站请求代理。 | `http://127.0.0.1:7890` |
+| `SKIP_ENV_VALIDATION` | 管理后台构建或特殊调试时跳过 env schema 校验。生产运行不要设置。 | `1` |
 
 ## 兼容字段
 
@@ -394,7 +402,7 @@ TELEMETRY_ENABLED=false
 ## 示例：公开域名部署
 
 ```bash
-DASHBOARD_PUBLIC_URL=https://ziru.example.com
+ADMIN_PUBLIC_URL=https://ziru.example.com
 MINERU_API_KEYS=your-mineru-api-key
 DS_KEY=your-deepseek-api-key
 ```

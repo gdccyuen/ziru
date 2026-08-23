@@ -8,10 +8,21 @@ sourceRoot="${repoRoot}/.build/sources"
 # CI passes explicit checkout paths and refs. Local builds default to the
 # monorepo's core/ and admin/ directories and archive their current HEAD
 # unless these env vars are overridden.
+# One-release backward compatibility: honor the legacy ZIRU_DASHBOARD_* names
+# when the ZIRU_ADMIN_* names are not set.
+if [ -n "${ZIRU_DASHBOARD_SOURCE:-}" ] && [ -z "${ZIRU_ADMIN_SOURCE:-}" ]; then
+  ZIRU_ADMIN_SOURCE="${ZIRU_DASHBOARD_SOURCE}"
+  echo "DEPRECATION WARNING: ZIRU_DASHBOARD_SOURCE is deprecated; use ZIRU_ADMIN_SOURCE instead." >&2
+fi
+if [ -n "${ZIRU_DASHBOARD_REF:-}" ] && [ -z "${ZIRU_ADMIN_REF:-}" ]; then
+  ZIRU_ADMIN_REF="${ZIRU_DASHBOARD_REF}"
+  echo "DEPRECATION WARNING: ZIRU_DASHBOARD_REF is deprecated; use ZIRU_ADMIN_REF instead." >&2
+fi
+
 apiSource="${ZIRU_API_SOURCE:-${workspaceRoot}/core}"
 apiRef="${ZIRU_API_REF:-HEAD}"
-dashboardSource="${ZIRU_DASHBOARD_SOURCE:-${workspaceRoot}/admin}"
-dashboardRef="${ZIRU_DASHBOARD_REF:-HEAD}"
+adminSource="${ZIRU_ADMIN_SOURCE:-${workspaceRoot}/admin}"
+adminRef="${ZIRU_ADMIN_REF:-HEAD}"
 
 copySource() {
   local sourcePath="$1"
@@ -54,8 +65,8 @@ copySource() {
 
 mkdir -p "$sourceRoot"
 copySource "$apiSource" "$apiRef" "${sourceRoot}/core" "Ziru API"
-copySource "$dashboardSource" "$dashboardRef" "${sourceRoot}/admin" "Ziru dashboard"
+copySource "$adminSource" "$adminRef" "${sourceRoot}/admin" "Ziru admin"
 
 echo "Prepared sources:"
-echo "  API:       ${apiSource} @ ${apiRef}"
-echo "  Dashboard: ${dashboardSource} @ ${dashboardRef}"
+echo "  API:   ${apiSource} @ ${apiRef}"
+echo "  Admin: ${adminSource} @ ${adminRef}"

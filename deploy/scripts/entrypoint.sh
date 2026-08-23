@@ -2,13 +2,13 @@
 set -Eeuo pipefail
 
 apiRoot="/opt/ziru/source/api"
-dashboardRoot="/opt/ziru/dashboard"
+adminRoot="/opt/ziru/dashboard"
 apiVenv="/opt/ziru/venvs/api"
 workerVenv="/opt/ziru/venvs/worker"
 
 apiPid=""
 workerPid=""
-dashboardPid=""
+adminPid=""
 
 setDefault() {
   local name="$1"
@@ -50,6 +50,30 @@ isEnabled() {
     *) return 1 ;;
   esac
 }
+
+# One-release backward compatibility: when a legacy DASHBOARD_* variable is
+# set and the matching ADMIN_* variable is not, carry the old value into the
+# new name and warn. The legacy variables are left in place so old app code
+# paths keep working during the transition.
+deprecatedEnv() {
+  local oldName="$1"
+  local newName="$2"
+
+  if [ -n "${!oldName:-}" ]; then
+    if [ -z "${!newName:-}" ]; then
+      export "${newName}=${!oldName}"
+      echo "DEPRECATION WARNING: ${oldName} is deprecated; use ${newName} instead." >&2
+    else
+      echo "DEPRECATION WARNING: both ${oldName} and ${newName} are set; ${newName} takes precedence." >&2
+    fi
+  fi
+}
+
+deprecatedEnv DASHBOARD_PORT ADMIN_PORT
+deprecatedEnv DASHBOARD_PUBLIC_URL ADMIN_PUBLIC_URL
+deprecatedEnv DASHBOARD_HOST_PORT ADMIN_HOST_PORT
+deprecatedEnv DASHBOARD_DATABASE_URL ADMIN_DATABASE_URL
+deprecatedEnv INTERNAL_DASHBOARD_ENDPOINT INTERNAL_ADMIN_ENDPOINT
 
 waitForPostgres() {
   local attempts="${SELF_HOSTED_WAIT_ATTEMPTS:-60}"
@@ -154,11 +178,11 @@ configureStorageEvents() {
     "${apiVenv}/bin/python" /usr/local/bin/ziru-configure-storage-events
 }
 
-runDashboardMigrations() {
-  echo "Running dashboard auth/account migrations"
+runAdminMigrations() {
+  echo "Running admin auth/account migrations"
   (
-    cd "$dashboardRoot"
-    DATABASE_URL="${DASHBOARD_DATABASE_URL}" \
+    cd "$adminRoot"
+    DATABASE_URL="${ADMIN_DATABASE_URL}" \
       NODE_ENV=production \
       BETTER_AUTH_URL="${BETTER_AUTH_URL}" \
       BETTER_AUTH_SECRET="${BETTER_AUTH_SECRET}" \
@@ -195,13 +219,13 @@ startWorker() {
   workerPid="$!"
 }
 
-startDashboard() {
-  echo "Starting Ziru dashboard on port ${DASHBOARD_PORT}"
+startAdmin() {
+  echo "Starting Ziru admin console on port ${ADMIN_PORT}"
   (
-    cd "$dashboardRoot"
-    DATABASE_URL="${DASHBOARD_DATABASE_URL}" \
+    cd "$adminRoot"
+    DATABASE_URL="${ADMIN_DATABASE_URL}" \
       NODE_ENV=production \
-      PORT="${DASHBOARD_PORT}" \
+      PORT="${ADMIN_PORT}" \
       HOSTNAME=0.0.0.0 \
       BETTER_AUTH_URL="${BETTER_AUTH_URL}" \
       BETTER_AUTH_SECRET="${BETTER_AUTH_SECRET}" \
@@ -211,16 +235,16 @@ startDashboard() {
       NEXT_PUBLIC_AUTH_BASE_URL="${NEXT_PUBLIC_AUTH_BASE_URL}" \
       BILLING_ENABLED="${BILLING_ENABLED}" \
       PASSWORD_LOGIN_ENABLED="${PASSWORD_LOGIN_ENABLED}" \
-      ./node_modules/.bin/next start --port "${DASHBOARD_PORT}" --hostname 0.0.0.0
+      ./node_modules/.bin/next start --port "${ADMIN_PORT}" --hostname 0.0.0.0
   ) &
-  dashboardPid="$!"
+  adminPid="$!"
 }
 
 stopChildren() {
   local signal="${1:-TERM}"
   local pids=()
 
-  [ -n "$dashboardPid" ] && pids+=("$dashboardPid")
+  [ -n "$adminPid" ] && pids+=("$adminPid")
   [ -n "$workerPid" ] && pids+=("$workerPid")
   [ -n "$apiPid" ] && pids+=("$apiPid")
 
@@ -241,7 +265,7 @@ setDefault POSTGRES_DB ziru
 setDefault POSTGRES_USER root
 setDefault POSTGRES_PASSWORD root123
 setDefault API_DATABASE_URL "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
-setDefault DASHBOARD_DATABASE_URL "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+setDefault ADMIN_DATABASE_URL "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
 setDefault DB_SSL_MODE disable
 setDefault UNSAFE_DB_SSL_ENABLED true
 
@@ -251,12 +275,13 @@ setDefault REDIS_DATABASE 0
 setDefault REDIS_PASSWORD ""
 setDefault CELERY_REDIS_URL "redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DATABASE}"
 
-setDefault DASHBOARD_PORT 3000
+setDefault ADMIN_HOST_PORT 81
+setDefault ADMIN_PORT 3000
 setDefault API_PORT 5005
 setDefault NEXT_PUBLIC_API_URL "http://127.0.0.1:${API_PORT}/api"
 setDefault NEXT_PUBLIC_AUTH_BASE_URL "/api/auth"
-setDefault DASHBOARD_PUBLIC_URL "http://localhost:${DASHBOARD_PORT}"
-setDefault NEXT_PUBLIC_APP_URL "${DASHBOARD_PUBLIC_URL}"
+setDefault ADMIN_PUBLIC_URL "http://localhost:${ADMIN_HOST_PORT}"
+setDefault NEXT_PUBLIC_APP_URL "${ADMIN_PUBLIC_URL}"
 setDefault BETTER_AUTH_URL "${NEXT_PUBLIC_APP_URL}"
 
 setDefault SELF_HOSTED_SECRETS_PATH /data/secrets
@@ -312,7 +337,7 @@ setDefault ALI_URL https://dashscope.aliyuncs.com/compatible-mode/v1
 setDefault ARK_URL https://ark.cn-beijing.volces.com/api/v3/chat/completions
 
 setDefault FRONTEND_URL "${NEXT_PUBLIC_APP_URL}"
-setDefault INTERNAL_DASHBOARD_ENDPOINT "http://127.0.0.1:${DASHBOARD_PORT}"
+setDefault INTERNAL_ADMIN_ENDPOINT "http://127.0.0.1:${ADMIN_HOST_PORT}"
 setDefault QSTASH_CALLBACK_BASE_URL "http://127.0.0.1:${API_PORT}/api/v1"
 setDefault TELEMETRY_ENABLED "true"
 export TELEMETRY_INSTALLATION_ID=""
@@ -333,14 +358,14 @@ waitForPostgres
 ensurePostgresExtensions
 waitForRedis
 createStorageBuckets
-runDashboardMigrations
+runAdminMigrations
 startApi
 waitForApi
 configureStorageEvents
 startWorker
-startDashboard
+startAdmin
 
-wait -n "$apiPid" "$workerPid" "$dashboardPid"
+wait -n "$apiPid" "$workerPid" "$adminPid"
 exitCode="$?"
 echo "A Ziru self-hosted process exited with code ${exitCode}; stopping remaining processes"
 stopChildren TERM

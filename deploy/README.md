@@ -3,7 +3,7 @@
 English | [中文](README.zh-CN.md)
 
 Ziru Self-Hosted packages Ziru for self-hosted deployments with Docker
-Compose: the Ziru API, worker, dashboard, and web UI in one stack.
+Compose: the Ziru API, worker, admin console, and web UI in one stack.
 
 ## Requirements
 
@@ -50,18 +50,20 @@ ALI_API_KEYS=dashscope-key-1,dashscope-key-2
 
 For local access, no other settings are required. Host ports bind to `127.0.0.1` by default.
 
-For external access through a local reverse proxy, keep the default binds and set `DASHBOARD_PUBLIC_URL` to the exact URL users open in their browser:
+For external access through a local reverse proxy, keep the default binds and set `ADMIN_PUBLIC_URL` to the exact URL users open in their browser:
 
 ```bash
-DASHBOARD_PUBLIC_URL=https://ziru.example.com
+ADMIN_PUBLIC_URL=https://ziru.example.com
 ```
 
-If `DASHBOARD_PUBLIC_URL` does not match the browser URL, login or signup may fail.
+If `ADMIN_PUBLIC_URL` does not match the browser URL, login or signup may fail.
+`WEBUI_PUBLIC_URL` serves the same purpose for the WebUI (used for storage CORS).
 
 If users need to connect directly to the host ports from another machine, also expose only the required public services:
 
 ```bash
-DASHBOARD_HOST_BIND=0.0.0.0
+ADMIN_HOST_BIND=0.0.0.0
+WEBUI_HOST_BIND=0.0.0.0
 API_HOST_BIND=0.0.0.0
 ```
 
@@ -78,17 +80,27 @@ for the event catalog, privacy bounds, and property tables.
 docker compose up -d
 ```
 
-Open the Dashboard:
+Access the services:
 
-```text
-http://localhost:3000/login
-```
+| Service | URL |
+| --- | --- |
+| Admin console | http://localhost:81/login |
+| Web UI | http://localhost:80 |
+| API health check | http://localhost:5005/health |
 
-API health check:
+The defaults are configurable via `ADMIN_HOST_PORT`, `WEBUI_HOST_PORT`, and
+`API_HOST_PORT` in `.env`. Port 80 needs elevated privileges on Linux — set
+`WEBUI_HOST_PORT` to a high port (for example 8080) if you cannot bind it.
+During development the dev servers keep their own ports: admin console on
+3000, WebUI on 3001.
 
-```text
-http://localhost:5005/health
-```
+The `webui` compose service is a first wiring: the WebUI is **not yet
+staged into the deploy image** (`deploy/Dockerfile` builds the API, worker,
+and admin console only). Compose builds the webui service from `../webui`
+(`webui/Dockerfile`) for now; once a `ziru-webui` image is published, set
+`WEBUI_IMAGE` in `.env` and the service uses that image instead. The
+service proxies `/api/*` to the core API (`NEXT_PUBLIC_API_URL=http://app:5005/api`);
+its build/publish and env wiring in deploy is not yet complete.
 
 ## API Usage
 
