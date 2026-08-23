@@ -246,8 +246,8 @@ A Ziru Credential is the API key used to call the Ziru API. It is resolved
 per workspace by `ensureApiKeyForWorkspace`
 (`src/integrations/ziru-credentials.ts`): the workspace's
 `ziruKeyLabel` picks a key from `config/ziru-keys.json` (falling
-back to `ZIRU_API_KEY` env). The Dashboard JWT path was removed in the
-Phase 2 hard-cut — the WebUI never requests or stores Dashboard tokens.
+back to `ZIRU_API_KEY` env). The admin JWT path was removed in the
+Phase 2 hard-cut — the WebUI never requests or stores admin JWT tokens.
 
 ## Route Service
 

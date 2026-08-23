@@ -1,4 +1,4 @@
-"""Dashboard JWT authentication workflow."""
+"""Admin JWT authentication workflow."""
 
 from __future__ import annotations
 
@@ -42,19 +42,19 @@ VerificationKey = AllowedPublicKeys | str | bytes
 
 
 @dataclass(frozen=True)
-class DashboardJWTIdentity:
+class AdminJWTIdentity:
     user_id: str
     permission: Permission
 
 
 @dataclass(frozen=True)
-class _DashboardJWTHeader:
+class _AdminJWTHeader:
     algorithm: object
     key_id: str
 
 
-class DashboardJWTAuthenticationService:
-    """Validate Dashboard-issued JWTs through the configured JWKS endpoint."""
+class AdminJWTAuthenticationService:
+    """Validate admin console-issued JWTs through the configured JWKS endpoint."""
 
     def __init__(self) -> None:
         self._jwks_client: PyJWKClient | None = None
@@ -64,7 +64,7 @@ class DashboardJWTAuthenticationService:
         """Decode and validate a JWT, returning its authenticated user ID."""
         return self.decode_identity(token).user_id
 
-    def decode_identity(self, token: str) -> DashboardJWTIdentity:
+    def decode_identity(self, token: str) -> AdminJWTIdentity:
         """Decode and validate a JWT, returning the user ID and permission."""
         header = _parse_header_or_reject(token)
         _assert_token_structure_or_reject(token)
@@ -107,7 +107,7 @@ class DashboardJWTAuthenticationService:
         return key
 
     def _get_verification_key(self, key_id: str) -> VerificationKey | None:
-        """Resolve the JWT verification key from the Dashboard JWKS endpoint."""
+        """Resolve the JWT verification key from the Admin JWKS endpoint."""
         jwks_client = self._get_jwks_client()
         signing_keys = jwks_client.get_signing_keys()
         signing_key = jwks_client.match_kid(signing_keys, key_id)
@@ -125,7 +125,7 @@ class DashboardJWTAuthenticationService:
         return cast(VerificationKey, refreshed_signing_key.key)
 
     def _get_jwks_client(self) -> PyJWKClient:
-        """Return a cached JWKS client for Dashboard token verification."""
+        """Return a cached JWKS client for Admin JWT token verification."""
         if self._jwks_client is None:
             with self._jwks_client_lock:
                 if self._jwks_client is None:
@@ -142,7 +142,7 @@ class DashboardJWTAuthenticationService:
         return self._jwks_client
 
 
-def _parse_header_or_reject(token: str) -> _DashboardJWTHeader:
+def _parse_header_or_reject(token: str) -> _AdminJWTHeader:
     try:
         unverified_header = cast(dict[str, object], jwt.get_unverified_header(token))
     except jwt.InvalidTokenError:
@@ -154,11 +154,11 @@ def _parse_header_or_reject(token: str) -> _DashboardJWTHeader:
     if key_id is None or not key_id.strip():
         _reject_client_jwt(failure_reason="jwt_missing_key_id")
 
-    return _DashboardJWTHeader(algorithm=algorithm, key_id=key_id)
+    return _AdminJWTHeader(algorithm=algorithm, key_id=key_id)
 
 
 def _assert_token_structure_or_reject(token: str) -> None:
-    """Reject structurally invalid JWTs before touching Dashboard JWKS."""
+    """Reject structurally invalid JWTs before touching Admin JWKS."""
     try:
         # This decode only checks token structure; verified claims come from
         # _verify_payload_or_reject after the signing key is resolved.
@@ -196,20 +196,20 @@ def _verify_payload_or_reject(
 
 def _build_identity_or_reject(
     payload: dict[str, object],
-) -> DashboardJWTIdentity:
+) -> AdminJWTIdentity:
     user_id = payload.get("id")
     if not isinstance(user_id, str) or not user_id:
         _reject_client_jwt(failure_reason="jwt_invalid")
 
     permission = _normalize_permission(payload.get("permission"))
-    return DashboardJWTIdentity(user_id=user_id, permission=permission)
+    return AdminJWTIdentity(user_id=user_id, permission=permission)
 
 
 def _reject_client_jwt(
     *,
     failure_reason: JWTFailureReason,
 ) -> NoReturn:
-    _log_dashboard_jwt_auth_failure(
+    _log_admin_jwt_auth_failure(
         failure_reason=failure_reason,
         is_jwks_dependency_failure=False,
     )
@@ -221,7 +221,7 @@ def _reject_jwks_dependency(
     failure_reason: JWTFailureReason,
     original_exception: Exception,
 ) -> NoReturn:
-    _log_dashboard_jwt_auth_failure(
+    _log_admin_jwt_auth_failure(
         failure_reason=failure_reason,
         is_jwks_dependency_failure=True,
         original_exception=original_exception,
@@ -229,17 +229,17 @@ def _reject_jwks_dependency(
     raise AuthException() from None
 
 
-def _log_dashboard_jwt_auth_failure(
+def _log_admin_jwt_auth_failure(
     *,
     failure_reason: JWTFailureReason,
     is_jwks_dependency_failure: bool,
     original_exception: Exception | None = None,
 ) -> None:
     log_data: dict[str, object] = {
-        "auth_component": "dashboard_jwt",
+        "auth_component": "admin_jwt",
         "failure_reason": failure_reason,
     }
-    message = f"Dashboard JWT authentication failed: {failure_reason}"
+    message = f"Admin JWT authentication failed: {failure_reason}"
     if is_jwks_dependency_failure:
         logger.bind(
             event=LogEvent.EXCEPTION_SYSTEM.value,
@@ -260,9 +260,9 @@ def _normalize_permission(value: object) -> Permission:
     return FULL_ACCESS_PERMISSION
 
 
-_dashboard_jwt_authentication_service = DashboardJWTAuthenticationService()
+_admin_jwt_authentication_service = AdminJWTAuthenticationService()
 
 
-def get_dashboard_jwt_authentication_service() -> DashboardJWTAuthenticationService:
-    """Return the process-wide Dashboard JWT authentication service."""
-    return _dashboard_jwt_authentication_service
+def get_admin_jwt_authentication_service() -> AdminJWTAuthenticationService:
+    """Return the process-wide Admin JWT authentication service."""
+    return _admin_jwt_authentication_service

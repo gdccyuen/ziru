@@ -9,10 +9,10 @@ from pytest import MonkeyPatch
 
 from shared.testing.contract_runtime import seed_contract_developer
 from tests.support.contract_database import ContractDatabase
-from tests.support.dashboard_jwt import use_dashboard_jwks_token
+from tests.support.admin_jwt import use_admin_jwks_token
 
 
-async def _seed_dashboard_user() -> str:
+async def _seed_admin_user() -> str:
     developer_profile = await seed_contract_developer()
     return cast(str, developer_profile["user_id"])
 
@@ -54,7 +54,7 @@ def _assert_read_only_error(response_json: dict[str, object]) -> None:
 
 
 @pytest.mark.asyncio
-async def test_read_only_dashboard_token_can_read_but_cannot_parse_or_archive(
+async def test_read_only_admin_token_can_read_but_cannot_parse_or_archive(
     api_client_factory: Callable[[], AbstractAsyncContextManager[AsyncClient]],
     monkeypatch: MonkeyPatch,
 ) -> None:
@@ -66,12 +66,12 @@ async def test_read_only_dashboard_token_can_read_but_cannot_parse_or_archive(
     }
 
     async with api_client_factory() as api_client:
-        user_id = await _seed_dashboard_user()
+        user_id = await _seed_admin_user()
         await ContractDatabase.insert_document(
             document_id=document_id,
         )
 
-        with use_dashboard_jwks_token(
+        with use_admin_jwks_token(
             api_client,
             monkeypatch,
             user_id=user_id,
@@ -100,7 +100,7 @@ async def test_read_only_dashboard_token_can_read_but_cannot_parse_or_archive(
 
 
 @pytest.mark.asyncio
-async def test_dashboard_token_without_permission_claim_keeps_full_access(
+async def test_admin_token_without_permission_claim_keeps_full_access(
     api_client_factory: Callable[[], AbstractAsyncContextManager[AsyncClient]],
     monkeypatch: MonkeyPatch,
 ) -> None:
@@ -111,9 +111,9 @@ async def test_dashboard_token_without_permission_claim_keeps_full_access(
     }
 
     async with api_client_factory() as api_client:
-        user_id = await _seed_dashboard_user()
+        user_id = await _seed_admin_user()
 
-        with use_dashboard_jwks_token(
+        with use_admin_jwks_token(
             api_client,
             monkeypatch,
             user_id=user_id,

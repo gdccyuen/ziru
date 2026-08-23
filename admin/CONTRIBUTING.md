@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for helping improve Ziru Dashboard.
+Thank you for helping improve the Ziru admin console.
 
 ## Branches and pull requests
 

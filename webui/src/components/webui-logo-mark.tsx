@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-const DASHBOARD_MARK = {
+const LOGO_MARK = {
   height: 84,
   width: 92,
 } as const;
@@ -11,7 +11,7 @@ type WebUILogoMarkProps = {
 };
 
 export function WebUILogoMark({ width, className }: WebUILogoMarkProps) {
-  const height = width * (DASHBOARD_MARK.height / DASHBOARD_MARK.width);
+  const height = width * (LOGO_MARK.height / LOGO_MARK.width);
 
   return (
     <Image

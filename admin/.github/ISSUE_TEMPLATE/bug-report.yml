@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem in the Ziru dashboard.
+description: Report a reproducible problem in the Ziru admin console.
 title: "[Bug]: "
 labels:
   - bug
@@ -12,7 +12,7 @@ body:
     id: affected-area
     attributes:
       label: Affected area
-      description: Which dashboard area is affected?
+      description: Which admin console area is affected?
       multiple: true
       options:
         - Login or registration

@@ -315,7 +315,7 @@ function ChangePasswordDialog({
   );
 }
 
-function DashboardContent({ children }: { children: React.ReactNode }) {
+function AdminContent({ children }: { children: React.ReactNode }) {
   const { user, loading, error, logout } = useAuth();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -434,10 +434,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <DashboardContent>{children}</DashboardContent>
+      <AdminContent>{children}</AdminContent>
     </AuthProvider>
   );
 }

@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives.asymmetric.rsa import (
 from httpx import AsyncClient
 from pytest import MonkeyPatch
 
-DashboardPermission = Literal["read_only", "full_access"]
+AdminPermission = Literal["read_only", "full_access"]
 
 
 @dataclass
@@ -59,11 +59,11 @@ class LocalJWKSServer:
     state: JWKSResponseState
 
 
-def create_dashboard_rsa_private_key() -> RSAPrivateKey:
+def create_admin_rsa_private_key() -> RSAPrivateKey:
     return generate_private_key(public_exponent=65537, key_size=2048)
 
 
-def create_dashboard_rsa_jwk(
+def create_admin_rsa_jwk(
     private_key: RSAPrivateKey,
     *,
     key_id: str,
@@ -80,12 +80,12 @@ def create_dashboard_rsa_jwk(
     }
 
 
-def create_dashboard_rsa_token(
+def create_admin_rsa_token(
     private_key: RSAPrivateKey,
     *,
     key_id: str,
-    user_id: str = "contract-dashboard-user",
-    permission: DashboardPermission | None = None,
+    user_id: str = "contract-admin-user",
+    permission: AdminPermission | None = None,
     expires_at: datetime | None = None,
     payload_overrides: Mapping[str, object] | None = None,
     algorithm: str = "RS256",
@@ -125,7 +125,7 @@ def _create_jwks_handler(
 
 
 @contextmanager
-def serve_dashboard_jwks() -> Iterator[LocalJWKSServer]:
+def serve_admin_jwks() -> Iterator[LocalJWKSServer]:
     state = JWKSResponseState()
     server = ThreadingHTTPServer(("127.0.0.1", 0), _create_jwks_handler(state))
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -141,27 +141,27 @@ def serve_dashboard_jwks() -> Iterator[LocalJWKSServer]:
 
 
 @contextmanager
-def use_dashboard_jwks_token(
+def use_admin_jwks_token(
     api_client: AsyncClient,
     monkeypatch: MonkeyPatch,
     *,
     user_id: str,
-    permission: DashboardPermission | None = None,
+    permission: AdminPermission | None = None,
 ) -> Iterator[str]:
-    key_id = f"contract-dashboard-key-{user_id}"
-    signing_key = create_dashboard_rsa_private_key()
-    token = create_dashboard_rsa_token(
+    key_id = f"contract-admin-key-{user_id}"
+    signing_key = create_admin_rsa_private_key()
+    token = create_admin_rsa_token(
         signing_key,
         key_id=key_id,
         user_id=user_id,
         permission=permission,
     )
 
-    with serve_dashboard_jwks() as jwks_server:
+    with serve_admin_jwks() as jwks_server:
         from shared.core.config import settings
 
         jwks_server.state.set_json_response(
-            {"keys": [create_dashboard_rsa_jwk(signing_key, key_id=key_id)]}
+            {"keys": [create_admin_rsa_jwk(signing_key, key_id=key_id)]}
         )
         monkeypatch.setattr(
             settings,

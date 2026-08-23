@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from shared.testing.contract_runtime import get_contract_database_url
 from tests.support.contract_database import ContractDatabase
-from tests.support.dashboard_jwt import use_dashboard_jwks_token
+from tests.support.admin_jwt import use_admin_jwks_token
 
 
 async def _create_contract_engine() -> AsyncEngine:
@@ -665,7 +665,7 @@ async def test_should_reject_authenticated_user_id_missing_from_user_table(
     }
 
     async with api_client_factory() as api_client:
-        with use_dashboard_jwks_token(
+        with use_admin_jwks_token(
             api_client,
             monkeypatch,
             user_id=user_id,

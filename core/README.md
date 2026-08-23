@@ -10,7 +10,7 @@
 
 This directory contains the API core of the Ziru monorepo: a FastAPI REST API
 (`apps/api`), a Celery worker for async document processing (`apps/worker`),
-and a shared Python library (`packages/shared-python`). The dashboard,
+and a shared Python library (`packages/shared-python`). The admin console,
 notebook-style web UI, and self-hosted packaging live in sibling directories —
 see the [root README](../README.md) for the full layout.
 
@@ -150,7 +150,7 @@ cd apps/worker && uv run worker.py
 
 The API runs migrations during startup.
 
-For API-only development without the dashboard, create an API-only user/key
+For API-only development without the admin console, create an API-only user/key
 after the API service starts:
 
 ```bash
@@ -158,11 +158,11 @@ cd apps/api
 uv run scripts/init_user.py --email you@example.com
 ```
 
-If you plan to use the dashboard, register through the dashboard instead of
+If you plan to use the admin console, register through the admin console instead of
 using `scripts/init_user.py`.
 
 The API is now running at `http://localhost:5005`. For the full product
-experience with a UI, run the dashboard and web UI from this monorepo
+experience with a UI, run the admin console and web UI from this monorepo
 (`admin/` and `webui/`) alongside it; they connect to this API out of the box.
 
 ## Quality Checks

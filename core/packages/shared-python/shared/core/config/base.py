@@ -38,13 +38,13 @@ class BaseConfig(BaseSettings):
         default="", description="Webhook encryption master key"
     )
     INTERNAL_DASHBOARD_ENDPOINT: str = Field(
-        default="http://localhost:3000", description="Internal Dashboard endpoint"
+        default="http://localhost:3000", description="Internal admin console endpoint"
     )
     API_STANDALONE_MODE_ENABLED: bool = Field(
         default=False,
         description=(
             "API-only mode that creates a minimal Better Auth-compatible user table "
-            "before Alembic migrations when the dashboard is absent"
+            "before Alembic migrations when the admin console is absent"
         ),
     )
 

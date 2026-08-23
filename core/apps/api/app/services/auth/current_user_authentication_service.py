@@ -8,11 +8,11 @@ from typing import Literal
 from app.services.auth.api_key_authentication_service import (
     APIKeyAuthenticationService,
 )
-from app.services.auth.dashboard_jwt_authentication_service import (
-    DashboardJWTAuthenticationService,
+from app.services.auth.admin_jwt_authentication_service import (
+    AdminJWTAuthenticationService,
     FULL_ACCESS_PERMISSION,
     Permission,
-    get_dashboard_jwt_authentication_service,
+    get_admin_jwt_authentication_service,
 )
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,22 +32,22 @@ class AuthenticatedIdentity:
 
 
 class CurrentUserAuthenticationService:
-    """Authenticate API keys or Dashboard JWTs and return the current user ID."""
+    """Authenticate API keys or Admin JWTs and return the current user ID."""
 
     def __init__(
         self,
         *,
         api_key_authentication_service: APIKeyAuthenticationService | None = None,
-        dashboard_jwt_authentication_service: (
-            DashboardJWTAuthenticationService | None
+        admin_jwt_authentication_service: (
+            AdminJWTAuthenticationService | None
         ) = None,
     ) -> None:
         self._api_key_authentication_service = (
             api_key_authentication_service or APIKeyAuthenticationService()
         )
-        self._dashboard_jwt_authentication_service = (
-            dashboard_jwt_authentication_service
-            or get_dashboard_jwt_authentication_service()
+        self._admin_jwt_authentication_service = (
+            admin_jwt_authentication_service
+            or get_admin_jwt_authentication_service()
         )
 
     async def authenticate_authorization_header(
@@ -83,7 +83,7 @@ class CurrentUserAuthenticationService:
                 )
             raise AuthException(user_message="Invalid API Key")
 
-        identity = self._dashboard_jwt_authentication_service.decode_identity(token)
+        identity = self._admin_jwt_authentication_service.decode_identity(token)
         await self._ensure_authenticated_user_exists(session, identity.user_id)
         return AuthenticatedIdentity(
             user_id=identity.user_id,

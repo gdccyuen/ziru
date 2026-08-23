@@ -36,12 +36,12 @@ cp .env.defaults .env      # then fill in your API keys
 docker compose up -d
 ```
 
-Open the dashboard at `http://localhost:3000/login`.
+Open the admin console at `http://localhost:3000/login`.
 
 For development setups of individual components, see each component's README:
 
 - API: [core/README.md](core/README.md)
-- Dashboard: [admin/README.md](admin/README.md)
+- Admin console: [admin/README.md](admin/README.md)
 - WebUI: [webui/README.md](webui/README.md)
 - Self-Hosted: [deploy/README.md](deploy/README.md)
 

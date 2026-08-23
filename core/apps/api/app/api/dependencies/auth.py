@@ -3,7 +3,7 @@
 from app.services.auth.current_user_authentication_service import (
     get_current_user_authentication_service,
 )
-from app.services.auth.dashboard_jwt_authentication_service import (
+from app.services.auth.admin_jwt_authentication_service import (
     FULL_ACCESS_PERMISSION,
     READ_ONLY_PERMISSION,
 )
@@ -31,7 +31,7 @@ async def get_current_user_id(
 ) -> str:
     """Authenticate the caller and return the current user ID.
 
-    Authorization headers (API key / dashboard JWT) take precedence; a
+    Authorization headers (API key / admin JWT) take precedence; a
     ``ziru_session`` cookie is accepted as a fallback so browser sessions
     can use the same endpoints (P2/Q27).
     """
@@ -63,7 +63,7 @@ async def require_write_permission(
     request: Request,
     _user_id: str = Depends(get_current_user_id),
 ) -> None:
-    """Reject write operations for read-only Dashboard tokens."""
+    """Reject write operations for read-only admin console tokens."""
     permission = getattr(request.state, "permission", FULL_ACCESS_PERMISSION)
     if permission != READ_ONLY_PERMISSION:
         return

@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose an improvement to the Ziru dashboard.
+description: Propose an improvement to the Ziru admin console.
 title: "[Feature]: "
 labels:
   - enhancement
@@ -15,7 +15,7 @@ body:
     id: affected-area
     attributes:
       label: Affected area
-      description: Which dashboard area should change?
+      description: Which admin console area should change?
       multiple: true
       options:
         - Login or registration

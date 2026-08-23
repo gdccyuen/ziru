@@ -21,11 +21,11 @@ from tests.support.import_environment import (
     configure_import_environment,
     ensure_import_paths,
 )
-from tests.support.dashboard_jwt import (
-    create_dashboard_rsa_jwk as _create_rsa_jwk,
-    create_dashboard_rsa_private_key as _create_rsa_private_key,
-    create_dashboard_rsa_token as _create_rsa_token,
-    serve_dashboard_jwks as _serve_jwks,
+from tests.support.admin_jwt import (
+    create_admin_rsa_jwk as _create_rsa_jwk,
+    create_admin_rsa_private_key as _create_rsa_private_key,
+    create_admin_rsa_token as _create_rsa_token,
+    serve_admin_jwks as _serve_jwks,
 )
 
 configure_import_environment()
@@ -65,7 +65,7 @@ class _AuthLogCapture:
     def capture(self, message: _LoguruMessage) -> None:
         record = message.record
         extra = cast(Mapping[str, object], record["extra"])
-        if extra.get("auth_component") != "dashboard_jwt":
+        if extra.get("auth_component") != "admin_jwt":
             return
 
         level: object = record["level"]
@@ -113,7 +113,7 @@ def _prepare_api_app_imports() -> None:
             sys.modules.pop(module_name, None)
 
 
-def _use_dashboard_endpoint(
+def _use_admin_endpoint(
     monkeypatch: MonkeyPatch,
     endpoint: str,
 ) -> None:
@@ -142,11 +142,11 @@ def _create_authentication_app() -> FastAPI:
     _prepare_api_app_imports()
 
     from app.core.exception_handlers import setup_exception_handlers
-    from app.services.auth.dashboard_jwt_authentication_service import (
-        DashboardJWTAuthenticationService,
+    from app.services.auth.admin_jwt_authentication_service import (
+        AdminJWTAuthenticationService,
     )
 
-    authentication_service = DashboardJWTAuthenticationService()
+    authentication_service = AdminJWTAuthenticationService()
     app = FastAPI()
 
     @app.get("/protected")
@@ -189,9 +189,9 @@ def _assert_unauthenticated_response(
     serialized_response = json.dumps(response_json, default=str)
     assert "failure_reason" not in serialized_response
     assert "auth_component" not in serialized_response
-    assert "dashboard_jwt" not in serialized_response
+    assert "admin_jwt" not in serialized_response
     assert "payload" not in serialized_response
-    assert "contract-dashboard-user" not in serialized_response
+    assert "contract-admin-user" not in serialized_response
     assert token not in serialized_response
     assert f"Bearer {token}" not in serialized_response
     token_segments = token.split(".")
@@ -210,7 +210,7 @@ def _assert_log_excludes_token(
     token_segments = token.split(".")
     if len(token_segments) > 1:
         assert token_segments[1] not in serialized_log
-    assert "contract-dashboard-user" not in serialized_log
+    assert "contract-admin-user" not in serialized_log
 
 
 def _serialize_auth_log(auth_log: _CapturedAuthLog) -> str:
@@ -254,7 +254,7 @@ def _assert_log_excludes_jwks_body(
 def _create_token_without_key_id() -> str:
     return jwt.encode(
         {
-            "id": "contract-dashboard-user",
+            "id": "contract-admin-user",
             "exp": datetime.now(timezone.utc) + timedelta(minutes=5),
         },
         "contract-secret-with-at-least-32-bytes",
@@ -282,7 +282,7 @@ async def test_missing_key_id_is_a_client_warning_without_fetching_jwks(
 
     with _capture_auth_logs() as log_capture:
         with _serve_jwks() as jwks_server:
-            _use_dashboard_endpoint(monkeypatch, jwks_server.endpoint)
+            _use_admin_endpoint(monkeypatch, jwks_server.endpoint)
             response = await _request_with_token(token)
 
     _assert_unauthenticated_response(
@@ -308,7 +308,7 @@ async def test_malformed_jwt_is_a_client_warning_without_fetching_jwks(
 
     with _capture_auth_logs() as log_capture:
         with _serve_jwks() as jwks_server:
-            _use_dashboard_endpoint(monkeypatch, jwks_server.endpoint)
+            _use_admin_endpoint(monkeypatch, jwks_server.endpoint)
             response = await _request_with_token(token)
 
     _assert_unauthenticated_response(
@@ -335,7 +335,7 @@ async def test_malformed_jwt_payload_is_a_client_warning_without_fetching_jwks(
     with _capture_auth_logs() as log_capture:
         with _serve_jwks() as jwks_server:
             jwks_server.state.set_raw_response(b"unavailable", status_code=503)
-            _use_dashboard_endpoint(monkeypatch, jwks_server.endpoint)
+            _use_admin_endpoint(monkeypatch, jwks_server.endpoint)
             response = await _request_with_token(token)
 
     _assert_unauthenticated_response(
@@ -368,7 +368,7 @@ async def test_unknown_key_id_refreshes_once_and_remains_a_client_warning(
             jwks_server.state.set_json_response(
                 {"keys": [_create_rsa_jwk(signing_key, key_id="known-key")]}
             )
-            _use_dashboard_endpoint(monkeypatch, jwks_server.endpoint)
+            _use_admin_endpoint(monkeypatch, jwks_server.endpoint)
             response = await _request_with_token(token)
 
     _assert_unauthenticated_response(
@@ -394,12 +394,12 @@ async def test_unavailable_jwks_is_a_system_error_with_an_unchanged_response(
 ) -> None:
     signing_key = _create_rsa_private_key()
     token = _create_rsa_token(signing_key, key_id="unavailable-key")
-    jwks_body = b"dashboard-jwks-secret-body"
+    jwks_body = b"admin-jwks-secret-body"
 
     with _capture_auth_logs() as log_capture:
         with _serve_jwks() as jwks_server:
             jwks_server.state.set_raw_response(jwks_body, status_code=503)
-            _use_dashboard_endpoint(monkeypatch, jwks_server.endpoint)
+            _use_admin_endpoint(monkeypatch, jwks_server.endpoint)
             response = await _request_with_token(token)
 
     _assert_unauthenticated_response(
@@ -438,7 +438,7 @@ async def test_invalid_jwks_is_a_system_error_with_an_unchanged_response(
     with _capture_auth_logs() as log_capture:
         with _serve_jwks() as jwks_server:
             jwks_server.state.set_raw_response(jwks_body)
-            _use_dashboard_endpoint(monkeypatch, jwks_server.endpoint)
+            _use_admin_endpoint(monkeypatch, jwks_server.endpoint)
             response = await _request_with_token(token)
 
     _assert_unauthenticated_response(
@@ -474,12 +474,12 @@ async def test_valid_keyed_jwt_returns_identity_without_auth_rejection_log(
             jwks_server.state.set_json_response(
                 {"keys": [_create_rsa_jwk(signing_key, key_id=key_id)]}
             )
-            _use_dashboard_endpoint(monkeypatch, jwks_server.endpoint)
+            _use_admin_endpoint(monkeypatch, jwks_server.endpoint)
             response = await _request_with_token(token)
 
     assert response.status_code == 200
     assert response.json() == {
-        "user_id": "contract-dashboard-user",
+        "user_id": "contract-admin-user",
         "permission": "read_only",
     }
     assert jwks_server.state.request_count == 1
@@ -503,7 +503,7 @@ async def test_expired_jwt_retains_response_and_logs_client_warning(
             jwks_server.state.set_json_response(
                 {"keys": [_create_rsa_jwk(signing_key, key_id=key_id)]}
             )
-            _use_dashboard_endpoint(monkeypatch, jwks_server.endpoint)
+            _use_admin_endpoint(monkeypatch, jwks_server.endpoint)
             response = await _request_with_token(token)
 
     _assert_unauthenticated_response(
@@ -534,7 +534,7 @@ async def test_invalid_signature_retains_response_and_logs_client_warning(
             jwks_server.state.set_json_response(
                 {"keys": [_create_rsa_jwk(jwks_key, key_id=key_id)]}
             )
-            _use_dashboard_endpoint(monkeypatch, jwks_server.endpoint)
+            _use_admin_endpoint(monkeypatch, jwks_server.endpoint)
             response = await _request_with_token(token)
 
     _assert_unauthenticated_response(
@@ -568,7 +568,7 @@ async def test_missing_user_claim_retains_response_and_logs_client_warning(
             jwks_server.state.set_json_response(
                 {"keys": [_create_rsa_jwk(signing_key, key_id=key_id)]}
             )
-            _use_dashboard_endpoint(monkeypatch, jwks_server.endpoint)
+            _use_admin_endpoint(monkeypatch, jwks_server.endpoint)
             response = await _request_with_token(token)
 
     _assert_unauthenticated_response(
@@ -602,7 +602,7 @@ async def test_non_allowlisted_algorithm_is_not_recorded_as_safe_metadata(
             jwks_server.state.set_json_response(
                 {"keys": [_create_rsa_jwk(signing_key, key_id=key_id)]}
             )
-            _use_dashboard_endpoint(monkeypatch, jwks_server.endpoint)
+            _use_admin_endpoint(monkeypatch, jwks_server.endpoint)
             response = await _request_with_token(token)
 
     _assert_unauthenticated_response(

@@ -4,4 +4,7 @@
 # Local review scratch
 .scratch/
 
+# Deploy build staging (stale knowhere admin sources)
+deploy/.build/
+
 .demo/
