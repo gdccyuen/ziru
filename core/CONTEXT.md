@@ -249,7 +249,7 @@ language and Redis retry policy.
 ### Quota Token Pool
 
 The shared Redis-backed token leasing workflow used by provider-specific quota
-managers such as Ali, iLoveAPI, and MinerU.
+managers such as Ali and MinerU.
 
 ## apps/api Module Map
 

@@ -18,7 +18,7 @@
 ### What was excluded
 `.venv`, `node_modules`, `.next`, `dist`, `build`, `MinerU/` (vendored third-party), and all engine internals (retrieval, parsing, chunking, agentic budgets, token *usage tracking*). Engine-adjacent "quota/token/usage" names that are **not** billing were verified and excluded, e.g.:
 - `shared/services/quota/token_pool.py`, `shared/services/ai/token_tracking.py`, `shared/services/ai/page_memory_vlm_limiter.py`, `worker/.../document_agent/budget.py` — model-context / agent token budgets, not credits.
-- `shared/services/ai/iloveapi_quota_manager.py`, `worker/.../providers/mineru/quota_manager.py` — third-party provider key pools (iLoveAPI/MinerU), not Ziru billing.
+- `worker/.../providers/mineru/quota_manager.py` — third-party provider key pool (MinerU), not Ziru billing.
 - `core/apps/api/app/services/s3_events/subscription_service.py` — AWS SNS subscription confirmation, **not** billing (keep).
 - `admin/lib/db/schema.ts` + Drizzle `0006/0007` — "subscription" here is the email **newsletter** opt-in (keep).
 - CSS class `text-balance` matched `balance` in `components/ui/empty.tsx` (false positive — keep).

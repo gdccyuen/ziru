@@ -77,7 +77,7 @@ flowchart TB
         Router --> Profiler["profiling.doc_profiler.profile_document"]
         Profiler --> PDF["formats.pdf.parser → MinerU"]
         Profiler --> DOCX["formats.docx.parser.parse_docx"]
-        Profiler --> PPTX["formats.pptx.parser → iLoveAPI → PDF"]
+        Profiler --> PPTX["formats.pptx.parser → LibreOffice → PDF"]
         Profiler --> XLSX["formats.excel.table_parser.parse_xlsx"]
         Profiler --> MD["formats.markdown.parser.parse_md"]
         Profiler --> IMG["formats.image.parser.parse_image"]
@@ -142,7 +142,7 @@ This is the typed `ParseOutput` entry for all file types. The parser flow:
 | `.pdf` | `formats.pdf.parser.parse_pdfs` | DOC_PROFILE category dispatch: `atlas` → atlas parser; oversized with entry anatomy → shard MinerU; otherwise MinerU API → Markdown parser → `structure.layout_parser.pred_titles` |
 | `.docx` | `formats.docx.parser.parse_docx` + `convert_doc2dics` | OXML iteration → heading detection → hierarchical tree |
 | `.doc` | `conversion.legacy_converter.doc_to_docx` → `.docx` pipeline | LibreOffice headless conversion first |
-| `.pptx` | `formats.pptx.parser.parse_pptx` | iLoveAPI PPTX→PDF → MinerU pipeline |
+| `.pptx` | `formats.pptx.parser.parse_pptx` | LibreOffice PPTX→PDF → MinerU pipeline |
 | `.xlsx` | `formats.excel.table_parser.parse_xlsx` | Sheet-by-sheet HTML table extraction |
 | `.xls` | `conversion.legacy_converter.xls_to_xlsx` → `.xlsx` pipeline | LibreOffice conversion first |
 | `.md` | `formats.markdown.parser.parse_md` | Markdown heading parsing + LLM summaries |

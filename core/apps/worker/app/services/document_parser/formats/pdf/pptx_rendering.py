@@ -31,7 +31,7 @@ def render_pdf_to_image_pdf(pdf_bytes: bytes, scale: int = 3) -> bytes:
     """
     Render each page of a PDF as a high-res image and create an image-only PDF.
 
-    Why? iLoveAPI/LibreOffice renders math formulas as vector paths in PDF.
+    Why? LibreOffice renders math formulas as vector paths in PDF.
     MinerU cannot extract these as text (produces '????'). By converting to
     images, MinerU is forced to use its VLM model which correctly OCRs
     formulas into LaTeX.

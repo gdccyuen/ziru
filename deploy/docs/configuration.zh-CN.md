@@ -111,14 +111,6 @@ IMAGE_MODEL_MAX=Qwen/Qwen3-VL-32B-Instruct
 | `MINERU_UPLOAD_RETRY_TOTAL` | MinerU 上传瞬时失败重试次数。 | `3` |
 | `MINERU_UPLOAD_RETRY_BACKOFF_FACTOR` | MinerU 上传重试退避系数。 | `2` |
 | `MINERU_URL_MODE_PRESIGN_EXPIRY` | MinerU URL 模式下预签名 URL 有效期，单位秒。 | `3600` |
-| `ILOVEAPI_PUBLIC_KEY` | iLoveAPI public key，用于 PPTX 转 PDF。 | `project_public_key` |
-| `ILOVEAPI_SECRET_KEY` | iLoveAPI secret key。 | `project_secret_key` |
-| `ILOVEAPI_KEYS` | iLoveAPI 项目池，JSON 数组，每项包含 `public_key` 和 `secret_key`。 | `[{"public_key":"...","secret_key":"..."}]` |
-| `ILOVEAPI_BASE_URL` | iLoveAPI base URL。 | `https://api.ilovepdf.com/v1` |
-| `ILOVEAPI_TIMEOUT` | iLoveAPI 请求超时，单位秒。 | `120` |
-| `ILOVEAPI_TOKEN_RPM_LIMIT` | 每个 iLoveAPI 项目的分钟请求上限。 | `25` |
-| `ILOVEAPI_TOKEN_DAILY_LIMIT` | 每个 iLoveAPI 项目的每日文件上限。 | `250` |
-| `ILOVEAPI_MAX_CONCURRENT` | iLoveAPI 并发转换上限。 | `5` |
 
 ## 管理后台、WebUI、认证和品牌
 

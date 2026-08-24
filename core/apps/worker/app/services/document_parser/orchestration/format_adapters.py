@@ -152,7 +152,7 @@ class PptxParseAdapter:
             filename=session.filename,
             output_dir=session.full_output_dir,
             base_llm_paras=session.base_llm_paras,
-            strategy="to_pdf_api",
+            strategy="to_pdf",
             job_id=session.job_id,
             relative_root=session.relative_root,
             baseurl=session.base_url,

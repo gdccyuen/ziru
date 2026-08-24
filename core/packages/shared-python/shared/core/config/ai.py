@@ -113,34 +113,6 @@ class AIConfig(BaseModel):
         description="Local per-job node OCR and summary concurrency for page-memory.",
     )
 
-    ILOVEAPI_PUBLIC_KEY: str = Field(
-        default="", description="iLoveAPI public key (PPTX-to-PDF)"
-    )
-    ILOVEAPI_SECRET_KEY: str = Field(
-        default="", description="iLoveAPI secret key (PPTX-to-PDF)"
-    )
-    ILOVEAPI_BASE_URL: str = Field(
-        default="https://api.ilovepdf.com/v1", description="iLoveAPI base URL"
-    )
-    ILOVEAPI_TIMEOUT: int = Field(
-        default=120, description="iLoveAPI request timeout in seconds"
-    )
-    ILOVEAPI_KEYS: str = Field(
-        default="",
-        description="iLoveAPI project pool as a JSON array of objects with public_key and secret_key. Each entry is a separate iLoveAPI project with its own credit quota.",
-    )
-    ILOVEAPI_TOKEN_RPM_LIMIT: int = Field(
-        default=25,
-        description="Per-project requests-per-minute burst limit for iLoveAPI. Safety net against 429 throttling.",
-    )
-    ILOVEAPI_TOKEN_DAILY_LIMIT: int = Field(
-        default=250,
-        description="Per-project daily file limit for iLoveAPI. The free tier is about 250 files per month for officepdf conversions.",
-    )
-    ILOVEAPI_MAX_CONCURRENT: int = Field(
-        default=5,
-        description="Max concurrent in-flight iLoveAPI conversions across all workers. Fail-open to LibreOffice when exceeded.",
-    )
     SPLIT_CHAR: str = Field(default="/", description="Path separator")
     ALL_DF_COLS: str = Field(
         default="content,path,type,length,keywords,summary,know_id,tokens,connectto,addtime,page_nums,entities,asset_title",

@@ -3,11 +3,9 @@ from __future__ import annotations
 import os
 
 from app.services.document_parser.formats.pptx.parser import (
-    _pptx_bytes_to_pdf_bytes,
     pptx_to_pdf_libreoffice,
 )
 from app.services.common.file_loading import load_file_bytes
-from loguru import logger
 
 from shared.core.exceptions.domain_exceptions import ValidationException
 
@@ -49,21 +47,7 @@ def _normalize_pptx_to_pdf(
     base_url: str,
 ) -> tuple[str, str]:
     pptx_data = load_file_bytes(file_path, file_url=base_url)
-    pdf_filename = f"{os.path.splitext(filename)[0]}.pdf"
-    pdf_path = os.path.join(output_dir, pdf_filename)
-    try:
-        pdf_bytes = _pptx_bytes_to_pdf_bytes(pptx_data, filename)
-        with open(pdf_path, "wb") as f:
-            f.write(pdf_bytes)
-        return pdf_path, pdf_filename
-    except Exception as exc:
-        logger.warning(
-            "[page_memory] iLoveAPI PPTX normalization failed for {}; "
-            "falling back to LibreOffice: {}",
-            filename,
-            exc,
-        )
-        local_pptx_path = os.path.join(output_dir, filename)
-        with open(local_pptx_path, "wb") as f:
-            f.write(pptx_data)
-        return pptx_to_pdf_libreoffice(local_pptx_path, output_dir)
+    local_pptx_path = os.path.join(output_dir, filename)
+    with open(local_pptx_path, "wb") as f:
+        f.write(pptx_data)
+    return pptx_to_pdf_libreoffice(local_pptx_path, output_dir)

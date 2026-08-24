@@ -112,14 +112,6 @@ IMAGE_MODEL_MAX=Qwen/Qwen3-VL-32B-Instruct
 | `MINERU_UPLOAD_RETRY_TOTAL` | Retry count for transient MinerU upload failures. | `3` |
 | `MINERU_UPLOAD_RETRY_BACKOFF_FACTOR` | MinerU upload retry backoff factor. | `2` |
 | `MINERU_URL_MODE_PRESIGN_EXPIRY` | Presigned URL expiry for MinerU URL mode, in seconds. | `3600` |
-| `ILOVEAPI_PUBLIC_KEY` | iLoveAPI public key for PPTX to PDF conversion. | `project_public_key` |
-| `ILOVEAPI_SECRET_KEY` | iLoveAPI secret key. | `project_secret_key` |
-| `ILOVEAPI_KEYS` | iLoveAPI project pool as a JSON array. Each item contains `public_key` and `secret_key`. | `[{"public_key":"...","secret_key":"..."}]` |
-| `ILOVEAPI_BASE_URL` | iLoveAPI base URL. | `https://api.ilovepdf.com/v1` |
-| `ILOVEAPI_TIMEOUT` | iLoveAPI request timeout, in seconds. | `120` |
-| `ILOVEAPI_TOKEN_RPM_LIMIT` | Per-minute request limit for each iLoveAPI project. | `25` |
-| `ILOVEAPI_TOKEN_DAILY_LIMIT` | Daily file limit for each iLoveAPI project. | `250` |
-| `ILOVEAPI_MAX_CONCURRENT` | Maximum concurrent iLoveAPI conversions. | `5` |
 
 ## Admin Console, WebUI, Auth, and Branding
 
