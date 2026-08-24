@@ -29,6 +29,7 @@ from typing import Any, Literal, cast, overload
 
 from loguru import logger
 
+from shared.core.config import settings
 from shared.core.exceptions.domain_exceptions import UnavailableException
 from shared.services.ai import openai_compatible_client_sync as _client_mod
 from shared.services.ai.prompt_service import _detect_text_language, build_prompt
@@ -338,7 +339,7 @@ def _summarize_body(
         task = prompt_task or "page-memory-vlm-tag"
         paras = prompt_paras or {"max_tokens": 600}
         prompt, temperature, top_p, max_tokens = build_prompt(task, "", "", paras=paras)
-        resolved_model = model or os.environ.get("IMAGE_MODEL")
+        resolved_model = model or settings.IMAGE_MODEL
         if not resolved_model:
             return BodySummary(kind=kind)
         parsed = _call_llm(
@@ -370,7 +371,7 @@ def _summarize_body(
                 "lang": detected_lang,
             },
         )
-        resolved_model = model or os.environ.get("NORMAL_MODEL")
+        resolved_model = model or settings.NORMAL_MODEL
         parsed = _call_llm(
             prompt=prompt,
             model=resolved_model,
@@ -421,7 +422,7 @@ def _summarize_asset(
             "",
             paras={"max_tokens": summary_len, "kw_num": 5, "lang": detected_lang},
         )
-        resolved_model = model or os.environ.get("NORMAL_MODEL")
+        resolved_model = model or settings.NORMAL_MODEL
         raw = _call_llm(
             prompt=prompt,
             model=resolved_model,
@@ -448,7 +449,7 @@ def _summarize_asset(
         "",
         paras={"max_tokens": summary_len},
     )
-    resolved_model = model or os.environ.get("IMAGE_MODEL")
+    resolved_model = model or settings.IMAGE_MODEL
     if not resolved_model:
         return AssetSummary(title=asset_title_hint)
     parsed = _call_llm(
@@ -494,7 +495,7 @@ def transcribe(
     image_paths = [p for p in image_paths if p and os.path.exists(p)]
     if not image_paths:
         return ""
-    resolved_model = model or os.environ.get("IMAGE_MODEL")
+    resolved_model = model or settings.IMAGE_MODEL
     if not resolved_model:
         return ""
     prompt, temperature, top_p, _max_tokens = build_prompt(
