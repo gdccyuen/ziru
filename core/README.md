@@ -52,7 +52,7 @@ A: Ziru uses MinerU as its default parser because it performs best in our tests.
 
 **Q: What LLM / VLM dependencies does Ziru have?**
 
-A: By default, DeepSeek (`deepseek-chat`) handles text and table summarization, and Qwen-VL (`qwen3.6-flash`) handles image OCR and descriptions. Ziru is model-agnostic. Swap in OpenAI, DashScope, Zhipu, or Volcengine via environment variables.
+A: Ziru is model-agnostic and sends LLM calls to one OpenAI-compatible provider. Point `PROVIDER_URL` at any endpoint (cloud, local Ollama, or vLLM) and set explicit per-role model names: `NORMAL_MODEL` for text/table summarization, `IMAGE_MODEL` for image OCR and descriptions, `HIERARCHY_LLM_MODEL` for heading recognition, and `RETRIEVAL_PLANNER_MODEL` for agentic planning.
 
 **Q: How is Agentic Retrieval different from traditional RAG?**
 

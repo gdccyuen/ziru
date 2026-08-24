@@ -2,7 +2,7 @@
 
 [English](configuration.md) | 中文
 
-本文档记录启动服务以外的可选配置。普通本地部署只需要 README 中的 `MINERU_API_KEYS` 和 `DS_KEY` 或 `ALI_API_KEYS`。
+本文档记录启动服务以外的可选配置。普通本地部署只需要 README 中的 `MINERU_API_KEYS` 以及 `PROVIDER_URL` 和 `PROVIDER_KEY`。
 
 Docker Compose 会先读取 `.env.defaults`，再读取 `.env`。`.env.defaults` 是内置默认值参考；实际部署时请新建一个小的 `.env`，只写需要覆盖的值，不要把真实密钥提交到 Git。
 
@@ -42,60 +42,56 @@ ZIRU_IMAGE=ghcr.io/gdccyuen/ziru:latest
 | 变量 | 用途 | 示例值 |
 | --- | --- | --- |
 | `MINERU_API_KEYS` | MinerU API Key 池，用于 PDF 解析。支持 JSON 数组、逗号分隔或换行分隔，条目也可写成 `token_id=api_key`。 | `mineru-key-1,mineru-key-2` |
-| `DS_KEY` | DeepSeek API Key。使用 DeepSeek 作为文本模型时填写。 | `sk-...` |
-| `ALI_API_KEYS` | 阿里云百炼 DashScope API Key 池。使用 Qwen 模型时填写，格式同 `MINERU_API_KEYS`。 | `sk-...` |
+| `PROVIDER_KEY` | 当前 OpenAI-compatible LLM 端点的 API Key。本地 Ollama / vLLM 通常接受任意非空值。 | `ollama`、`EMPTY` |
+| `PROVIDER_URL` | 当前 OpenAI-compatible LLM 端点的 base URL。 | `http://localhost:11434/v1`、`http://localhost:8000/v1` |
 
-`MINERU_API_KEYS` 和 `ALI_API_KEYS` 支持多个 Key 是为了组成 Key 池，在单个 Key 触发额度或限流时可以轮换使用其他 Key。只有一个 Key 也可以正常运行。
+`MINERU_API_KEYS` 支持多个 Key 是为了组成 Key 池，在单个 Key 触发额度或限流时可以轮换使用其他 Key。只有一个 Key 也可以正常运行。
 
-Key 请从各服务商官网获取：
+MinerU Key 请从官网获取；`PROVIDER_URL` 可指向任意 OpenAI-compatible 模型端点：
 
 - [MinerU](https://mineru.net/)
-- [DeepSeek](https://platform.deepseek.com/)
-- [阿里云百炼 DashScope](https://bailian.console.aliyun.com/)
+- [Ollama](https://ollama.com/)
+- [vLLM](https://docs.vllm.ai/)
 
 ## AI 模型和供应商
 
 | 变量 | 用途 | 示例值 |
 | --- | --- | --- |
-| `DS_URL` | DeepSeek OpenAI-compatible base URL。 | `https://api.deepseek.com/v1` |
-| `ALI_URL` | DashScope OpenAI-compatible base URL。 | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
-| `GPT_API_KEY` | OpenAI 或其他兼容服务的 Key。当前默认 URL 路由仍以模型名判断，使用前请确认镜像支持对应 provider。 | `sk-...` |
-| `GLM_API_KEY` | 智谱 GLM API Key。 | `...` |
-| `GLM_URL` | 智谱 GLM base URL。 | `https://open.bigmodel.cn/api/paas/v4` |
-| `ARK_API_KEY` | 火山方舟 API Key。 | `...` |
-| `ARK_URL` | 火山方舟 chat completions URL。 | `https://ark.cn-beijing.volces.com/api/v3/chat/completions` |
-| `NORMOL_MODEL` | 主要文本、表格理解和摘要模型。 | `deepseek-v4-flash`、`qwen-plus` |
-| `HIERARCHY_LLM_MODEL` | 文档标题层级、目录识别模型；为空时回退到 `NORMOL_MODEL`。 | `deepseek-v4-flash`、`qwen-plus` |
-| `IMAGE_MODEL` | 图片摘要、图集和 OCR 相关的默认视觉模型。 | `qwen3.6-flash` |
-| `IMAGE_MODEL_MAX` | 更高能力的图片问答和 OCR 模型。 | `qwen3.6-flash` |
+| `PROVIDER_URL` | 当前 OpenAI-compatible LLM 端点的 base URL。 | `http://localhost:11434/v1`（Ollama）、`http://localhost:8000/v1`（vLLM） |
+| `PROVIDER_KEY` | 该端点使用的 API Key。本地服务通常接受任意非空值。 | `ollama`、`EMPTY` |
+| `NORMAL_MODEL` | 主要文本、表格理解和摘要模型。需显式设置；为空时该能力保持禁用直到配置完成。 | `qwen3:32b`、`Qwen/Qwen3-32B` |
+| `HIERARCHY_LLM_MODEL` | 文档标题层级、目录识别模型；为空时回退到 `NORMAL_MODEL`。 | `qwen3:32b`、`Qwen/Qwen3-32B` |
+| `RETRIEVAL_PLANNER_MODEL` | 用于 agentic 检索规划、具备推理能力的模型；为空时回退到 `NORMAL_MODEL`。 | `qwen3:32b`、`Qwen/Qwen3-32B` |
+| `IMAGE_MODEL` | 图片摘要、图集、OCR 以及 atlas/bbox 探针的默认视觉模型。 | `llava:latest`、`Qwen/Qwen3-VL-32B-Instruct` |
+| `IMAGE_MODEL_MAX` | 更高能力的图片问答和 OCR 模型。 | `llava:latest`、`Qwen/Qwen3-VL-32B-Instruct` |
 | `EMBEDDING_MODEL` | 检索使用的 embedding 模型名。 | `text-embedding-v4` |
 | `OPENAI_CLIENT_TIMEOUT` | OpenAI-compatible 客户端超时时间，单位秒。 | `300` |
 | `LLM_MOCK_ENABLED` | 是否用 mock 响应短路 LLM 调用，主要用于测试。 | `false` |
 | `HEADING_LLM_MAX_CONCURRENT` | 标题识别并发 LLM 调用上限。 | `8` |
 | `SUMMARY_LLM_MAX_CONCURRENT` | 摘要、图片、表格 LLM 调用并发上限。 | `8` |
-| `ALI_TOKEN_RPM_LIMIT` | 每个 DashScope Key 的每分钟请求上限。 | `300` |
-| `ALI_TOKEN_DAILY_LIMIT` | 每个 DashScope Key 的每日请求上限。 | `10000` |
-| `ALI_TOKEN_COOLDOWN_SECONDS` | DashScope Key 触发 429 后冷却秒数。 | `60` |
-| `ALI_INLINE_MAX_RETRIES` | DashScope token 轮换重试次数。 | `3` |
-| `ALI_SDK_MAX_RETRIES` | 单个 DashScope token 内部 SDK 重试次数。 | `3` |
 
-DeepSeek 示例：
+本地 Ollama 示例：
 
 ```bash
-DS_KEY=your-deepseek-api-key
-NORMOL_MODEL=deepseek-v4-flash
-HIERARCHY_LLM_MODEL=deepseek-v4-flash
+PROVIDER_URL=http://localhost:11434/v1
+PROVIDER_KEY=ollama
+NORMAL_MODEL=qwen3:32b
+HIERARCHY_LLM_MODEL=qwen3:32b
+RETRIEVAL_PLANNER_MODEL=qwen3:32b
+IMAGE_MODEL=llava:latest
+IMAGE_MODEL_MAX=llava:latest
 ```
 
-阿里云百炼示例：
+自托管 vLLM 示例：
 
 ```bash
-ALI_API_KEYS=your-dashscope-api-key
-NORMOL_MODEL=qwen-plus
-HIERARCHY_LLM_MODEL=qwen-plus
-IMAGE_MODEL=qwen3.6-flash
-IMAGE_MODEL_MAX=qwen3.6-flash
-EMBEDDING_MODEL=text-embedding-v4
+PROVIDER_URL=http://localhost:8000/v1
+PROVIDER_KEY=EMPTY
+NORMAL_MODEL=Qwen/Qwen3-32B
+HIERARCHY_LLM_MODEL=Qwen/Qwen3-32B
+RETRIEVAL_PLANNER_MODEL=Qwen/Qwen3-32B
+IMAGE_MODEL=Qwen/Qwen3-VL-32B-Instruct
+IMAGE_MODEL_MAX=Qwen/Qwen3-VL-32B-Instruct
 ```
 
 ## MinerU 和可选解析服务
@@ -404,7 +400,9 @@ TELEMETRY_ENABLED=false
 ```bash
 ADMIN_PUBLIC_URL=https://ziru.example.com
 MINERU_API_KEYS=your-mineru-api-key
-DS_KEY=your-deepseek-api-key
+PROVIDER_URL=http://localhost:11434/v1
+PROVIDER_KEY=ollama
+NORMAL_MODEL=qwen3:32b
 ```
 
 修改后重启：

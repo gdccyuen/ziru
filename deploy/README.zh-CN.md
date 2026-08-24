@@ -8,44 +8,50 @@ Ziru Self-Hosted 使用 Docker Compose 打包 Ziru 的自托管部署：Ziru API
 
 - Docker 和 Docker Compose。
 - MinerU API Key，用于 PDF 文档的初始解析。
-- 大模型 API Key：DeepSeek 或阿里云百炼 DashScope。
+- 任意 OpenAI-compatible 模型端点的 Key/URL（例如本地 Ollama 或 vLLM）。
 
 目前，我们的配置默认使用 MinerU 作为 PDF 解析器。如果你需要自定义解析流程，也可以接入自己的解析器；只要它能产出 Markdown（`.md`）文件，Ziru 就可以继续处理。如果你想为更多 PDF 解析器贡献支持，欢迎提交 pull request。
 
 ## 1. 准备 API Key
 
 - [MinerU](https://mineru.net/)
-- [DeepSeek](https://platform.deepseek.com/)
-- [阿里云百炼 DashScope](https://bailian.console.aliyun.com/)
+- 任意 OpenAI-compatible 模型端点（本地 [Ollama](https://ollama.com/)、[vLLM](https://docs.vllm.ai/) 或云厂商）
 
 ## 2. 配置 `.env`
 
 新建一个 `.env` 文件。
 
-使用 DeepSeek：
+本地 OpenAI-compatible 模型服务器（Ollama）示例：
 
 ```bash
 MINERU_API_KEYS=your-mineru-api-key
-DS_KEY=your-deepseek-api-key
+PROVIDER_URL=http://localhost:11434/v1
+PROVIDER_KEY=ollama
+NORMAL_MODEL=qwen3:32b
+HIERARCHY_LLM_MODEL=qwen3:32b
+IMAGE_MODEL=llava:latest
+IMAGE_MODEL_MAX=llava:latest
 ```
 
-使用阿里云百炼 DashScope：
+自托管 vLLM 示例：
 
 ```bash
 MINERU_API_KEYS=your-mineru-api-key
-ALI_API_KEYS=your-dashscope-api-key
-NORMOL_MODEL=qwen-plus
-HIERARCHY_LLM_MODEL=qwen-plus
-IMAGE_MODEL=qwen3.6-flash
-IMAGE_MODEL_MAX=qwen3.6-flash
+PROVIDER_URL=http://localhost:8000/v1
+PROVIDER_KEY=EMPTY
+NORMAL_MODEL=Qwen/Qwen3-32B
+HIERARCHY_LLM_MODEL=Qwen/Qwen3-32B
+IMAGE_MODEL=Qwen/Qwen3-VL-32B-Instruct
+IMAGE_MODEL_MAX=Qwen/Qwen3-VL-32B-Instruct
 ```
 
-`MINERU_API_KEYS` 和 `ALI_API_KEYS` 都支持多个 Key，用英文逗号分隔。多个 Key 不是必需的；它们会组成一个 Key 池，当某个 Key 触发限流时，Ziru 可以轮换使用其他 Key。
+`MINERU_API_KEYS` 支持多个 Key，用英文逗号分隔。多个 Key 不是必需的；它们会组成一个 Key 池，当某个 Key 触发限流时，Ziru 可以轮换使用其他 Key。
 
 ```bash
 MINERU_API_KEYS=mineru-key-1,mineru-key-2
-ALI_API_KEYS=dashscope-key-1,dashscope-key-2
 ```
+
+当前大模型 provider 通过 `PROVIDER_URL` 和 `PROVIDER_KEY` 配置。每个角色的模型名（`NORMAL_MODEL`、`HIERARCHY_LLM_MODEL`、`IMAGE_MODEL`、`IMAGE_MODEL_MAX`）需要按启用的角色显式设置。
 
 本地访问默认不需要修改其他配置。宿主机端口默认只绑定到 `127.0.0.1`。
 

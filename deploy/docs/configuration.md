@@ -2,7 +2,7 @@
 
 English | [中文](configuration.zh-CN.md)
 
-This document covers optional configuration beyond the minimal startup path. A normal local deployment only needs `MINERU_API_KEYS` and either `DS_KEY` or `ALI_API_KEYS`, as shown in the README.
+This document covers optional configuration beyond the minimal startup path. A normal local deployment only needs `MINERU_API_KEYS` plus `PROVIDER_URL` and `PROVIDER_KEY`, as shown in the README.
 
 Docker Compose reads `.env.defaults` first, then reads `.env`. `.env.defaults` is the built-in default reference. For real deployments, create a small `.env` file that only contains values you need to override, and never commit real secrets to Git.
 
@@ -43,60 +43,56 @@ ZIRU_IMAGE=ghcr.io/gdccyuen/ziru:latest
 | Variable | Usage | Example values |
 | --- | --- | --- |
 | `MINERU_API_KEYS` | MinerU API key pool for PDF parsing. Supports JSON arrays, comma-separated values, newline-separated values, and `token_id=api_key` entries. | `mineru-key-1,mineru-key-2` |
-| `DS_KEY` | DeepSeek API key. Set this when using DeepSeek as the text model provider. | `sk-...` |
-| `ALI_API_KEYS` | Alibaba Cloud Model Studio DashScope API key pool. Set this when using Qwen models. The format is the same as `MINERU_API_KEYS`. | `sk-...` |
+| `PROVIDER_KEY` | API key for the active OpenAI-compatible LLM endpoint. Local servers such as Ollama or vLLM often accept any non-empty value. | `ollama`, `EMPTY` |
+| `PROVIDER_URL` | Base URL for the active OpenAI-compatible LLM endpoint. | `http://localhost:11434/v1`, `http://localhost:8000/v1` |
 
-`MINERU_API_KEYS` and `ALI_API_KEYS` support multiple keys so they can form a key pool. When one key reaches provider quota or rate limits, Ziru can rotate to another key. A single key also works.
+`MINERU_API_KEYS` supports multiple keys so they can form a key pool. When one key reaches provider quota or rate limits, Ziru can rotate to another key. A single key also works.
 
-Get keys from the providers' official websites:
+Get MinerU keys from the official website, or point `PROVIDER_URL` at any OpenAI-compatible model endpoint:
 
 - [MinerU](https://mineru.net/)
-- [DeepSeek](https://platform.deepseek.com/)
-- [Alibaba Cloud Model Studio DashScope](https://bailian.console.aliyun.com/)
+- [Ollama](https://ollama.com/)
+- [vLLM](https://docs.vllm.ai/)
 
 ## AI Models and Providers
 
 | Variable | Usage | Example values |
 | --- | --- | --- |
-| `DS_URL` | DeepSeek OpenAI-compatible base URL. | `https://api.deepseek.com/v1` |
-| `ALI_URL` | DashScope OpenAI-compatible base URL. | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
-| `GPT_API_KEY` | OpenAI or other compatible service key. The default URL routing still depends on model names; confirm provider support in the image before using it. | `sk-...` |
-| `GLM_API_KEY` | Zhipu GLM API key. | `...` |
-| `GLM_URL` | Zhipu GLM base URL. | `https://open.bigmodel.cn/api/paas/v4` |
-| `ARK_API_KEY` | Volcengine Ark API key. | `...` |
-| `ARK_URL` | Volcengine Ark chat completions URL. | `https://ark.cn-beijing.volces.com/api/v3/chat/completions` |
-| `NORMOL_MODEL` | Main model for text, table understanding, and summarization. | `deepseek-v4-flash`, `qwen-plus` |
-| `HIERARCHY_LLM_MODEL` | Model for document heading hierarchy and table-of-contents recognition. Falls back to `NORMOL_MODEL` when empty. | `deepseek-v4-flash`, `qwen-plus` |
-| `IMAGE_MODEL` | Default vision model for image summaries, image collections, and OCR-related work. | `qwen3.6-flash` |
-| `IMAGE_MODEL_MAX` | Higher-capability model for image Q&A and OCR. | `qwen3.6-flash` |
+| `PROVIDER_URL` | Base URL for the active OpenAI-compatible LLM endpoint. | `http://localhost:11434/v1` (Ollama), `http://localhost:8000/v1` (vLLM) |
+| `PROVIDER_KEY` | API key for that endpoint. Local servers often accept any non-empty value. | `ollama`, `EMPTY` |
+| `NORMAL_MODEL` | Main model for text, table understanding, and summarization. Set explicitly; empty disables the feature until configured. | `qwen3:32b`, `Qwen/Qwen3-32B` |
+| `HIERARCHY_LLM_MODEL` | Model for document heading hierarchy and table-of-contents recognition. Falls back to `NORMAL_MODEL` when empty. | `qwen3:32b`, `Qwen/Qwen3-32B` |
+| `RETRIEVAL_PLANNER_MODEL` | Reasoning-capable model for agentic retrieval planning. Falls back to `NORMAL_MODEL` when empty. | `qwen3:32b`, `Qwen/Qwen3-32B` |
+| `IMAGE_MODEL` | Default vision model for image summaries, image collections, OCR, and atlas/bbox probes. | `llava:latest`, `Qwen/Qwen3-VL-32B-Instruct` |
+| `IMAGE_MODEL_MAX` | Higher-capability model for image Q&A and OCR. | `llava:latest`, `Qwen/Qwen3-VL-32B-Instruct` |
 | `EMBEDDING_MODEL` | Embedding model used for retrieval. | `text-embedding-v4` |
 | `OPENAI_CLIENT_TIMEOUT` | OpenAI-compatible client timeout, in seconds. | `300` |
 | `LLM_MOCK_ENABLED` | Whether to short-circuit LLM calls with mock responses, mainly for tests. | `false` |
 | `HEADING_LLM_MAX_CONCURRENT` | Maximum concurrent LLM calls for heading recognition. | `8` |
 | `SUMMARY_LLM_MAX_CONCURRENT` | Maximum concurrent LLM calls for summaries, images, and tables. | `8` |
-| `ALI_TOKEN_RPM_LIMIT` | Per-minute request limit for each DashScope key. | `300` |
-| `ALI_TOKEN_DAILY_LIMIT` | Daily request limit for each DashScope key. | `10000` |
-| `ALI_TOKEN_COOLDOWN_SECONDS` | Cooldown seconds after a DashScope key receives a 429 response. | `60` |
-| `ALI_INLINE_MAX_RETRIES` | Token rotation retry count for DashScope calls. | `3` |
-| `ALI_SDK_MAX_RETRIES` | Internal SDK retry count for a single DashScope token. | `3` |
 
-DeepSeek example:
+Local Ollama example:
 
 ```bash
-DS_KEY=your-deepseek-api-key
-NORMOL_MODEL=deepseek-v4-flash
-HIERARCHY_LLM_MODEL=deepseek-v4-flash
+PROVIDER_URL=http://localhost:11434/v1
+PROVIDER_KEY=ollama
+NORMAL_MODEL=qwen3:32b
+HIERARCHY_LLM_MODEL=qwen3:32b
+RETRIEVAL_PLANNER_MODEL=qwen3:32b
+IMAGE_MODEL=llava:latest
+IMAGE_MODEL_MAX=llava:latest
 ```
 
-Alibaba Cloud Model Studio DashScope example:
+Self-hosted vLLM example:
 
 ```bash
-ALI_API_KEYS=your-dashscope-api-key
-NORMOL_MODEL=qwen-plus
-HIERARCHY_LLM_MODEL=qwen-plus
-IMAGE_MODEL=qwen3.6-flash
-IMAGE_MODEL_MAX=qwen3.6-flash
-EMBEDDING_MODEL=text-embedding-v4
+PROVIDER_URL=http://localhost:8000/v1
+PROVIDER_KEY=EMPTY
+NORMAL_MODEL=Qwen/Qwen3-32B
+HIERARCHY_LLM_MODEL=Qwen/Qwen3-32B
+RETRIEVAL_PLANNER_MODEL=Qwen/Qwen3-32B
+IMAGE_MODEL=Qwen/Qwen3-VL-32B-Instruct
+IMAGE_MODEL_MAX=Qwen/Qwen3-VL-32B-Instruct
 ```
 
 ## MinerU and Optional Parsing Services
@@ -418,7 +414,9 @@ These fields are retained for legacy code paths or internal path conventions. Mo
 ```bash
 ADMIN_PUBLIC_URL=https://ziru.example.com
 MINERU_API_KEYS=your-mineru-api-key
-DS_KEY=your-deepseek-api-key
+PROVIDER_URL=http://localhost:11434/v1
+PROVIDER_KEY=ollama
+NORMAL_MODEL=qwen3:32b
 ```
 
 Restart after changing `.env`:

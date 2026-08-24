@@ -9,15 +9,14 @@ Compose: the Ziru API, worker, admin console, and web UI in one stack.
 
 - Docker and Docker Compose.
 - A MinerU API key for the initial parsing of PDF documents.
-- LLM provider API key: DeepSeek or Alibaba Cloud Model Studio DashScope.
+- An LLM provider key/URL for any OpenAI-compatible endpoint (e.g. local Ollama or vLLM).
 
 For now, our setup uses MinerU as the default PDF parser. If you customize the parsing pipeline, your own parser can also work as long as it produces Markdown (`.md`) files for Ziru to process. If you'd like to contribute support for additional PDF parsers, feel free to submit a pull request.
 
 ## 1. Prepare API Keys
 
 - [MinerU](https://mineru.net/)
-- [DeepSeek](https://platform.deepseek.com/)
-- [Alibaba Cloud Model Studio DashScope](https://bailian.console.aliyun.com/)
+- Any OpenAI-compatible model endpoint (local [Ollama](https://ollama.com/), [vLLM](https://docs.vllm.ai/), or a cloud provider)
 
 ## 2. Configure `.env`
 

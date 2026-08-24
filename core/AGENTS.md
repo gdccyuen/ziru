@@ -688,11 +688,11 @@ identifiers to find the nearest valid text.
 
 ### LLM Constraints
 
-- **DeepSeek JSON mode**: Requires the word "json" in the prompt when
-  `response_format` is `json_object`
-- **Streaming robustness**: Concatenate `delta.content` only if `not None`
-- **Token pool rotation**: Ali API keys support per-token RPM limits,
-  cooldown, and inline retry with next available token
+- **JSON mode**: Some OpenAI-compatible providers require the word "json" in
+  the prompt when `response_format` is `json_object`.
+- **Streaming robustness**: Concatenate `delta.content` only if `not None`.
+- **Single active provider**: All LLM calls use `PROVIDER_URL`/`PROVIDER_KEY`;
+  there is no provider-name routing or per-provider key pool.
 
 ---
 
