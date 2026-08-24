@@ -251,7 +251,7 @@ def _parse_pdf_via_shards(
         smart_parse = base_llm_paras.get("smart_title_parse", True)
         hierarchy_model_name = (
             base_llm_paras.get("hierarchy_model_name")
-            or base_llm_paras.get("model_name", settings.NORMOL_MODEL)
+            or base_llm_paras.get("model_name", settings.NORMAL_MODEL)
         )
 
         def _predict_shard_headings(

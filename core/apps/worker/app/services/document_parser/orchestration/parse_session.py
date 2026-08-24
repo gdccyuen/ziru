@@ -68,8 +68,8 @@ def build_parse_session(parse_input: ParseInput) -> ParseSession:
         "stopwords": parse_options.stopwords,
         "doc_type": parse_options.doc_type,
         "frag_desc": parse_options.add_frag_desc,
-        "model_name": settings.NORMOL_MODEL,
-        "hierarchy_model_name": settings.HIERARCHY_LLM_MODEL or settings.NORMOL_MODEL,
+        "model_name": settings.NORMAL_MODEL,
+        "hierarchy_model_name": settings.HIERARCHY_LLM_MODEL or settings.NORMAL_MODEL,
     }
 
     logger.debug(f"baseurl: {parse_input.base_url}")

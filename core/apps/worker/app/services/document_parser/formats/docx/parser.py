@@ -517,10 +517,10 @@ def parse_docx(
         model_name = (
             (
                 llm_paras.get("hierarchy_model_name")
-                or llm_paras.get("model_name", settings.NORMOL_MODEL)
+                or llm_paras.get("model_name", settings.NORMAL_MODEL)
             )
             if llm_paras
-            else (settings.HIERARCHY_LLM_MODEL or settings.NORMOL_MODEL)
+            else (settings.HIERARCHY_LLM_MODEL or settings.NORMAL_MODEL)
         )
         heading_candidates = predict_heading_hierarchy(
             HeadingHierarchyInput(

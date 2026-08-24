@@ -324,17 +324,14 @@ setDefault SELF_HOSTED_S3_EVENT_TOPIC_NAME ziru-s3-upload-events
 setDefault SELF_HOSTED_S3_EVENT_WEBHOOK_URL "http://app:${API_PORT}/v1/internal/s3-events"
 setDefault SELF_HOSTED_STORAGE_CORS_ALLOWED_ORIGINS ""
 
-setDefault DS_URL https://api.deepseek.com/v1
-setDefault DS_KEY ""
-setDefault NORMOL_MODEL deepseek-v4-flash
-setDefault HIERARCHY_LLM_MODEL "${NORMOL_MODEL}"
+setDefault PROVIDER_URL ""
+setDefault PROVIDER_KEY ""
+setDefault NORMAL_MODEL ""
+setDefault HIERARCHY_LLM_MODEL "${NORMAL_MODEL}"
 setDefault IMAGE_MODEL qwen3.6-flash
 setDefault IMAGE_MODEL_MAX "${IMAGE_MODEL}"
 setDefault EMBEDDING_MODEL text-embedding-v4
 setDefault PDF_PROFILE_TOC_ENABLED false
-setDefault GLM_URL https://open.bigmodel.cn/api/paas/v4
-setDefault ALI_URL https://dashscope.aliyuncs.com/compatible-mode/v1
-setDefault ARK_URL https://ark.cn-beijing.volces.com/api/v3/chat/completions
 
 setDefault FRONTEND_URL "${NEXT_PUBLIC_APP_URL}"
 setDefault INTERNAL_ADMIN_ENDPOINT "http://127.0.0.1:${ADMIN_HOST_PORT}"

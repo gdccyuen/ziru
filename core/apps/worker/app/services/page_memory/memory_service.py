@@ -196,7 +196,7 @@ def _resolve_hierarchy_model(page_memory_config: PageMemoryConfig) -> str | None
     return (
         page_memory_config.hierarchy_model
         or os.environ.get("HIERARCHY_LLM_MODEL")
-        or os.environ.get("NORMOL_MODEL")
+        or os.environ.get("NORMAL_MODEL")
     )
 
 
@@ -483,7 +483,7 @@ def _build_page_ctx(
     vlm_model = os.environ.get("IMAGE_MODEL")
     reason_model = (
         os.environ.get("PAGE_LOCATE_REASON_MODEL")
-        or os.environ.get("NORMOL_MODEL")
+        or os.environ.get("NORMAL_MODEL")
     )
     return ToolContext(
         pdf_path=pdf_path,

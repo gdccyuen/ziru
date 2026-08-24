@@ -124,9 +124,9 @@ cp apps/worker/.env.example apps/worker/.env
 
 - database and Redis connection settings
 - S3-compatible storage credentials
-- at least one LLM provider key: `DS_KEY`, `ALI_API_KEYS`, `GPT_API_KEY`, or `GLM_API_KEY`
+- the active LLM provider: `PROVIDER_URL` and `PROVIDER_KEY`, plus the explicit per-role model names you use
 - `MINERU_API_KEYS` if you need PDF parsing
-- a vision-capable model provider if you need image summaries, OCR, atlas classification, or image-aware retrieval
+- `IMAGE_MODEL` / `IMAGE_MODEL_MAX` if you need image summaries, OCR, atlas classification, or image-aware retrieval
 - any optional billing or webhook providers you want to enable
 
 Most parser and retrieval tuning values have code defaults. Start with the

@@ -158,7 +158,7 @@ The core hierarchical recognition module. Determines heading levels using:
    use it as ground truth for heading levels.
 2. **Regex patterns**: Match numbered headings like `1.2.3`, `第X章`, `（一）`.
 3. **LLM smart parse**: When `smart_title_parse=True`, send candidate headings
-   to the hierarchy model (`HIERARCHY_LLM_MODEL` or `NORMOL_MODEL`) for level
+   to the hierarchy model (`HIERARCHY_LLM_MODEL` or `NORMAL_MODEL`) for level
    assignment.
 4. **Font clustering (PDF)**: K-means on span heights from MinerU `layout.json`
    to group headings into 5 discrete tiers.
@@ -215,8 +215,8 @@ flowchart LR
 
 | Task | Config Key | Default Model |
 |:---|:---|:---|
-| Text/table summarization | `NORMOL_MODEL` | `deepseek-chat` |
-| Heading hierarchy recognition | `HIERARCHY_LLM_MODEL` | Falls back to `NORMOL_MODEL` |
+| Text/table summarization | `NORMAL_MODEL` | Set explicitly; no provider-specific default |
+| Heading hierarchy recognition | `HIERARCHY_LLM_MODEL` | Falls back to `NORMAL_MODEL` |
 | Image description (VLM) | `IMAGE_MODEL` | `qwen3.6-flash` |
 | Image OCR / Q&A | `IMAGE_MODEL_MAX` | `qwen3.6-flash` |
 | PDF coarse classification | `IMAGE_MODEL` | `qwen3.6-flash` |

@@ -23,30 +23,37 @@ For now, our setup uses MinerU as the default PDF parser. If you customize the p
 
 Create a new `.env` file with only the values you need.
 
-For DeepSeek:
+For a local OpenAI-compatible model server such as Ollama:
 
 ```bash
 MINERU_API_KEYS=your-mineru-api-key
-DS_KEY=your-deepseek-api-key
+PROVIDER_URL=http://localhost:11434/v1
+PROVIDER_KEY=ollama
+NORMAL_MODEL=qwen3:32b
+HIERARCHY_LLM_MODEL=qwen3:32b
+IMAGE_MODEL=llava:latest
+IMAGE_MODEL_MAX=llava:latest
 ```
 
-For Alibaba Cloud Model Studio DashScope:
+For self-hosted vLLM:
 
 ```bash
 MINERU_API_KEYS=your-mineru-api-key
-ALI_API_KEYS=your-dashscope-api-key
-NORMOL_MODEL=qwen-plus
-HIERARCHY_LLM_MODEL=qwen-plus
-IMAGE_MODEL=qwen3.6-flash
-IMAGE_MODEL_MAX=qwen3.6-flash
+PROVIDER_URL=http://localhost:8000/v1
+PROVIDER_KEY=EMPTY
+NORMAL_MODEL=Qwen/Qwen3-32B
+HIERARCHY_LLM_MODEL=Qwen/Qwen3-32B
+IMAGE_MODEL=Qwen/Qwen3-VL-32B-Instruct
+IMAGE_MODEL_MAX=Qwen/Qwen3-VL-32B-Instruct
 ```
 
-`MINERU_API_KEYS` and `ALI_API_KEYS` support multiple keys separated by commas. Multiple keys are optional; they form a key pool so Ziru can rotate requests across keys when one key reaches provider quota or rate limits.
+`MINERU_API_KEYS` supports multiple keys separated by commas. Multiple keys are optional; they form a key pool so Ziru can rotate requests across keys when one key reaches provider quota or rate limits.
 
 ```bash
 MINERU_API_KEYS=mineru-key-1,mineru-key-2
-ALI_API_KEYS=dashscope-key-1,dashscope-key-2
 ```
+
+The active LLM provider is configured with `PROVIDER_URL` and `PROVIDER_KEY`. Per-role model names (`NORMAL_MODEL`, `HIERARCHY_LLM_MODEL`, `IMAGE_MODEL`, `IMAGE_MODEL_MAX`) must be set explicitly for the roles you enable.
 
 For local access, no other settings are required. Host ports bind to `127.0.0.1` by default.
 

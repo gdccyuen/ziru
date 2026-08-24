@@ -7,8 +7,8 @@ from pathlib import Path
 
 _REQUIRED_IMPORT_ENVIRONMENT: dict[str, str] = {
     "DATABASE_URL": "postgresql+asyncpg://user:pass@127.0.0.1:15432/ziru_test",
-    "DS_KEY": "test-deepseek-key",
-    "DS_URL": "https://example.com/v1",
+    "PROVIDER_KEY": "test-provider-key",
+    "PROVIDER_URL": "https://example.com/v1",
     "S3_BUCKET_NAME": "ziru-test-bucket",
     "S3_ACCESS_KEY_ID": "test-access-key",
     "S3_SECRET_ACCESS_KEY": "test-secret-key",

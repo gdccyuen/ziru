@@ -29,41 +29,26 @@ _RETRIEVAL_LLM_MAX_TOKENS = 2048
 
 
 def _has_llm_credentials() -> bool:
-    """Check whether at least one LLM provider is configured."""
+    """Check whether the active OpenAI-compatible provider is configured."""
     if get_current_llm_overrides() is not None:
         return True
     if getattr(settings, 'LLM_MOCK_ENABLED', False):
         return True
-    if getattr(settings, 'DS_KEY', ''):
-        return True
-    if getattr(settings, 'ALI_API_KEYS', ''):
-        return True
-    if getattr(settings, 'GLM_API_KEY', ''):
-        return True
-    if getattr(settings, 'GPT_API_KEY', ''):
-        return True
-    return False
+    return bool(getattr(settings, 'PROVIDER_KEY', ''))
 
 
 def _resolve_default_model() -> str:
-    """Pick a model name that matches the configured LLM provider."""
+    """Return the explicit default text model configured for the provider."""
     overrides = get_current_llm_overrides()
     if overrides is not None:
         provider = overrides.text_effective()
         if provider is not None:
             return provider.model
-    if getattr(settings, 'DS_KEY', ''):
-        return 'deepseek-v4-flash'
-    if getattr(settings, 'ALI_API_KEYS', ''):
-        return 'qwen-plus'
-    if getattr(settings, 'GLM_API_KEY', ''):
-        return 'glm-4-flash'
-    if getattr(settings, 'GPT_API_KEY', ''):
-        return getattr(settings, 'NORMOL_MODEL', None) or 'gpt-4o-mini'
-    return getattr(settings, 'NORMOL_MODEL', None) or 'deepseek-v4-flash'
+    return getattr(settings, 'NORMAL_MODEL', '')
 
 
 def _resolve_planner_model(*, thinking: bool) -> str:
+    del thinking  # reserved for future reasoning-mode model selection
     overrides = get_current_llm_overrides()
     if overrides is not None:
         provider = overrides.text_effective()
@@ -72,15 +57,7 @@ def _resolve_planner_model(*, thinking: bool) -> str:
     configured = getattr(settings, 'RETRIEVAL_PLANNER_MODEL', '') or ''
     if configured:
         return configured
-    if getattr(settings, 'DS_KEY', ''):
-        return 'deepseek-reasoner' if thinking else 'deepseek-v4-flash'
-    if getattr(settings, 'ALI_API_KEYS', ''):
-        return 'qwq-32b-preview' if thinking else 'qwen-plus'
-    if getattr(settings, 'GLM_API_KEY', ''):
-        return 'glm-4-plus' if thinking else 'glm-4-flash'
-    if getattr(settings, 'GPT_API_KEY', ''):
-        return 'o3-mini' if thinking else 'gpt-4o-mini'
-    return getattr(settings, 'NORMOL_MODEL', None) or 'deepseek-v4-flash'
+    return getattr(settings, 'NORMAL_MODEL', '')
 
 
 def _resolve_vlm_model(model: str | None = None) -> str:
@@ -89,7 +66,7 @@ def _resolve_vlm_model(model: str | None = None) -> str:
         provider = overrides.vision_effective()
         if provider is not None:
             return provider.model
-    return model or getattr(settings, 'IMAGE_MODEL', '') or 'qwen3.6-flash'
+    return model or getattr(settings, 'IMAGE_MODEL', '')
 
 
 def _build_client_for_channel(*, channel: str, model: str):
@@ -119,9 +96,9 @@ def create_retrieval_llm_fn(
     Returns None when no LLM provider is configured, signalling the caller
     to fall back to lexical graph routing.
 
-    When *thinking* is True, DeepSeek V4 Flash reasoning mode is enabled.
-    The model thinks internally but we only return ``message.content``
-    (the final answer), not ``reasoning_content``.
+    When *thinking* is True, the active model is asked to reason internally but
+    only `message.content` (the final answer) is returned, not any
+    provider-specific reasoning payload.
     """
     if not _has_llm_credentials():
         logger.debug('retrieval: no LLM credentials configured, agent navigation disabled')
@@ -132,7 +109,9 @@ def create_retrieval_llm_fn(
         thinking = os.environ.get('RETRIEVAL_LLM_THINKING', '').lower() in ('1', 'true', 'yes')
 
     effective_model = model or _resolve_default_model()
-    # DeepSeek thinking mode requires temperature=0
+    if not effective_model:
+        logger.debug('retrieval: NORMAL_MODEL is not configured, agent navigation disabled')
+        return None
     effective_temperature = 0.0 if thinking else temperature
     effective_max_tokens = max(max_tokens, 8192) if thinking else max_tokens
 
@@ -152,7 +131,6 @@ def create_retrieval_llm_fn(
 
         kwargs: dict[str, Any] = {}
         if thinking:
-            # DeepSeek V4 Flash thinking mode
             kwargs['extra_body'] = {
                 'thinking': {'type': 'enabled'},
                 'reasoning_effort': reasoning_effort,
@@ -184,6 +162,9 @@ def create_retrieval_planner_fn(
         return None
 
     effective_model = model or _resolve_planner_model(thinking=thinking)
+    if not effective_model:
+        logger.debug('retrieval: RETRIEVAL_PLANNER_MODEL/NORMAL_MODEL is not configured, planner disabled')
+        return None
 
     async def llm_fn(prompt: LLMFnInput) -> str:
         client, resolved_model = _build_client_for_channel(
@@ -212,17 +193,16 @@ def create_retrieval_vlm_fn(
 ) -> LLMFn | None:
     """Create an async VLM callable for image-aware answer generation.
 
-    Uses the IMAGE_MODEL (e.g. qwen3.6-flash) for multimodal input.
-    Returns None when the image model is not configured.
-
-    The returned function accepts the same ``LLMFnInput`` type as
-    ``create_retrieval_llm_fn`` — callers pass either a plain string
-    or a list of ChatCompletionMessageParam (including image_url parts).
+    Uses IMAGE_MODEL for multimodal input. Returns None when no provider or
+    image model is configured.
     """
     effective_model = _resolve_vlm_model(model)
 
     if not _has_llm_credentials():
         logger.debug('retrieval: no LLM credentials for VLM, image-aware answering disabled')
+        return None
+    if not effective_model:
+        logger.debug('retrieval: IMAGE_MODEL is not configured, image-aware answering disabled')
         return None
 
     async def vlm_fn(prompt: LLMFnInput) -> str:

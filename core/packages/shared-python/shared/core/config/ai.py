@@ -6,27 +6,26 @@ from pydantic import BaseModel, Field
 class AIConfig(BaseModel):
     """AI model configuration."""
 
-    # Provider credentials and primary model selection.
-    GLM_API_KEY: str = Field(default="", description="Zhipu GLM API key")
-    GLM_URL: str = Field(
-        default="https://open.bigmodel.cn/api/paas/v4", description="Zhipu GLM API URL"
+    # Single active OpenAI-compatible provider.
+    PROVIDER_URL: str = Field(
+        default="",
+        description="OpenAI-compatible provider base URL",
     )
-    DS_KEY: str = Field(default="", description="DeepSeek API key")
-    DS_URL: str = Field(
-        default="https://api.deepseek.com/v1", description="DeepSeek API URL"
+    PROVIDER_KEY: str = Field(
+        default="",
+        description="OpenAI-compatible provider API key",
     )
-    GPT_API_KEY: str = Field(default="", description="OpenAI API key")
-    # Default behavior: text/table summaries use deepseek-v4-flash. Hierarchy parsing
-    # can be overridden independently with HIERARCHY_LLM_MODEL. Existing
-    # environment overrides for NORMOL_MODEL / HIERARCHY_LLM_MODEL /
-    # IMAGE_MODEL / IMAGE_MODEL_MAX remain supported.
-    NORMOL_MODEL: str = Field(
-        default="deepseek-v4-flash",
+
+    # Per-role model selection. Every role is explicit: when a role model is
+    # empty the caller must supply one, or the feature is disabled until it is
+    # configured. No provider-specific model names are assumed.
+    NORMAL_MODEL: str = Field(
+        default="",
         description="Default text model for summaries and general text LLM calls",
     )
     HIERARCHY_LLM_MODEL: str = Field(
         default="",
-        description="Heading and outline recognition model; falls back to NORMOL_MODEL when empty",
+        description="Heading and outline recognition model; falls back to NORMAL_MODEL when empty",
     )
     IMAGE_MODEL: str = Field(
         default="qwen3.6-flash",
@@ -79,7 +78,7 @@ class AIConfig(BaseModel):
     )
     SUMMARY_LLM_MAX_CONCURRENT: int = Field(
         default=8,
-        description="Max concurrent gevent greenlets for parallel post-heading summary LLM calls -- image/table/text (Dashscope).",
+        description="Max concurrent gevent greenlets for parallel post-heading summary LLM calls -- image/table/text.",
     )
     DOCX_IMAGE_SUMMARY_MAX_CONCURRENT: int = Field(
         default=4,
@@ -113,39 +112,7 @@ class AIConfig(BaseModel):
         default=3,
         description="Local per-job node OCR and summary concurrency for page-memory.",
     )
-    # Compatibility fields retained during migration.
-    ARK_API_KEY: str = Field(
-        default="", description="ARK API key (compatibility field)"
-    )
-    ARK_URL: str = Field(default="", description="ARK URL (compatibility field)")
-    ALI_API_KEYS: str = Field(
-        default="",
-        description="Ali API key pool. Supports JSON array or comma/newline-separated values; entries may use token_id=api_key format.",
-    )
-    ALI_URL: str = Field(
-        default="https://dashscope.aliyuncs.com/compatible-mode/v1",
-        description="Aliyun DashScope URL (compatibility field)",
-    )
-    ALI_TOKEN_RPM_LIMIT: int = Field(
-        default=300,
-        description="Per-token requests-per-minute limit for Ali API keys.",
-    )
-    ALI_TOKEN_DAILY_LIMIT: int = Field(
-        default=10000,
-        description="Per-token daily request limit for Ali API keys.",
-    )
-    ALI_TOKEN_COOLDOWN_SECONDS: int = Field(
-        default=60,
-        description="Cooldown seconds after an Ali token receives 429.",
-    )
-    ALI_INLINE_MAX_RETRIES: int = Field(
-        default=3,
-        description="Maximum inline retries when an Ali token is rate-limited (429). Each retry acquires the next available token.",
-    )
-    ALI_SDK_MAX_RETRIES: int = Field(
-        default=3,
-        description="OpenAI SDK max_retries per token for transient 429s (exponential backoff + jitter).",
-    )
+
     ILOVEAPI_PUBLIC_KEY: str = Field(
         default="", description="iLoveAPI public key (PPTX-to-PDF)"
     )

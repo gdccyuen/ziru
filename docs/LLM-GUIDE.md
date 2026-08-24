@@ -12,24 +12,48 @@ All LLM calls go through one OpenAI-compatible transport and are gated by creden
 - Gate: `core/packages/shared-python/shared/services/retrieval/llm_adapter.py` —
   no key set → no LLM client → evidence-only mode (search/chat still work)
 
-Providers (OpenAI-compatible, defaults shown — any compatible endpoint works, e.g. local vLLM/Ollama):
-| Env var | Default |
-|---|---|
-| `DS_KEY` / `DS_URL` | `` / `https://api.deepseek.com/v1` |
-| `GLM_API_KEY` / `GLM_URL` | `` / `https://open.bigmodel.cn/api/paas/v4` |
-| `GPT_API_KEY` | `` (OpenAI) |
+Single active provider (any OpenAI-compatible endpoint works, e.g. local vLLM/Ollama):
 
-## Groups by purpose
+| Env var | Usage | Example |
+|---|---|---|
+| `PROVIDER_URL` | OpenAI-compatible base URL for the active provider. | `http://localhost:11434/v1` (Ollama), `http://localhost:8000/v1` (vLLM) |
+| `PROVIDER_KEY` | API key accepted by that endpoint. Local servers often accept any non-empty value. | `ollama`, `EMPTY` |
+
+Per-role models are explicit. Set each role you use; empty roles are disabled or fall back as noted:
 
 | Group | Purpose | Model knob | Runs when |
 |---|---|---|---|
-| A. Retrieval reasoning | Agentic search: planning/decomposition, navigation, tool use, reranking | `RETRIEVAL_PLANNER_MODEL`, `NORMOL_MODEL` | Every search with `rerank=true` / `use_agentic=true` |
-| B. Summarization | Text/table summaries (incl. chat evidence) | `NORMOL_MODEL` (default `deepseek-v4-flash`) | Ingestion + on demand |
-| C. Hierarchy parsing | Heading/outline recognition at ingestion | `HIERARCHY_LLM_MODEL` (falls back to B) | Ingestion only |
-| D. Vision/VLM | Image & table understanding | `IMAGE_MODEL` (qwen3-vl family), `IMAGE_MODEL_MAX` | Image/table-heavy docs |
+| A. Retrieval reasoning | Agentic search: planning/decomposition, navigation, tool use, reranking | `RETRIEVAL_PLANNER_MODEL`, `NORMAL_MODEL` | Every search with `rerank=true` / `use_agentic=true` |
+| B. Summarization | Text/table summaries (incl. chat evidence) | `NORMAL_MODEL` | Ingestion + on demand |
+| C. Hierarchy parsing | Heading/outline recognition at ingestion | `HIERARCHY_LLM_MODEL` (falls back to `NORMAL_MODEL`) | Ingestion only |
+| D. Vision/VLM | Image & table understanding | `IMAGE_MODEL`, `IMAGE_MODEL_MAX` | Image/table-heavy docs |
 | E. Infrastructure | Transport, per-task overrides, token budgets, mock mode | — | Always |
 
-Groups are independently switchable: each can point at a different provider/model.
+Groups are independently switchable: each can point at a different model on the same provider.
+
+Example local Ollama config:
+
+```bash
+PROVIDER_URL=http://localhost:11434/v1
+PROVIDER_KEY=ollama
+NORMAL_MODEL=qwen3:32b
+HIERARCHY_LLM_MODEL=qwen3:32b
+RETRIEVAL_PLANNER_MODEL=qwen3:32b
+IMAGE_MODEL=llava:latest
+IMAGE_MODEL_MAX=llava:latest
+```
+
+Example self-hosted vLLM config:
+
+```bash
+PROVIDER_URL=http://localhost:8000/v1
+PROVIDER_KEY=EMPTY
+NORMAL_MODEL=Qwen/Qwen3-32B
+HIERARCHY_LLM_MODEL=Qwen/Qwen3-32B
+RETRIEVAL_PLANNER_MODEL=Qwen/Qwen3-32B
+IMAGE_MODEL=Qwen/Qwen3-VL-32B-Instruct
+IMAGE_MODEL_MAX=Qwen/Qwen3-VL-32B-Instruct
+```
 
 ## E. Infrastructure — cost control, concretely
 
@@ -43,7 +67,7 @@ Groups are independently switchable: each can point at a different provider/mode
 
 ## On-premise impact
 
-- **No cloud dependency**: point the URLs at a local OpenAI-compatible model server — fully offline.
+- **No cloud dependency**: point `PROVIDER_URL` at a local OpenAI-compatible model server — fully offline.
 - **Cost control = resource control**: the wallet counts tokens, bounding GPU/CPU load and latency per query.
 - **Predictable capacity**: budgets + step caps + timeout/retry bound worst-case spend per query.
 - **Safe degraded mode**: model-server outage degrades to evidence-only, never takes the product down.

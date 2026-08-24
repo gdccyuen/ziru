@@ -3,8 +3,8 @@ Synchronous OpenAI-compatible client for gevent worker tasks.
 Uses the official OpenAI SDK with shared httpx connection pooling
 and built-in 429 retry with exponential backoff.
 
-For Aliyun (qwen) models, api keys are drawn from the AliQuotaManager
-token pool and automatically rotated on 429 RateLimitError.
+The active provider is configured explicitly through PROVIDER_URL and
+PROVIDER_KEY. There is no provider-name sniffing and no per-provider key pool.
 """
 import os
 import threading
@@ -31,11 +31,6 @@ LLMUsage = dict[str, int]
 
 _client_cache: Dict[tuple, "OpenAICompatibleClientSync"] = {}
 _client_cache_lock = threading.Lock()
-
-
-def _is_ali_model(model_name: str) -> bool:
-    """Check whether a model name routes to Aliyun DashScope."""
-    return "qwen" in (model_name or "").lower()
 
 
 def _should_mock_llm_calls() -> bool:
@@ -86,14 +81,11 @@ class OpenAICompatibleClientSync:
         timeout: int = 300,
         max_retries: int = 2,
     ):
-        self.default_model = default_model or getattr(settings, "NORMOL_MODEL", "deepseek-v4-flash")
+        self.default_model = default_model or getattr(settings, "NORMAL_MODEL", "")
         self._explicit_api_key = api_key
         self._explicit_api_url = api_url
         self._max_retries = max_retries
-        self._base_url: Optional[str] = self._resolve_base_url(
-            model_name=self.default_model,
-            api_url=api_url,
-        )
+        self._base_url: Optional[str] = self._resolve_base_url(api_url=api_url)
 
         self.timeout = (
             getattr(settings, "OPENAI_CLIENT_TIMEOUT", 300)
@@ -103,16 +95,12 @@ class OpenAICompatibleClientSync:
         self._client: Optional[OpenAI] = None
         if _should_mock_llm_calls():
             return
-        if not self._should_use_ali_pool():
-            resolved_key: Optional[str] = self._resolve_direct_api_key(
-                model_name=self.default_model,
-                api_key=api_key,
-            )
-            self._client = self._build_client(
-                api_key=resolved_key,
-                base_url=self._base_url,
-                max_retries=max_retries,
-            )
+        resolved_key: Optional[str] = self._resolve_api_key(api_key=api_key)
+        self._client = self._build_client(
+            api_key=resolved_key,
+            base_url=self._base_url,
+            max_retries=max_retries,
+        )
 
     def _build_client(
         self,
@@ -138,45 +126,24 @@ class OpenAICompatibleClientSync:
 
     def _resolve_base_url(
         self,
-        model_name: str,
         api_url: Optional[str],
     ) -> Optional[str]:
         if api_url:
             return self._strip_chat_completions(api_url)
+        return self._strip_chat_completions(
+            getattr(settings, "PROVIDER_URL", "") or None
+        )
 
-        model_lower = (model_name or "").lower()
-        if "qwen" in model_lower:
-            ali_base = getattr(settings, "ALI_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
-            return self._strip_chat_completions(ali_base)
-
-        if "glm" in model_lower:
-            glm_base = getattr(settings, "GLM_URL", "https://open.bigmodel.cn/api/paas/v4")
-            return self._strip_chat_completions(glm_base)
-
-        if "doubao" in model_lower or model_lower.startswith("ep-"):
-            return self._strip_chat_completions(getattr(settings, "ARK_URL", None))
-
-        return self._strip_chat_completions(settings.DS_URL)
-
-    def _resolve_direct_api_key(
+    def _resolve_api_key(
         self,
-        model_name: str,
         api_key: Optional[str],
     ) -> Optional[str]:
         if api_key:
             return api_key
-
-        model_lower = (model_name or "").lower()
-        if "glm" in model_lower:
-            return getattr(settings, "GLM_API_KEY", None)
-
-        if "doubao" in model_lower or model_lower.startswith("ep-"):
-            return getattr(settings, "ARK_API_KEY", None)
-
-        return settings.DS_KEY
+        return getattr(settings, "PROVIDER_KEY", "") or None
 
     # ------------------------------------------------------------------
-    # Ali token-pool helpers
+    # Page-memory VLM lease helpers
     # ------------------------------------------------------------------
 
     def _acquire_page_memory_vlm_lease(
@@ -191,112 +158,6 @@ class OpenAICompatibleClientSync:
     ) -> None:
         if lease is not None:
             get_page_memory_vlm_limiter().release(lease)
-
-    def _should_use_ali_pool(self) -> bool:
-        """Whether to route through the AliQuotaManager instead of a fixed key."""
-        if self._explicit_api_key:
-            return False
-        return _is_ali_model(self.default_model)
-
-    def _make_ali_pool_raw_call(
-        self,
-        model: str,
-        all_messages: List[ChatCompletionMessageParam],
-        temperature: float,
-        max_tokens: int,
-        api_kwargs: Dict[str, Any],
-        usage_task: str | None = None,
-    ) -> tuple[Any, LLMUsage]:
-        """Acquire a token, make the call, and retry inline on 429."""
-        from shared.services.ai.ali_quota_manager import get_ali_quota_manager
-
-        quota_manager = get_ali_quota_manager()
-        base_url: Optional[str] = self._base_url
-
-        max_retries = settings.ALI_INLINE_MAX_RETRIES
-        for attempt in range(max_retries):
-            lease = quota_manager.acquire_request(operation="chat_completion")
-            try:
-                # Hybrid rate-limit control: SDK handles per-key backoff (exp. backoff + jitter),
-                # outer loop handles token rotation across the pool on persistent 429s.
-                client = self._build_client(
-                    api_key=lease.api_key,
-                    base_url=base_url,
-                    max_retries=settings.ALI_SDK_MAX_RETRIES,
-                )
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=all_messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    **api_kwargs,
-                )
-                if not response.choices:
-                    raise LLMServiceException(
-                        internal_message="AI returned empty result",
-                        provider=self.default_model,
-                    )
-                usage = _extract_usage(response)
-                record_tokens(usage, model=model, task=usage_task)
-                return response, usage
-            except openai.RateLimitError as exc:
-                retry_after = _parse_retry_after(exc)
-                quota_manager.mark_rate_limited(lease.token_id, retry_after)
-                logger.warning(
-                    f"Ali token {lease.token_id} rate-limited (attempt {attempt + 1}/{max_retries}), "
-                    f"cooling down {retry_after}s and retrying with next token"
-                )
-                if attempt == max_retries - 1:
-                    raise LLMServiceException(
-                        internal_message=f"All Ali tokens exhausted after {max_retries} retries: {exc}",
-                        provider=self.default_model,
-                        original_exception=exc,
-                    ) from exc
-            except LLMServiceException:
-                raise
-            except Exception as exc:
-                masked_api_key = mask_api_key(lease.api_key)
-                logger.error(
-                    "LLM request failed (Ali pool): model={model}, token_id={token_id}, api_key={api_key}, error={error}",
-                    model=model,
-                    token_id=lease.token_id,
-                    api_key=masked_api_key,
-                    error=exc,
-                )
-                raise LLMServiceException(
-                    internal_message=(
-                        "API request failed "
-                        f"(Ali pool, token_id={lease.token_id}, api_key={masked_api_key}): {exc}"
-                    ),
-                    provider=self.default_model,
-                    original_exception=exc,
-                ) from exc
-        # unreachable but satisfies the type checker
-        raise LLMServiceException(
-            internal_message="Ali token pool retry loop exited unexpectedly",
-            provider=self.default_model,
-        )
-
-    def _make_ali_pool_call(
-        self,
-        model: str,
-        all_messages: List[ChatCompletionMessageParam],
-        temperature: float,
-        max_tokens: int,
-        api_kwargs: Dict[str, Any],
-        usage_task: str | None = None,
-    ) -> tuple[str, LLMUsage]:
-        response, usage = self._make_ali_pool_raw_call(
-            model=model,
-            all_messages=all_messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            api_kwargs=api_kwargs,
-            usage_task=usage_task,
-        )
-        return response.choices[0].message.content or "", usage
-
-    # ------------------------------------------------------------------
 
     def chat_completion_raw_with_usage(
         self,
@@ -350,20 +211,10 @@ class OpenAICompatibleClientSync:
 
         lease = self._acquire_page_memory_vlm_lease(usage_task=usage_task)
         try:
-            if self._should_use_ali_pool():
-                return self._make_ali_pool_raw_call(
-                    model=effective_model,
-                    all_messages=all_messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    api_kwargs=api_kwargs,
-                    usage_task=usage_task,
-                )
-
             client = self._client
             if client is None:
                 raise LLMServiceException(
-                    internal_message="OpenAI client is not initialized for direct provider requests",
+                    internal_message="OpenAI client is not initialized",
                     provider=self.default_model,
                 )
             response = client.chat.completions.create(
@@ -436,7 +287,7 @@ class OpenAICompatibleClientSync:
         # ── disable thinking mode (Qwen default) ──
         # Qwen3.5 by default enables thinking mode, which wastes tokens by outputting <think>...</think>
         # Only inject the disable flag when the caller hasn't already set extra_body
-        # (e.g. DeepSeek thinking mode explicitly passes its own extra_body).
+        # (e.g. a reasoning-capable caller passes its own extra_body).
         if "extra_body" not in api_kwargs:
             api_kwargs["extra_body"] = {
                 "enable_thinking": False,
@@ -457,22 +308,10 @@ class OpenAICompatibleClientSync:
 
         lease = self._acquire_page_memory_vlm_lease(usage_task=usage_task)
         try:
-            # Route through Ali token pool when applicable
-            if self._should_use_ali_pool():
-                return self._make_ali_pool_call(
-                    model=effective_model,
-                    all_messages=all_messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    api_kwargs=api_kwargs,
-                    usage_task=usage_task,
-                )
-
-            # Non-Ali path: use the single pre-configured client
             client = self._client
             if client is None:
                 raise LLMServiceException(
-                    internal_message="OpenAI client is not initialized for direct provider requests",
+                    internal_message="OpenAI client is not initialized",
                     provider=self.default_model,
                 )
             response = client.chat.completions.create(
@@ -534,20 +373,6 @@ class OpenAICompatibleClientSync:
             **kwargs,
         )
         return content
-
-
-def _parse_retry_after(exc: openai.RateLimitError) -> int:
-    """Extract Retry-After seconds from a RateLimitError, with sane bounds."""
-    try:
-        if hasattr(exc, "response") and exc.response is not None:
-            header_value = exc.response.headers.get(
-                "retry-after"
-            ) or exc.response.headers.get("Retry-After")
-            if header_value:
-                return max(1, min(int(header_value), 120))
-    except (ValueError, TypeError, AttributeError) as parse_error:
-        logger.debug(f"Could not parse retry-after header: {parse_error}")
-    return settings.ALI_TOKEN_COOLDOWN_SECONDS
 
 
 def get_openai_client(

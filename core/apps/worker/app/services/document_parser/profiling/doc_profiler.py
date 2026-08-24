@@ -129,7 +129,7 @@ def _profile_pdf_with_db(
         settings={
             "planner_model": settings.IMAGE_MODEL,
             "vlm_model": settings.IMAGE_MODEL,
-            "model": settings.HIERARCHY_LLM_MODEL or settings.NORMOL_MODEL,
+            "model": settings.HIERARCHY_LLM_MODEL or settings.NORMAL_MODEL,
             "toc_profile_enabled": page_toc_enabled,
             "toc_before_coarse": page_toc_enabled,
         },

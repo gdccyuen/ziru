@@ -44,7 +44,7 @@ from shared.services.ai.llm_overrides import get_text_client
 
 def _resolve_hierarchy_model_name(model_name=None):
     """Resolve the dedicated hierarchy LLM model with backward-compatible fallback."""
-    return model_name or settings.HIERARCHY_LLM_MODEL or settings.NORMOL_MODEL
+    return model_name or settings.HIERARCHY_LLM_MODEL or settings.NORMAL_MODEL
 
 
 def save_intermediate_csv(df: pd.DataFrame, output_dir: str, filename: str):

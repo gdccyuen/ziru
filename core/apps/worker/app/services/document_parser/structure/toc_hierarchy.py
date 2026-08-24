@@ -12,7 +12,7 @@ from shared.core.config import settings
 
 
 def resolve_hierarchy_model_name(model_name: str | None = None) -> str:
-    return model_name or settings.HIERARCHY_LLM_MODEL or settings.NORMOL_MODEL
+    return model_name or settings.HIERARCHY_LLM_MODEL or settings.NORMAL_MODEL
 
 
 def parse_toc_hierarchy(

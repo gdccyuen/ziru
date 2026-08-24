@@ -330,7 +330,7 @@ def _run_hierarchy_on_candidates(
             model_name
             or os.environ.get(
                 "HIERARCHY_LLM_MODEL",
-                os.environ.get("NORMOL_MODEL"),
+                os.environ.get("NORMAL_MODEL"),
             )
         )
         client, resolved_model = get_text_client(requested_model=resolved_model)
