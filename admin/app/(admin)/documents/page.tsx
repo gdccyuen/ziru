@@ -367,7 +367,6 @@ function UploadDocumentDialog({
                 id="upload-file"
                 type="file"
                 multiple
-                required
                 disabled={submitting}
                 onChange={handleFileChange}
               />
