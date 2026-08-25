@@ -109,7 +109,7 @@ def verify_section_page_choice(
             messages=cast(Any, [{"role": "user", "content": content_parts}]),
             model=model,
             temperature=0.0,
-            max_tokens=400,
+            max_tokens=8192,
             response_format={"type": "json_object"},
             usage_task="page_memory.page_locate",
         )

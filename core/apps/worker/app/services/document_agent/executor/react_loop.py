@@ -242,7 +242,7 @@ class ReActExecutor:
                 messages=[{"role": "user", "content": prompt}],
                 model=model,
                 temperature=0.0,
-                max_tokens=1200,
+                max_tokens=8192,
                 response_format={"type": "json_object"},
                 usage_task="document_agent.react_loop",
             )

@@ -745,7 +745,7 @@ def propose_shard_plan(ctx: ToolContext, _args: dict[str, Any]) -> ToolResult:
                     messages=[{"role": "user", "content": prompt}],
                     model=model,
                     temperature=0.0,
-                    max_tokens=1600,
+                    max_tokens=8192,
                     response_format={"type": "json_object"},
                     usage_task="document_agent.propose_shard_plan",
                 )

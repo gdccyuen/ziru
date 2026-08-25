@@ -311,7 +311,7 @@ class ProfilePlanner:
                 messages=cast(Any, [{"role": "user", "content": content_parts}]),
                 model=model,
                 temperature=0.0,
-                max_tokens=1800,
+                max_tokens=8192,
                 response_format={"type": "json_object"},
                 usage_task="document_agent.coarse_profile",
             )
