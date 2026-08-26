@@ -87,8 +87,11 @@ function ThemeToggle() {
 
 function SidebarNav({ grade, onNavigate }: { grade: string; onNavigate?: () => void }) {
   const pathname = usePathname();
-  const visibleItems =
-    grade === "administrator" ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.href !== "/users");
+  const visibleItems = NAV_ITEMS.filter(
+    (item) =>
+      !(item.href === "/users" && grade !== "administrator") &&
+      !(item.href === "/jobs" && grade === "user")
+  );
   return (
     <nav className="flex flex-col gap-1 p-3">
       {visibleItems.map((item) => {
@@ -354,6 +357,10 @@ function AdminContent({ children }: { children: React.ReactNode }) {
   }
 
   if (pathname.startsWith("/users") && user.grade !== "administrator") {
+    return <RedirectTo to="/" />;
+  }
+
+  if (pathname.startsWith("/jobs") && user.grade === "user") {
     return <RedirectTo to="/" />;
   }
 
