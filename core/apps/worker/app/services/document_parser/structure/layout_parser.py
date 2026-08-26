@@ -456,7 +456,7 @@ def pred_titles(
     infos,
     doc_type,
     toc_hierarchies=None,
-    prompt_limt=4000,
+    prompt_limt=1200,
     enable_regx=True,
     smart_parse=False,
     model_name=None,
