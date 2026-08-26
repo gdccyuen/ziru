@@ -175,7 +175,7 @@ def update_df_list(
     llm_paras,
     time_stamp,
     page_nums="",
-    summary_len=1500,
+    summary_len=3000,
     skip_llm=False,
 ):
     """Flush accumulated content_items into a chunk row in df_list.
@@ -489,7 +489,7 @@ def parse_md(
         parser_state.flush_current_content()
 
     # Collect text chunk deferred tasks (entries needing summary/keywords)
-    summary_len = 1500
+    summary_len = 3000
     parser_state.collect_text_summary_tasks(summary_len)
     apply_markdown_deferred_summaries(
         MarkdownDeferredSummaryInput(
