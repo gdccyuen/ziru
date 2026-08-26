@@ -164,7 +164,7 @@ def hiearchy_llm(
     model_name=None,
     max_depth=6,
     toc_context=None,
-    max_len=8192,
+    max_len=20000,
     task="eval-headings",
     preceding_context=None,
 ):
