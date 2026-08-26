@@ -608,7 +608,8 @@ def parse_via_local(
 
     try:
         with open(local_file_path, "rb") as file_obj:
-            files = {"files": (filename, file_obj, "application/pdf")}
+            upload_name = f"{job_id}_{filename}" if job_id else filename
+            files = {"files": (upload_name, file_obj, "application/pdf")}
             local_logger.info("Posting PDF to local MinerU /file_parse")
             try:
                 response = _get_local_mineru_session_cached().post(
