@@ -127,7 +127,15 @@ def _parse_margin_ratio(value: Any) -> float | None:
 
 
 def _parse_profile_and_decision(raw: str) -> tuple[DocumentProfile, ReflexionDecision]:
-    data = json.loads(raw)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        logger.error(
+            "[document_agent] planner raw not JSON: len={} head={!r}",
+            len(raw or ""),
+            (raw or "")[:500],
+        )
+        raise
     if not isinstance(data, dict):
         raise ValueError("planner output must be a JSON object")
     category = " ".join(str(data.get("category") or "unknown document").split()[:5])
