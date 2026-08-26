@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from loguru import logger
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +12,9 @@ from shared.services.retrieval.execution.plan import (
 from shared.services.retrieval.search.scoring import merge_channels_rrf
 
 __all__ = ["merge_channels_rrf", "run_retrieval_query"]
+
+
+from shared.services.retrieval.query_normalization import normalize_query
 
 
 async def run_retrieval_query(
@@ -32,10 +36,13 @@ async def run_retrieval_query(
     use_agentic: bool | None = None,
     llm_config: LLMConfig | None = None,
 ) -> dict[str, Any]:
+    normalized_query, query_rewrites = normalize_query(query)
+    if query_rewrites:
+        logger.info("retrieval: query normalized {} -> {}", query, normalized_query)
     return await execute_retrieval_query(
         db=db,
         user_id=user_id,
-        query=query,
+        query=normalized_query,
         top_k=top_k,
         exclude_document_ids=exclude_document_ids,
         exclude_sections=exclude_sections,
