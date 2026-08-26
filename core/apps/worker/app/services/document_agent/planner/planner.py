@@ -65,7 +65,7 @@ def _segment_sample(candidates: list[int], count: int) -> list[int]:
 
 
 # Coarse VLM budget: extrema first, then front/mid/back fill, hard cap 10.
-_COARSE_SAMPLE_CAP = 10
+_COARSE_SAMPLE_CAP = 4
 _COARSE_SEGMENT_QUOTAS = (2, 2, 2)  # front, middle, back
 
 

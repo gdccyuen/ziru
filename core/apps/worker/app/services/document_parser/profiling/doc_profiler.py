@@ -132,6 +132,7 @@ def _profile_pdf_with_db(
             "model": settings.HIERARCHY_LLM_MODEL or settings.NORMAL_MODEL,
             "toc_profile_enabled": page_toc_enabled,
             "toc_before_coarse": page_toc_enabled,
+            "agent_png_dpi": "100",
         },
     )
     agent_profile = coordinator.run_coarse()
