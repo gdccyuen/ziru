@@ -7,6 +7,20 @@ import json
 import time
 from dataclasses import dataclass
 from typing import Any, cast
+def _strip_json_fences(raw: str) -> str:
+    """Remove markdown code fences and surrounding whitespace."""
+    text = (raw or '').strip()
+    if text.startswith('```'):
+        lines = text.splitlines()
+        if lines and lines[0].startswith('```'):
+            lines = lines[1:]
+        if lines and lines[-1].strip().startswith('```'):
+            lines = lines[:-1]
+        text = '\n'.join(lines).strip()
+    return text
+
+
+
 
 
 # ---------------------------------------------------------------------------

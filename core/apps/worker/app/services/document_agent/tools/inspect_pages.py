@@ -12,6 +12,20 @@ from app.services.document_agent.manifest import ToolContext, ToolResult
 from app.services.document_agent.registry import has_page_features, register_tool
 from app.services.document_agent.visual import render_pages
 from shared.utils.token_estimate import estimate_tokens
+def _strip_json_fences(raw: str) -> str:
+    """Remove markdown code fences and surrounding whitespace."""
+    text = (raw or '').strip()
+    if text.startswith('```'):
+        lines = text.splitlines()
+        if lines and lines[0].startswith('```'):
+            lines = lines[1:]
+        if lines and lines[-1].strip().startswith('```'):
+            lines = lines[:-1]
+        text = '\n'.join(lines).strip()
+    return text
+
+
+
 
 
 @register_tool(
