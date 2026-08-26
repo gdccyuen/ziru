@@ -527,7 +527,7 @@ def _parse_llm_plan(
     min_pages: int,
     max_pages: int,
 ) -> tuple[bool, list[tuple[int, str, str, float]], str, str]:
-    data = json.loads(raw)
+    data = json.loads(_strip_json_fences(raw))
     if not isinstance(data, dict):
         raise ValueError("LLM shard plan is not an object")
     enabled = bool(data.get("enabled"))

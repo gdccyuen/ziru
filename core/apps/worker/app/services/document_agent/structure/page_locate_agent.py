@@ -119,7 +119,7 @@ def verify_section_page_choice(
             est=est,
             stage=stage,
         )
-        payload = json.loads(raw)
+        payload = json.loads(_strip_json_fences(raw))
         selected_page = payload.get("selected_page")
         if selected_page is not None:
             selected_page = int(selected_page)

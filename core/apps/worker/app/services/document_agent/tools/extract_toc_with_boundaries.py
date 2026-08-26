@@ -142,7 +142,7 @@ def _vlm_confirm_anchors(
                 est=est,
                 stage=stage,
             )
-        data = json.loads(raw)
+        data = json.loads(_strip_json_fences(raw))
         if isinstance(data, dict):
             items = data.get("pages") or data.get("results") or data.get("data") or []
             if not items and len(data) == 1:

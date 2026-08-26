@@ -202,7 +202,7 @@ def vlm_extract_toc_batch(
     )
     elapsed_ms = int((time.monotonic() - start) * 1000)
 
-    data = json.loads(raw)
+    data = json.loads(_strip_json_fences(raw))
     raw_pages: list[dict[str, Any]] = []
     if isinstance(data, dict):
         raw_pages = data.get("pages", [])

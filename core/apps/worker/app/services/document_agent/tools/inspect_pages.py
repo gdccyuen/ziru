@@ -96,7 +96,7 @@ def inspect_pages(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
             stage=stage,
         )
         try:
-            payload: dict[str, Any] = json.loads(raw)
+            payload: dict[str, Any] = json.loads(_strip_json_fences(raw))
         except json.JSONDecodeError:
             payload = {"raw": raw}
         if isinstance(payload, dict):

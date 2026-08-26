@@ -128,7 +128,7 @@ def _parse_margin_ratio(value: Any) -> float | None:
 
 def _parse_profile_and_decision(raw: str) -> tuple[DocumentProfile, ReflexionDecision]:
     try:
-        data = json.loads(raw)
+        data = json.loads(_strip_json_fences(raw))
     except json.JSONDecodeError:
         logger.error(
             "[document_agent] planner raw not JSON: len={} head={!r}",

@@ -57,7 +57,7 @@ def _compact_blackboard(ctx: ToolContext) -> dict[str, Any]:
 
 
 def _parse_decision(raw: str) -> ReflexionDecision:
-    data = json.loads(raw)
+    data = json.loads(_strip_json_fences(raw))
     action = str(data.get("action") or "tool_call")
     if action not in {"tool_call", "verdict_now"}:
         action = "tool_call"
