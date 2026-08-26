@@ -16,6 +16,9 @@ from app.api.v1.routes.retrieval import (
 from app.services.attributes.attribute_service import validation_error_422
 from app.services.rate_limit.data_structures import CurrentUser
 from app.services.search.knowledge_search import empty_evidence_response
+import asyncio
+import os
+from shared.services.ai.llm_overrides import get_text_client
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -187,6 +190,34 @@ async def resolve_chat_corpus_ids(
     return await resolve_matching_document_ids(db, constraints)
 
 
+def _chat_answer_synthesis_enabled() -> bool:
+    return os.environ.get("CHAT_ANSWER_SYNTHESIS", "").strip().lower() in ("1", "true", "yes")
+
+def _synthesis_prompt(question, results):
+    blocks = []
+    for i, res in enumerate(results[:5], start=1):
+        src = res.get("source") or {}
+        path = str(src.get("section_path") or src.get("source_file_name") or "unknown")
+        content = str(res.get("content") or res.get("evidence_text") or "")[:1500]
+        blocks.append(f"[{i}] Section: {path}\n    {content}")
+    return ("Answer the user question using ONLY the evidence blocks below. "
+            "If the evidence is insufficient, say so explicitly. "
+            "Write a concise, well-organized answer (short paragraphs or bullets). "
+            "Reference sections by their paths in parentheses. Do not invent facts.\n\n"
+            "Question: " + question + "\n\nEVIDENCE:\n" + "\n".join(blocks))
+
+def _synthesize_answer_sync(question, results):
+    client, model = get_text_client()
+    if client is None:
+        return ""
+    messages = [
+        {"role": "system", "content": "You are Ziru chat assistant. Ground every claim in the provided evidence."},
+        {"role": "user", "content": _synthesis_prompt(question, results)},
+    ]
+    raw, _ = client.chat_completion_with_usage(messages=messages, model=model, temperature=0.0, max_tokens=8192, usage_task="chat.answer_synthesis")
+    return (raw or "").strip()
+
+
 async def run_message_turn(
     db: AsyncSession,
     current_user: CurrentUser,
@@ -236,6 +267,13 @@ async def run_message_turn(
 
     answer_content = (evidence.get("evidence_text") or "").strip()
     citations = evidence.get("results") or []
+    if _chat_answer_synthesis_enabled() and citations:
+        try:
+            synthesized = await asyncio.to_thread(_synthesize_answer_sync, text, citations)
+            if synthesized:
+                answer_content = synthesized
+        except Exception:
+            pass
     if not answer_content:
         if citations:
             answer_content = (
