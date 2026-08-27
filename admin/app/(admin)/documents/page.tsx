@@ -970,7 +970,7 @@ export default function DocumentsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <Table className="min-w-[980px]">
+              <Table className="min-w-[980px] [&_td]:p-1.5 [&_th]:py-1.5">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[300px]">Document</TableHead>
