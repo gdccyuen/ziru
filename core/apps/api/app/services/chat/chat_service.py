@@ -37,16 +37,47 @@ DEFAULT_THREAD_TITLE = "New chat"
 CHAT_TOP_K = 8
 CHAT_RECALL_K = 30
 
+RETRIEVAL_PARAM_KEYS = {"rerank", "top_k", "internal_recall_k", "use_agentic"}
+DEFAULT_RETRIEVAL_PARAMS: dict[str, Any] = {
+    "rerank": False,
+    "top_k": CHAT_TOP_K,
+    "internal_recall_k": CHAT_RECALL_K,
+    "use_agentic": False,
+}
+
 
 def thread_payload(thread: ChatThread) -> dict[str, Any]:
     return {
         "id": thread.id,
         "title": thread.title,
         "filters": thread.filters or [],
+        "retrieval_params": thread.retrieval_params,
         "created_at": thread.created_at.isoformat() if thread.created_at else None,
         "updated_at": thread.updated_at.isoformat() if thread.updated_at else None,
         "archived_at": thread.archived_at.isoformat() if thread.archived_at else None,
     }
+
+
+def _normalize_retrieval_params(
+    params: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if params is None:
+        return None
+    cleaned = {key: value for key, value in params.items() if key in RETRIEVAL_PARAM_KEYS}
+    return cleaned or None
+
+
+def _resolved_retrieval_params(thread: ChatThread) -> dict[str, Any]:
+    resolved = dict(DEFAULT_RETRIEVAL_PARAMS)
+    if thread.retrieval_params:
+        resolved.update(
+            {
+                key: value
+                for key, value in thread.retrieval_params.items()
+                if key in RETRIEVAL_PARAM_KEYS
+            }
+        )
+    return resolved
 
 
 def message_payload(message: ChatMessage) -> dict[str, Any]:
@@ -93,14 +124,38 @@ async def create_thread(
     *,
     title: str | None,
     filters: list[dict[str, Any]] | None,
+    retrieval_params: dict[str, Any] | None,
 ) -> dict[str, Any]:
     cleaned_title = (title or "").strip() or DEFAULT_THREAD_TITLE
     thread = ChatThread(
         user_id=user_id,
         title=cleaned_title[:255],
         filters=filters,
+        retrieval_params=_normalize_retrieval_params(retrieval_params),
     )
     db.add(thread)
+    await db.commit()
+    await db.refresh(thread)
+    return thread_payload(thread)
+
+
+async def update_thread(
+    db: AsyncSession,
+    user_id: str,
+    thread_id: str,
+    *,
+    title: str | None,
+    retrieval_params: dict[str, Any] | None,
+) -> dict[str, Any]:
+    thread = await _get_owned_thread(db, user_id, thread_id)
+    if title is not None:
+        cleaned_title = title.strip()
+        if not cleaned_title:
+            raise validation_error_422("title must not be empty", "title")
+        thread.title = cleaned_title[:255]
+    if retrieval_params is not None:
+        thread.retrieval_params = _normalize_retrieval_params(retrieval_params)
+    thread.updated_at = utc_now_naive()
     await db.commit()
     await db.refresh(thread)
     return thread_payload(thread)
@@ -112,15 +167,13 @@ async def rename_thread(
     thread_id: str,
     title: str,
 ) -> dict[str, Any]:
-    thread = await _get_owned_thread(db, user_id, thread_id)
-    cleaned_title = title.strip()
-    if not cleaned_title:
-        raise validation_error_422("title must not be empty", "title")
-    thread.title = cleaned_title[:255]
-    thread.updated_at = utc_now_naive()
-    await db.commit()
-    await db.refresh(thread)
-    return thread_payload(thread)
+    return await update_thread(
+        db,
+        user_id,
+        thread_id,
+        title=title,
+        retrieval_params=None,
+    )
 
 
 async def archive_thread(
@@ -251,12 +304,14 @@ async def run_message_turn(
     else:
         all_ids = await resolve_all_active_document_ids(db)
         excludes = all_ids - allowed_ids
+        retrieval_params = _resolved_retrieval_params(thread)
         retrieval_request = RetrievalQueryRequest(
             query=text,
-            top_k=CHAT_TOP_K,
+            top_k=retrieval_params["top_k"],
             exclude_document_ids=sorted(excludes),
-            rerank=False,
-            internal_recall_k=CHAT_RECALL_K,
+            rerank=retrieval_params["rerank"],
+            internal_recall_k=retrieval_params["internal_recall_k"],
+            use_agentic=retrieval_params["use_agentic"],
         )
         evidence = await execute_retrieval_query(
             retrieval_request,
@@ -310,4 +365,5 @@ __all__ = [
     "rename_thread",
     "run_message_turn",
     "thread_payload",
+    "update_thread",
 ]

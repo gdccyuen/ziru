@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import importlib
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
 from typing import cast
+from unittest.mock import AsyncMock
 
 import pytest
 from httpx import AsyncClient
+from pytest import MonkeyPatch
 
 from tests.support.v2_knowledge import (
     bootstrap_admin,
@@ -58,10 +61,13 @@ async def _create_thread(
     *,
     title: str = "My thread",
     filters: list[dict[str, object]] | None = None,
+    retrieval_params: dict[str, object] | None = None,
 ) -> dict[str, object]:
     payload: dict[str, object] = {"title": title}
     if filters is not None:
         payload["filters"] = filters
+    if retrieval_params is not None:
+        payload["retrieval_params"] = retrieval_params
     response = await client.post(
         "/api/v2/chat/threads",
         headers=_cookie_headers(cookie),
@@ -291,3 +297,140 @@ async def test_chat_forced_password_change_gate(
 
         assert response.status_code == 403
         assert response.json()["error"]["code"] == "PASSWORD_CHANGE_REQUIRED"
+
+
+@pytest.mark.asyncio
+async def test_chat_thread_retrieval_params_persist_and_update(
+    api_client_factory: Callable[[], AbstractAsyncContextManager[AsyncClient]],
+) -> None:
+    async with api_client_factory() as client:
+        cookie = await bootstrap_admin(client)
+        headers = _cookie_headers(cookie)
+
+        created = await _create_thread(
+            client,
+            cookie,
+            title="Tuned thread",
+            retrieval_params={
+                "rerank": True,
+                "top_k": 12,
+                "internal_recall_k": 55,
+                "use_agentic": True,
+            },
+        )
+        thread_id = cast(str, created["id"])
+        assert created["retrieval_params"] == {
+            "rerank": True,
+            "top_k": 12,
+            "internal_recall_k": 55,
+            "use_agentic": True,
+        }
+
+        listed = await client.get("/api/v2/chat/threads", headers=headers)
+        assert listed.status_code == 200
+        assert listed.json()["threads"][0]["retrieval_params"] == {
+            "rerank": True,
+            "top_k": 12,
+            "internal_recall_k": 55,
+            "use_agentic": True,
+        }
+
+        updated = await client.patch(
+            f"/api/v2/chat/threads/{thread_id}",
+            headers=headers,
+            json={
+                "title": "Retuned thread",
+                "retrieval_params": {
+                    "rerank": False,
+                    "top_k": 20,
+                    "internal_recall_k": 90,
+                    "use_agentic": False,
+                },
+            },
+        )
+        assert updated.status_code == 200, updated.text
+        assert updated.json()["title"] == "Retuned thread"
+        assert updated.json()["retrieval_params"] == {
+            "rerank": False,
+            "top_k": 20,
+            "internal_recall_k": 90,
+            "use_agentic": False,
+        }
+
+
+@pytest.mark.asyncio
+async def test_chat_message_turn_applies_thread_retrieval_params(
+    api_client_factory: Callable[[], AbstractAsyncContextManager[AsyncClient]],
+    monkeypatch: MonkeyPatch,
+) -> None:
+    async with api_client_factory() as client:
+        cookie = await bootstrap_admin(client)
+        headers = _cookie_headers(cookie)
+
+        chat_service = importlib.import_module("app.services.chat.chat_service")
+        retrieval_calls: list[object] = []
+
+        async def fake_retrieval(payload: object, *args: object, **kwargs: object):
+            retrieval_calls.append(payload)
+            return {"evidence_text": "", "results": []}
+
+        async def fake_corpus_ids(*args: object, **kwargs: object):
+            return {"doc_chat_trace"}
+
+        monkeypatch.setattr(chat_service, "execute_retrieval_query", fake_retrieval)
+        monkeypatch.setattr(chat_service, "resolve_chat_corpus_ids", fake_corpus_ids)
+
+        thread = await _create_thread(
+            client,
+            cookie,
+            retrieval_params={
+                "rerank": True,
+                "top_k": 17,
+                "internal_recall_k": 66,
+                "use_agentic": True,
+            },
+        )
+        thread_id = cast(str, thread["id"])
+
+        turn = await client.post(
+            f"/api/v2/chat/threads/{thread_id}/messages",
+            headers=headers,
+            json={"content": "alpha"},
+        )
+
+        assert turn.status_code == 200, turn.text
+        assert len(retrieval_calls) == 1
+        request = cast(object, retrieval_calls[0])
+        assert getattr(request, "top_k") == 17
+        assert getattr(request, "internal_recall_k") == 66
+        assert getattr(request, "rerank") is True
+        assert getattr(request, "use_agentic") is True
+
+
+@pytest.mark.asyncio
+async def test_chat_thread_retrieval_param_range_validation(
+    api_client_factory: Callable[[], AbstractAsyncContextManager[AsyncClient]],
+) -> None:
+    async with api_client_factory() as client:
+        cookie = await bootstrap_admin(client)
+        headers = _cookie_headers(cookie)
+
+        for invalid_params in (
+            {"top_k": 0},
+            {"top_k": 51},
+            {"internal_recall_k": 0},
+            {"internal_recall_k": 201},
+        ):
+            response = await client.post(
+                "/api/v2/chat/threads",
+                headers=headers,
+                json={"title": "invalid", "retrieval_params": invalid_params},
+            )
+            assert response.status_code == 422, response.text
+
+        response = await client.patch(
+            "/api/v2/chat/threads/does-not-matter",
+            headers=headers,
+            json={"retrieval_params": {"top_k": 51}},
+        )
+        assert response.status_code == 422, response.text
