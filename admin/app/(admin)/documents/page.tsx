@@ -984,7 +984,7 @@ export default function DocumentsPage() {
                 <TableBody>
                   {documents.map((document) => (
                     <TableRow key={document.document_id}>
-                      <TableCell>
+                      <TableCell className="p-1.5">
                         <p
                           className="max-w-[280px] truncate font-medium"
                           title={document.source_file_name ?? undefined}
@@ -998,12 +998,12 @@ export default function DocumentsPage() {
                           {document.document_id}
                         </code>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="p-1.5">
                         <Badge variant={document.status === "active" ? "default" : "outline"}>
                           {document.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="p-1.5">
                         {document.attributes && Object.keys(document.attributes).length > 0 ? (
                           <p
                             className="max-w-[320px] truncate text-xs"
@@ -1031,7 +1031,7 @@ export default function DocumentsPage() {
                         </Button>
                         {canUpload ? (
                           <Button variant="ghost" size="sm" onClick={() => setEditTarget(document)}>
-                            Edit attributes
+                            Edit
                           </Button>
                         ) : null}
                         {user?.grade === "administrator" ? (
