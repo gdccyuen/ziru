@@ -6,6 +6,7 @@ import {
   ExternalLink,
   FileText,
   Filter,
+  Pencil,
   Plus,
   Search,
   Upload,
@@ -58,6 +59,7 @@ import { formatDateTime, truncate } from "@/lib/format";
 
 type FilterRow = { id: string; key: string; value: string };
 type UploadRow = { id: string; key: string; values: string };
+type EditRow = { id: string; key: string; values: string };
 type UploadFileStatus = "queued" | "uploading" | "done" | "failed";
 type UploadFileEntry = {
   id: string;
@@ -68,6 +70,8 @@ type UploadFileEntry = {
 };
 
 const MAX_UPLOAD_FILES = 20;
+
+const BUILTIN_ATTRIBUTE_KEYS = ["createBy", "createTime", "fileHash", "originalFile"];
 
 const UPLOAD_STATUS_LABELS: Record<UploadFileStatus, string> = {
   queued: "Queued",
@@ -86,6 +90,7 @@ const UPLOAD_STATUS_CLASSES: Record<UploadFileStatus, string> = {
 let filterSequence = 0;
 let uploadSequence = 0;
 let fileSequence = 0;
+let editSequence = 0;
 
 function nextFilterId(): string {
   filterSequence += 1;
@@ -100,6 +105,11 @@ function nextUploadId(): string {
 function nextFileId(): string {
   fileSequence += 1;
   return `upload-file-${fileSequence}`;
+}
+
+function nextEditId(): string {
+  editSequence += 1;
+  return `edit-row-${editSequence}`;
 }
 
 function splitValues(values: string): string[] {
@@ -128,6 +138,22 @@ function toggleValue(values: string, value: string): string {
   const list = splitValues(values);
   const next = list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
   return next.join(", ");
+}
+
+function buildEditRows(document: DocumentItem | null): EditRow[] {
+  if (!document?.attributes) return [];
+  return Object.entries(document.attributes)
+    .filter(([key]) => !BUILTIN_ATTRIBUTE_KEYS.includes(key))
+    .map(([key, values]) => ({
+      id: nextEditId(),
+      key,
+      values: (values ?? []).join(", "),
+    }));
+}
+
+function fieldErrorKey(field: string): string | null {
+  const match = /^attributes\.(.+)$/.exec(field);
+  return match ? match[1] : null;
 }
 
 function AttributeValuesEditor({
@@ -520,6 +546,202 @@ function UploadDocumentDialog({
   );
 }
 
+function EditDocumentAttributesDialog({
+  open,
+  onOpenChange,
+  document,
+  dictionary,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  document: DocumentItem | null;
+  dictionary: AttributeEntry[];
+  onSaved: () => void;
+}) {
+  const [rows, setRows] = useState<EditRow[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const prevOpen = useRef(open);
+  useEffect(() => {
+    if (open && !prevOpen.current) {
+      setRows(buildEditRows(document));
+      setFieldErrors({});
+      setError(null);
+      setSubmitting(false);
+    }
+    prevOpen.current = open;
+  }, [open, document]);
+
+  const existingKeys = new Set(rows.map((row) => row.key.trim()).filter(Boolean));
+  const keyOptions: AttributeEntry[] = [
+    ...dictionary,
+    ...Array.from(existingKeys)
+      .filter((key) => !dictionary.some((entry) => entry.key === key))
+      .map((key) => ({ key, allowedValues: null, usage: 0 })),
+  ];
+
+  const builtInRows = BUILTIN_ATTRIBUTE_KEYS.map((key) => ({
+    key,
+    values: document?.attributes?.[key] ?? [],
+  })).filter((row) => row.values.length > 0);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!document) return;
+    setError(null);
+    setFieldErrors({});
+    const attributes: Record<string, string[]> = {};
+    for (const row of rows) {
+      const key = row.key.trim();
+      const values = splitValues(row.values);
+      if (key && values.length > 0) attributes[key] = values;
+    }
+    setSubmitting(true);
+    try {
+      await api.updateDocumentAttributes(document.document_id, attributes);
+      onSaved();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        const nextFieldErrors: Record<string, string> = {};
+        for (const violation of err.violations) {
+          const key = fieldErrorKey(violation.field);
+          if (key) nextFieldErrors[key] = violation.description;
+        }
+        setFieldErrors(nextFieldErrors);
+        setError(err.message);
+      } else {
+        setError("Failed to update document attributes");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit attributes</DialogTitle>
+          <DialogDescription>
+            {document?.source_file_name ?? truncate(document?.document_id ?? "Document", 40)} — replace
+            non-built-in attributes. Clearing every value removes all non-built-in attributes.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Non-built-in attributes</Label>
+            {keyOptions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No attributes defined yet — define attributes first in the Attribute Dictionary.
+              </p>
+            ) : null}
+            {rows.length > 0 ? (
+              <div className="space-y-3">
+                {rows.map((row, index) => {
+                  const entry = row.key.trim()
+                    ? keyOptions.find((item) => item.key === row.key.trim())
+                    : undefined;
+                  const rowError = fieldErrors[row.key.trim()];
+                  return (
+                    <div key={row.id} className="space-y-2 rounded-md border p-3">
+                      <div className="flex items-end gap-2">
+                        <div className="flex-1 space-y-1">
+                          <Label className="text-xs">Attribute</Label>
+                          <AttributeKeySelect
+                            value={row.key}
+                            onChange={(key) =>
+                              setRows((prev) =>
+                                prev.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, key, values: "" } : item
+                                )
+                              )
+                            }
+                            dictionary={keyOptions}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Remove attribute row"
+                          onClick={() =>
+                            setRows((prev) => prev.filter((_, itemIndex) => itemIndex !== index))
+                          }
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">
+                          Values{entry === undefined ? "" : " (multi-select)"}
+                        </Label>
+                        <AttributeValuesEditor
+                          keyName={row.key}
+                          values={row.values}
+                          onChange={(values) =>
+                            setRows((prev) =>
+                              prev.map((item, itemIndex) =>
+                                itemIndex === index ? { ...item, values } : item
+                              )
+                            )
+                          }
+                          dictionary={keyOptions}
+                        />
+                      </div>
+                      {rowError ? <p className="text-xs text-destructive">{rowError}</p> : null}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={keyOptions.length === 0}
+              onClick={() =>
+                setRows((prev) => [...prev, { id: nextEditId(), key: "", values: "" }])
+              }
+            >
+              <Plus className="mr-1 h-3.5 w-3.5" />
+              Add attribute
+            </Button>
+          </div>
+          <div className="space-y-2">
+            <Label>Built-in attributes (read-only)</Label>
+            {builtInRows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No built-in attributes.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {builtInRows.map((row) => (
+                  <div
+                    key={row.key}
+                    className="flex items-start justify-between gap-3 rounded-md border bg-muted/40 p-2"
+                  >
+                    <span className="font-mono text-sm font-medium">{row.key}</span>
+                    <span className="text-right text-sm text-muted-foreground">
+                      {row.values.join(", ")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          <DialogFooter>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Saving…" : "Save attributes"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function DocumentsPage() {
   const { user } = useAuth();
   const canUpload = user?.grade === "administrator" || user?.grade === "librarian";
@@ -532,6 +754,7 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewTarget, setViewTarget] = useState<DocumentItem | null>(null);
+  const [editTarget, setEditTarget] = useState<DocumentItem | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<DocumentItem | null>(null);
   const [archiving, setArchiving] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -806,6 +1029,11 @@ export default function DocumentsPage() {
                         <Button variant="ghost" size="sm" onClick={() => setViewTarget(document)}>
                           View
                         </Button>
+                        {canUpload ? (
+                          <Button variant="ghost" size="sm" onClick={() => setEditTarget(document)}>
+                            Edit attributes
+                          </Button>
+                        ) : null}
                         {user?.grade === "administrator" ? (
                           <Button
                             variant="ghost"
@@ -931,6 +1159,19 @@ export default function DocumentsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <EditDocumentAttributesDialog
+        open={editTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditTarget(null);
+        }}
+        document={editTarget}
+        dictionary={dictionary}
+        onSaved={() => {
+          setEditTarget(null);
+          void load();
+        }}
+      />
 
       <AlertDialog
         open={archiveTarget !== null}

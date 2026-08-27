@@ -135,16 +135,37 @@ export type VersionInfo = {
   service: string;
 };
 
+export type ApiViolation = {
+  field: string;
+  description: string;
+};
+
 export class ApiError extends Error {
   readonly status: number;
   readonly code?: string;
+  readonly violations: ApiViolation[];
 
-  constructor(message: string, status: number, code?: string) {
+  constructor(message: string, status: number, code?: string, violations: ApiViolation[] = []) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
+    this.violations = violations;
   }
+}
+
+function extractViolations(body: unknown): ApiViolation[] {
+  if (body === null || typeof body !== "object") return [];
+  const error = (body as { error?: { details?: { violations?: unknown } } }).error;
+  const raw = error?.details?.violations;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (item): item is ApiViolation =>
+      item !== null &&
+      typeof item === "object" &&
+      typeof (item as ApiViolation).field === "string" &&
+      typeof (item as ApiViolation).description === "string"
+  );
 }
 
 function extractDetail(body: unknown): string | undefined {
@@ -188,7 +209,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
         : undefined;
     const message =
       errorBlock?.message ?? extractDetail(body) ?? `Request failed with status ${response.status}`;
-    throw new ApiError(message, response.status, errorBlock?.code);
+    throw new ApiError(message, response.status, errorBlock?.code, extractViolations(body));
   }
   return body as T;
 }
@@ -313,6 +334,11 @@ export const api = {
     apiRequest<DocumentItem>(`/v2/documents/${encodeURIComponent(documentId)}`, {
       method: "DELETE",
     }),
+  updateDocumentAttributes: (documentId: string, attributes: Record<string, string[]>) =>
+    apiRequest<{ attributes: Record<string, string[]> }>(
+      `/v2/documents/${encodeURIComponent(documentId)}/attributes`,
+      { method: "PATCH", body: JSON.stringify({ attributes }) }
+    ),
   jobs: (query: JobsQuery = {}) =>
     apiRequest<JobsResponse>(
       `/v1/jobs${toQuery({ page: query.page, page_size: query.page_size, job_status: query.job_status })}`
