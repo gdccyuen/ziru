@@ -145,6 +145,7 @@ async def update_thread(
     thread_id: str,
     *,
     title: str | None,
+    filters: list[dict[str, Any]] | None,
     retrieval_params: dict[str, Any] | None,
 ) -> dict[str, Any]:
     thread = await _get_owned_thread(db, user_id, thread_id)
@@ -153,6 +154,8 @@ async def update_thread(
         if not cleaned_title:
             raise validation_error_422("title must not be empty", "title")
         thread.title = cleaned_title[:255]
+    if filters is not None:
+        thread.filters = filters
     if retrieval_params is not None:
         thread.retrieval_params = _normalize_retrieval_params(retrieval_params)
     thread.updated_at = utc_now_naive()
@@ -172,6 +175,7 @@ async def rename_thread(
         user_id,
         thread_id,
         title=title,
+        filters=None,
         retrieval_params=None,
     )
 

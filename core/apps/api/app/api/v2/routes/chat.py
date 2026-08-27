@@ -48,12 +48,17 @@ class CreateThreadRequest(BaseModel):
 
 class UpdateThreadRequest(BaseModel):
     title: str | None = Field(None, min_length=1, max_length=255)
+    filters: list[ChatFilter] | None = None
     retrieval_params: RetrievalParams | None = None
 
     @model_validator(mode="after")
     def at_least_one_field(self) -> "UpdateThreadRequest":
-        if self.title is None and self.retrieval_params is None:
-            raise ValueError("provide title or retrieval_params to update")
+        if (
+            self.title is None
+            and self.filters is None
+            and self.retrieval_params is None
+        ):
+            raise ValueError("provide title, filters, or retrieval_params to update")
         return self
 
 
@@ -125,6 +130,7 @@ async def update_chat_thread(
         current_user.user_id,
         thread_id,
         title=payload.title,
+        filters=_filter_dicts(payload.filters),
         retrieval_params=_retrieval_params_dict(payload.retrieval_params),
     )
 

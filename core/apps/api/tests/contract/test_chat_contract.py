@@ -112,6 +112,24 @@ async def test_chat_thread_crud_and_archive(
         assert renamed.status_code == 200
         assert renamed.json()["title"] == "Renamed thread"
 
+        rescoped = await client.patch(
+            f"/api/v2/chat/threads/{thread_id}",
+            headers=headers,
+            json={"filters": [{"key": "division", "values": ["sales"]}]},
+        )
+        assert rescoped.status_code == 200, rescoped.text
+        assert rescoped.json()["filters"] == [
+            {"key": "division", "values": ["sales"]},
+        ]
+
+        cleared = await client.patch(
+            f"/api/v2/chat/threads/{thread_id}",
+            headers=headers,
+            json={"filters": []},
+        )
+        assert cleared.status_code == 200, cleared.text
+        assert cleared.json()["filters"] == []
+
         empty = await client.get(
             f"/api/v2/chat/threads/{thread_id}/messages",
             headers=headers,

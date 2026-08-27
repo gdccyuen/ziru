@@ -267,6 +267,7 @@ export const api = {
       ),
     update: (threadId: string, input: {
       title?: string;
+      filters?: AttributeFilter[];
       retrieval_params?: RetrievalParams;
     }) =>
       apiRequest<ChatThread>(

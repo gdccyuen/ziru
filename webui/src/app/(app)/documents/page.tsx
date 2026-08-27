@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import { ApiError, api, originalFileUrl, type AttributeEntry, type DocumentItem } from "@/lib/api";
+import { getCorpusScope, setCorpusScope, subscribeCorpusScope, type CorpusScope } from "@/lib/corpus-scope";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
@@ -16,6 +17,9 @@ export default function DocumentsPage() {
   const highlightDocument = searchParams.get("document");
   const [attributes, setAttributes] = useState<AttributeEntry[]>([]);
   const [selected, setSelected] = useState<Record<string, string[]>>({});
+  const [corpusScope, setCorpusScopeState] = useState<CorpusScope>(() =>
+    getCorpusScope(),
+  );
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -33,6 +37,8 @@ export default function DocumentsPage() {
       }
     })();
   }, []);
+
+  useEffect(() => subscribeCorpusScope((scope) => setCorpusScopeState(scope)), []);
 
   useEffect(() => {
     // The list must show a spinner immediately when filters/page change; the
@@ -66,20 +72,38 @@ export default function DocumentsPage() {
   }, [page, selected]);
 
   function toggleValue(key: string, value: string) {
-    setSelected((current) => {
-      const values = current[key] ?? [];
-      const next = values.includes(value)
-        ? values.filter((item) => item !== value)
-        : [...values, value];
-      return { ...current, [key]: next };
-    });
+    const values = selected[key] ?? [];
+    const nextValues = values.includes(value)
+      ? values.filter((item) => item !== value)
+      : [...values, value];
+    const next = { ...selected, [key]: nextValues };
+    setSelected(next);
+    setCorpusScope(selectedToScope(next));
     setPage(1);
+  }
+
+  function selectedToScope(filters: Record<string, string[]>): CorpusScope {
+    return Object.entries(filters)
+      .filter(([, values]) => values.length > 0)
+      .map(([key, values]) => ({ key, values }));
   }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-bold text-foreground">Documents</h1>
+        <div className="min-w-0">
+          <h1 className="text-lg font-bold text-foreground">Documents</h1>
+          {corpusScope.length > 0 ? (
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span className="font-semibold uppercase tracking-wide">Scoped corpus</span>
+              {corpusScope.map((filter) => (
+                <Badge key={filter.key} variant="secondary" className="text-[10px]">
+                  {filter.key}: {filter.values.join(", ")}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
+        </div>
         {total > 0 ? (
           <p className="text-xs text-muted-foreground">{total} document{total === 1 ? "" : "s"}</p>
         ) : null}

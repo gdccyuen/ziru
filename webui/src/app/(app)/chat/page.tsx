@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiError, api, type ChatMessage, type ChatThread } from "@/lib/api";
+import { X } from "lucide-react";
+import { ApiError, api, type AttributeFilter, type ChatMessage, type ChatThread } from "@/lib/api";
 import { ChatComposer } from "@/components/chat-composer";
 import { ChatMessageList } from "@/components/chat-message-list";
 import {
@@ -9,14 +10,25 @@ import {
   type RetrievalSettings,
 } from "@/components/retrieval-settings";
 import { ThreadSidebar } from "@/components/thread-sidebar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { clearCorpusScope, getCorpusScope, subscribeCorpusScope, type CorpusScope } from "@/lib/corpus-scope";
 
 function settingsFromThread(thread: ChatThread | null): RetrievalSettings {
   return {
     ...RETRIEVAL_DEFAULTS,
     ...(thread?.retrieval_params ?? {}),
   };
+}
+
+function filtersEqual(left: AttributeFilter[], right: AttributeFilter[]): boolean {
+  const normalize = (filters: AttributeFilter[]) =>
+    filters
+      .filter((filter) => filter.values.length > 0)
+      .map((filter) => ({ key: filter.key, values: [...filter.values].sort() }))
+      .sort((a, b) => a.key.localeCompare(b.key));
+  return JSON.stringify(normalize(left)) === JSON.stringify(normalize(right));
 }
 
 export default function ChatPage() {
@@ -30,6 +42,9 @@ export default function ChatPage() {
   const [error, setError] = useState<string | null>(null);
   const [retrievalSettings, setRetrievalSettings] = useState<RetrievalSettings>(
     RETRIEVAL_DEFAULTS,
+  );
+  const [corpusScope, setCorpusScopeState] = useState<CorpusScope>(() =>
+    getCorpusScope(),
   );
   const initializedRef = useRef(false);
 
@@ -62,6 +77,8 @@ export default function ChatPage() {
     }
   }, []);
 
+  useEffect(() => subscribeCorpusScope((scope) => setCorpusScopeState(scope)), []);
+
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
@@ -84,7 +101,9 @@ export default function ChatPage() {
     setCreating(true);
     setError(null);
     try {
-      const thread = await api.chatThreads.create({});
+      const thread = await api.chatThreads.create(
+        corpusScope.length > 0 ? { filters: corpusScope } : {},
+      );
       setThreads((current) => [thread, ...current]);
       setActiveThreadId(thread.id);
       setMessages([]);
@@ -145,11 +164,23 @@ export default function ChatPage() {
     }
   }
 
+  async function ensureThreadScope(threadId: string) {
+    const thread = threads.find((item) => item.id === threadId);
+    if (!thread || filtersEqual(thread.filters, corpusScope)) return;
+    const updated = await api.chatThreads.update(threadId, {
+      filters: corpusScope,
+    });
+    setThreads((current) =>
+      current.map((item) => (item.id === threadId ? updated : item)),
+    );
+  }
+
   async function handleSend(text: string) {
     if (!activeThreadId || sending) return;
     setSending(true);
     setError(null);
     try {
+      await ensureThreadScope(activeThreadId);
       const result = await api.chatThreads.postMessage(activeThreadId, {
         content: text,
       });
@@ -218,6 +249,30 @@ export default function ChatPage() {
         ) : activeThread ? (
           <>
             <ChatMessageList messages={messages} pending={sending} />
+            {corpusScope.length > 0 ? (
+              <div className="shrink-0 border-t border-border/70 bg-background px-4 py-2">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Corpus scope
+                  </span>
+                  {corpusScope.map((filter) => (
+                    <Badge key={filter.key} variant="secondary" className="text-[10px]">
+                      {filter.key}: {filter.values.join(", ")}
+                    </Badge>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto h-6 gap-1 px-2 text-[10px]"
+                    onClick={() => clearCorpusScope()}
+                  >
+                    <X className="size-3" />
+                    Clear
+                  </Button>
+                </div>
+              </div>
+            ) : null}
             <ChatComposer
               disabled={!activeThread}
               sending={sending}
