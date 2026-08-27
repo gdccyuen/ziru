@@ -43,6 +43,13 @@ export type AttributeFilter = {
   values: string[];
 };
 
+export type RetrievalParams = {
+  rerank?: boolean;
+  top_k?: number;
+  internal_recall_k?: number;
+  use_agentic?: boolean;
+};
+
 export type Pagination = {
   page: number;
   page_size: number;
@@ -100,6 +107,7 @@ export type ChatThread = {
   id: string;
   title: string;
   filters: AttributeFilter[];
+  retrieval_params: RetrievalParams | null;
   created_at: string | null;
   updated_at: string | null;
   archived_at: string | null;
@@ -208,6 +216,7 @@ export const api = {
     top_k?: number;
     internal_recall_k?: number;
     rerank?: boolean;
+    use_agentic?: boolean;
   }) =>
     apiRequest<SearchResponse>("/v2/search", {
       method: "POST",
@@ -217,6 +226,7 @@ export const api = {
         top_k: input.top_k ?? 8,
         internal_recall_k: input.internal_recall_k ?? 30,
         rerank: input.rerank ?? false,
+        use_agentic: input.use_agentic ?? false,
       }),
     }),
   documents: (query: {
@@ -241,7 +251,11 @@ export const api = {
       apiRequest<{ threads: ChatThread[]; total: number }>(
         "/v2/chat/threads",
       ),
-    create: (input: { title?: string; filters?: AttributeFilter[] }) =>
+    create: (input: {
+      title?: string;
+      filters?: AttributeFilter[];
+      retrieval_params?: RetrievalParams;
+    }) =>
       apiRequest<ChatThread>("/v2/chat/threads", {
         method: "POST",
         body: JSON.stringify(input),
@@ -250,6 +264,14 @@ export const api = {
       apiRequest<ChatThread>(
         `/v2/chat/threads/${encodeURIComponent(threadId)}`,
         { method: "PATCH", body: JSON.stringify({ title }) },
+      ),
+    update: (threadId: string, input: {
+      title?: string;
+      retrieval_params?: RetrievalParams;
+    }) =>
+      apiRequest<ChatThread>(
+        `/v2/chat/threads/${encodeURIComponent(threadId)}`,
+        { method: "PATCH", body: JSON.stringify(input) },
       ),
     archive: (threadId: string) =>
       apiRequest<{ message: string }>(

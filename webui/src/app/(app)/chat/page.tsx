@@ -4,9 +4,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, api, type ChatMessage, type ChatThread } from "@/lib/api";
 import { ChatComposer } from "@/components/chat-composer";
 import { ChatMessageList } from "@/components/chat-message-list";
+import {
+  RETRIEVAL_DEFAULTS,
+  type RetrievalSettings,
+} from "@/components/retrieval-settings";
 import { ThreadSidebar } from "@/components/thread-sidebar";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+
+function settingsFromThread(thread: ChatThread | null): RetrievalSettings {
+  return {
+    ...RETRIEVAL_DEFAULTS,
+    ...(thread?.retrieval_params ?? {}),
+  };
+}
 
 export default function ChatPage() {
   const [threads, setThreads] = useState<ChatThread[]>([]);
@@ -17,6 +28,9 @@ export default function ChatPage() {
   const [creating, setCreating] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retrievalSettings, setRetrievalSettings] = useState<RetrievalSettings>(
+    RETRIEVAL_DEFAULTS,
+  );
   const initializedRef = useRef(false);
 
   const loadThreads = useCallback(async () => {
@@ -40,6 +54,7 @@ export default function ChatPage() {
     try {
       const response = await api.chatThreads.messages(threadId);
       setMessages(response.messages);
+      setRetrievalSettings(settingsFromThread(response.thread));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to load messages.");
     } finally {
@@ -73,6 +88,7 @@ export default function ChatPage() {
       setThreads((current) => [thread, ...current]);
       setActiveThreadId(thread.id);
       setMessages([]);
+      setRetrievalSettings(RETRIEVAL_DEFAULTS);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not create thread.");
     } finally {
@@ -88,6 +104,25 @@ export default function ChatPage() {
       );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not rename thread.");
+    }
+  }
+
+  async function handleRetrievalSettingsChange(next: RetrievalSettings) {
+    setRetrievalSettings(next);
+    if (!activeThreadId) return;
+    try {
+      const updated = await api.chatThreads.update(activeThreadId, {
+        retrieval_params: next,
+      });
+      setThreads((current) =>
+        current.map((thread) =>
+          thread.id === activeThreadId ? updated : thread,
+        ),
+      );
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Could not update retrieval settings.",
+      );
     }
   }
 
@@ -186,6 +221,10 @@ export default function ChatPage() {
             <ChatComposer
               disabled={!activeThread}
               sending={sending}
+              retrievalSettings={retrievalSettings}
+              onRetrievalSettingsChange={(next) =>
+                void handleRetrievalSettingsChange(next)
+              }
               onSend={(text) => handleSend(text)}
             />
           </>

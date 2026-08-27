@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search as SearchIcon } from "lucide-react";
 import { ApiError, api, originalFileUrl, type AttributeEntry, type RetrievalResult, type SearchResponse } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  RETRIEVAL_DEFAULTS,
+  RetrievalSettingsRow,
+  type RetrievalSettings,
+} from "@/components/retrieval-settings";
 import { useAuth } from "@/lib/auth-context";
 import { profileSummary } from "@/lib/format";
 
@@ -15,6 +20,10 @@ type SelectedFilters = Record<string, string[]>;
 export default function SearchPage() {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
+  const [retrievalSettings, setRetrievalSettings] = useState<RetrievalSettings>(
+    RETRIEVAL_DEFAULTS,
+  );
+  const queryRef = useRef<HTMLInputElement>(null);
   const [attributes, setAttributes] = useState<AttributeEntry[]>([]);
   const [selected, setSelected] = useState<SelectedFilters>({});
   const [freeText, setFreeText] = useState<Record<string, string>>({});
@@ -57,6 +66,21 @@ export default function SearchPage() {
         ? values.filter((item) => item !== value)
         : [...values, value];
       return { ...current, [key]: next };
+    });
+  }
+
+  function handleSelectPrompt(prompt: string) {
+    setQuery(prompt);
+    requestAnimationFrame(() => {
+      const input = queryRef.current;
+      if (!input) return;
+      input.focus({ preventScroll: true });
+      const match = prompt.match(/\[[^\]\r\n]{1,80}\]/);
+      if (!match || match.index === undefined) {
+        input.setSelectionRange(prompt.length, prompt.length);
+        return;
+      }
+      input.setSelectionRange(match.index, match.index + match[0].length);
     });
   }
 
@@ -105,6 +129,10 @@ export default function SearchPage() {
       const response = await api.search({
         query: trimmed,
         filters: filterList,
+        top_k: retrievalSettings.top_k,
+        internal_recall_k: retrievalSettings.internal_recall_k,
+        rerank: retrievalSettings.rerank,
+        use_agentic: retrievalSettings.use_agentic,
       });
       setResult(response);
       if (!usedProfile) {
@@ -141,6 +169,7 @@ export default function SearchPage() {
       <form onSubmit={handleSearch} className="space-y-4">
         <div className="flex gap-2">
           <Input
+            ref={queryRef}
             aria-label="Search query"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -152,6 +181,13 @@ export default function SearchPage() {
             Search
           </Button>
         </div>
+        <RetrievalSettingsRow
+          className="rounded-lg border border-border/70 bg-background px-3 py-2"
+          value={retrievalSettings}
+          onChange={setRetrievalSettings}
+          onSelectPrompt={handleSelectPrompt}
+          disabled={searching}
+        />
         {loadingAttributes ? (
           <p className="text-xs text-muted-foreground">Loading attribute filters…</p>
         ) : attributes.length === 0 ? (
