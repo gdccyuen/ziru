@@ -52,6 +52,7 @@ export type DocumentItem = {
   updated_at: string | null;
   archived_at: string | null;
   attributes?: Record<string, string[]>;
+  creator_email?: string;
 };
 
 export type DocumentsResponse = {

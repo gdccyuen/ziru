@@ -6,7 +6,6 @@ import {
   ExternalLink,
   FileText,
   Filter,
-  Pencil,
   Plus,
   Search,
   Upload,
@@ -117,6 +116,28 @@ function splitValues(values: string): string[] {
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
+}
+
+const ADMIN_HIDDEN_BUILTIN_ATTRIBUTE_KEYS = ["createTime", "fileHash", "originalFile"];
+
+function displayedAttributes(
+  document: DocumentItem,
+  grade: string | undefined
+): [string, string[]][] {
+  const attributes = Object.entries(document.attributes ?? {});
+  if (grade === "librarian") {
+    return attributes.filter(([key]) => !BUILTIN_ATTRIBUTE_KEYS.includes(key));
+  }
+  if (grade === "administrator") {
+    return attributes
+      .filter(([key]) => !ADMIN_HIDDEN_BUILTIN_ATTRIBUTE_KEYS.includes(key))
+      .map(([key, values]) =>
+        key === "createBy"
+          ? ["creator_email", document.creator_email ? [document.creator_email] : values]
+          : [key, values]
+      );
+  }
+  return attributes;
 }
 
 function formatFileSize(bytes: number): string {
@@ -626,8 +647,9 @@ function EditDocumentAttributesDialog({
         <DialogHeader>
           <DialogTitle>Edit attributes</DialogTitle>
           <DialogDescription>
-            {document?.source_file_name ?? truncate(document?.document_id ?? "Document", 40)} — replace
-            non-built-in attributes. Clearing every value removes all non-built-in attributes.
+            {document?.source_file_name ?? truncate(document?.document_id ?? "Document", 40)} —
+            replace non-built-in attributes. Clearing every value removes all non-built-in
+            attributes.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -977,76 +999,79 @@ export default function DocumentsPage() {
                     <TableHead className="w-[110px]">Status</TableHead>
                     <TableHead className="w-[340px]">Attributes</TableHead>
                     <TableHead className="w-[160px]">Created</TableHead>
-                    <TableHead className="w-[160px]">Updated</TableHead>
                     <TableHead className="w-[140px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {documents.map((document) => (
-                    <TableRow key={document.document_id}>
-                      <TableCell className="p-1.5">
-                        <p
-                          className="max-w-[280px] truncate font-medium"
-                          title={document.source_file_name ?? undefined}
-                        >
-                          {document.source_file_name ?? "—"}
-                        </p>
-                        <code
-                          className="block max-w-[280px] truncate font-mono text-xs text-muted-foreground"
-                          title={document.document_id}
-                        >
-                          {document.document_id}
-                        </code>
-                      </TableCell>
-                      <TableCell className="p-1.5">
-                        <Badge variant={document.status === "active" ? "default" : "outline"}>
-                          {document.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="p-1.5">
-                        {document.attributes && Object.keys(document.attributes).length > 0 ? (
+                  {documents.map((document) => {
+                    const visibleAttributes = displayedAttributes(document, user?.grade);
+                    return (
+                      <TableRow key={document.document_id}>
+                        <TableCell className="p-1.5">
                           <p
-                            className="max-w-[320px] truncate text-xs"
-                            title={Object.entries(document.attributes)
-                              .map(([key, values]) => `${key}=${values.join(",")}`)
-                              .join(" ")}
+                            className="max-w-[280px] truncate font-medium"
+                            title={document.source_file_name ?? undefined}
                           >
-                            {Object.entries(document.attributes)
-                              .map(([key, values]) => `${key}=${values.join(",")}`)
-                              .join("  ")}
+                            {document.source_file_name ?? "—"}
                           </p>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-                        {formatDateTime(document.created_at)}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-                        {formatDateTime(document.updated_at)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" onClick={() => setViewTarget(document)}>
-                          View
-                        </Button>
-                        {canUpload ? (
-                          <Button variant="ghost" size="sm" onClick={() => setEditTarget(document)}>
-                            Edit
-                          </Button>
-                        ) : null}
-                        {user?.grade === "administrator" ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setArchiveTarget(document)}
+                          <code
+                            className="block max-w-[280px] truncate font-mono text-xs text-muted-foreground"
+                            title={document.document_id}
                           >
-                            <Archive className="mr-1 h-3.5 w-3.5" />
-                            Archive
+                            {document.document_id}
+                          </code>
+                        </TableCell>
+                        <TableCell className="p-1.5">
+                          <Badge variant={document.status === "active" ? "default" : "outline"}>
+                            {document.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="p-1.5">
+                          {visibleAttributes.length > 0 ? (
+                            <p
+                              className="max-w-[320px] truncate text-xs"
+                              title={visibleAttributes
+                                .map(([key, values]) => `${key}=${values.join(",")}`)
+                                .join(" ")}
+                            >
+                              {visibleAttributes
+                                .map(([key, values]) => `${key}=${values.join(",")}`)
+                                .join("  ")}
+                            </p>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                          {formatDateTime(document.created_at)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm" onClick={() => setViewTarget(document)}>
+                            View
                           </Button>
-                        ) : null}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          {canUpload ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditTarget(document)}
+                            >
+                              Edit
+                            </Button>
+                          ) : null}
+                          {user?.grade === "administrator" ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setArchiveTarget(document)}
+                            >
+                              <Archive className="mr-1 h-3.5 w-3.5" />
+                              Archive
+                            </Button>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
