@@ -14,6 +14,7 @@ from shared.models.database.document import Document, DocumentChunk, DocumentSec
 from shared.models.database.document_attribute import DocumentAttribute
 from shared.models.database.job import Job
 from shared.models.database.job_result import JobResult
+from shared.models.database.user import User
 from shared.services.profile import (
     ProfileConstraint,
     build_profile_scope_clause,
@@ -119,6 +120,20 @@ class DocumentRepository:
                 attr_value
             )
         return attributes_map
+
+    async def get_user_emails_by_ids(
+        self,
+        db: AsyncSession,
+        *,
+        user_ids: Sequence[str],
+    ) -> dict[str, str]:
+        """Resolve user ids to emails with one query (creator_email lookup)."""
+        if not user_ids:
+            return {}
+        result = await db.execute(
+            select(User.id, User.email).where(User.id.in_(list(set(user_ids))))
+        )
+        return {user_id: email for user_id, email in result.all()}
 
     async def get_document(
         self,

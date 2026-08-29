@@ -178,6 +178,85 @@ async def test_empty_profile_returns_empty_list(
 
 
 @pytest.mark.asyncio
+async def test_creator_email_admin_only_and_admin_sees_other_creators(
+    api_client_factory: Callable[
+        [], AbstractAsyncContextManager[AsyncClient]
+    ],
+) -> None:
+    async with api_client_factory() as client:
+        admin_cookie = await bootstrap_admin(client)
+        await seed_attribute_dictionary({"division": ["library"]})
+        librarian_id, librarian_key = await create_user_with_key(
+            client,
+            admin_cookie,
+            email="creator-librarian@contract.ziru.local",
+            grade="librarian",
+            profile=[{"key": "division", "values": ["library"]}],
+        )
+        other_id, _ = await create_user_with_key(
+            client,
+            admin_cookie,
+            email="creator-other@contract.ziru.local",
+            grade="librarian",
+            profile=[{"key": "division", "values": ["library"]}],
+        )
+        await seed_document_with_attributes(
+            document_id="doc_creator_lib",
+            attributes={
+                "division": ["library"],
+                "createBy": [librarian_id],
+                "createTime": ["2026-01-01T00:00:00"],
+            },
+        )
+        await seed_document_with_attributes(
+            document_id="doc_creator_other",
+            attributes={
+                "division": ["library"],
+                "createBy": [other_id],
+                "createTime": ["2026-01-02T00:00:00"],
+            },
+        )
+
+        admin_response = await client.get(
+            "/api/v2/documents",
+            headers=_cookie_headers(admin_cookie),
+        )
+        librarian_response = await client.get(
+            "/api/v2/documents",
+            headers=_bearer(librarian_key),
+        )
+
+    assert admin_response.status_code == 200
+    assert _document_ids(admin_response.json()) == {
+        "doc_creator_lib",
+        "doc_creator_other",
+    }
+    admin_documents = cast(list[dict[str, object]], admin_response.json()["documents"])
+    admin_by_id = {
+        cast(str, document["document_id"]): document
+        for document in admin_documents
+    }
+    assert admin_by_id["doc_creator_lib"]["creator_email"] == (
+        "creator-librarian@contract.ziru.local"
+    )
+    assert admin_by_id["doc_creator_other"]["creator_email"] == (
+        "creator-other@contract.ziru.local"
+    )
+
+    assert librarian_response.status_code == 200
+    librarian_documents = cast(
+        list[dict[str, object]],
+        librarian_response.json()["documents"],
+    )
+    assert _document_ids(librarian_response.json()) == {
+        "doc_creator_lib",
+        "doc_creator_other",
+    }
+    for document in librarian_documents:
+        assert "creator_email" not in document
+
+
+@pytest.mark.asyncio
 async def test_attributes_included_in_payloads(
     api_client_factory: Callable[
         [], AbstractAsyncContextManager[AsyncClient]

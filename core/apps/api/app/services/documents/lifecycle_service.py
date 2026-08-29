@@ -165,8 +165,12 @@ def _positive_int(value: Any) -> int | None:
     return number if number > 0 else None
 
 
-def document_payload(document) -> dict[str, Any]:
-    return {
+def document_payload(
+    document,
+    *,
+    creator_email: str | None = None,
+) -> dict[str, Any]:
+    payload = {
         "document_id": document.document_id,
         "status": document.status,
         "current_job_result_id": document.current_job_result_id,
@@ -178,6 +182,9 @@ def document_payload(document) -> dict[str, Any]:
             document.archived_at.isoformat() if document.archived_at else None
         ),
     }
+    if creator_email is not None:
+        payload["creator_email"] = creator_email
+    return payload
 
 
 class DocumentService:
@@ -224,11 +231,14 @@ class DocumentService:
         page: int,
         page_size: int,
         constraints: list[ProfileConstraint],
+        include_creator_email: bool = False,
     ) -> dict[str, Any]:
         """List non-archived documents matching ALL attribute constraints.
 
         Each payload carries the document attributes map (including the
         createBy/createTime built-ins stored as document_attributes rows).
+        When include_creator_email is True (administrator callers), each
+        payload also carries creator_email resolved from createBy[0].
         """
         total = await self._repository.count_documents_matching(
             db,
@@ -244,9 +254,27 @@ class DocumentService:
             db,
             document_ids=[document.document_id for document in documents],
         )
+        creator_emails: dict[str, str] = {}
+        if include_creator_email:
+            creator_user_ids = {
+                create_by[0]
+                for values in attributes_map.values()
+                if (create_by := values.get("createBy")) and create_by[0]
+            }
+            creator_emails = await self._repository.get_user_emails_by_ids(
+                db,
+                user_ids=creator_user_ids,
+            )
         payloads = []
         for document in documents:
-            payload = document_payload(document)
+            creator_email: str | None = None
+            if include_creator_email:
+                create_by = (
+                    attributes_map.get(document.document_id, {}).get("createBy") or []
+                )
+                if create_by:
+                    creator_email = creator_emails.get(create_by[0])
+            payload = document_payload(document, creator_email=creator_email)
             payload["attributes"] = attributes_map.get(document.document_id, {})
             payloads.append(payload)
         return {

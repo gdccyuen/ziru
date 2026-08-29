@@ -325,6 +325,7 @@ async def list_documents_v2(
         page=page,
         page_size=page_size,
         constraints=constraints,
+        include_creator_email=is_admin,
     )
 
 
