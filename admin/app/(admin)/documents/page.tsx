@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import {
   AlertDialog,
@@ -52,9 +52,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ApiError, type AttributeEntry, api, type DocumentItem } from "@/lib/api";
+import {
+  ApiError,
+  type AttributeEntry,
+  api,
+  type DocumentItem,
+  type ProfileEntry,
+  type User,
+} from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { formatDateTime, truncate } from "@/lib/format";
+import { profileVisibilityFailureReason } from "@/lib/profile-matching";
 
 type FilterRow = { id: string; key: string; value: string };
 type UploadRow = { id: string; key: string; values: string };
@@ -116,6 +124,24 @@ function splitValues(values: string): string[] {
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
+}
+
+function uploadRowsToAttributes(rows: UploadRow[]): Record<string, string[]> {
+  const attributes: Record<string, string[]> = {};
+  for (const row of rows) {
+    const key = row.key.trim();
+    const values = splitValues(row.values);
+    if (key && values.length > 0) attributes[key] = values;
+  }
+  return attributes;
+}
+
+function buildUploadRows(profile: ProfileEntry[] | null | undefined): UploadRow[] {
+  return (profile ?? []).map((entry) => ({
+    id: nextUploadId(),
+    key: entry.key,
+    values: (entry.values ?? []).join(", "),
+  }));
 }
 
 const ADMIN_HIDDEN_BUILTIN_ATTRIBUTE_KEYS = ["createTime", "fileHash", "originalFile"];
@@ -253,12 +279,14 @@ function UploadDocumentDialog({
   onUploaded,
   onBatchComplete,
   dictionary,
+  user,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUploaded: (jobId: string) => void;
   onBatchComplete: (summary: string) => void;
   dictionary: AttributeEntry[];
+  user: User | null;
 }) {
   const [files, setFiles] = useState<UploadFileEntry[]>([]);
   const [rows, setRows] = useState<UploadRow[]>([]);
@@ -278,13 +306,22 @@ function UploadDocumentDialog({
   useEffect(() => {
     if (open && !prevOpen.current) {
       setFiles([]);
-      setRows([]);
+      setRows(buildUploadRows(user?.profile));
       setError(null);
       setJobId(null);
       setSubmitting(false);
     }
     prevOpen.current = open;
-  }, [open]);
+  }, [open, user?.profile]);
+
+  const visibilityWarning = useMemo(() => {
+    if (user?.grade === "administrator") return null;
+    const failureReason = profileVisibilityFailureReason(
+      user?.profile,
+      uploadRowsToAttributes(rows)
+    );
+    return failureReason;
+  }, [rows, user]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(event.target.files ?? []);
@@ -329,12 +366,7 @@ function UploadDocumentDialog({
       setError("Choose at least one file to upload");
       return;
     }
-    const attributes: Record<string, string[]> = {};
-    for (const row of rows) {
-      const key = row.key.trim();
-      const values = splitValues(row.values);
-      if (key && values.length > 0) attributes[key] = values;
-    }
+    const attributes = uploadRowsToAttributes(rows);
     const batch = files;
     const updateStatus = (
       id: string,
@@ -550,14 +582,32 @@ function UploadDocumentDialog({
                 Add attribute
               </Button>
             </div>
+            {visibilityWarning ? (
+              <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-700">
+                You will not be able to see this document with your profile ({visibilityWarning}).
+                Upload anyway?
+              </p>
+            ) : null}
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             <DialogFooter>
+              {visibilityWarning ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={submitting}
+                  onClick={() => onOpenChange(false)}
+                >
+                  Cancel
+                </Button>
+              ) : null}
               <Button type="submit" disabled={submitting}>
                 {submitting
                   ? "Uploading…"
-                  : files.length > 1
-                    ? `Upload ${files.length} files`
-                    : "Upload"}
+                  : visibilityWarning
+                    ? "Upload anyway"
+                    : files.length > 1
+                      ? `Upload ${files.length} files`
+                      : "Upload"}
               </Button>
             </DialogFooter>
           </form>
@@ -1113,6 +1163,7 @@ export default function DocumentsPage() {
           void load(1);
         }}
         dictionary={dictionary}
+        user={user}
       />
 
       <Dialog
