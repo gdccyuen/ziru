@@ -26,8 +26,7 @@ COPY core/apps/api/pyproject.toml apps/api/pyproject.toml
 COPY core/apps/worker/pyproject.toml apps/worker/pyproject.toml
 COPY core/packages/shared-python ./packages/shared-python
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-  UV_PROJECT_ENVIRONMENT=/opt/ziru/venv uv sync --locked --no-dev --no-editable --all-packages
+RUN UV_PROJECT_ENVIRONMENT=/opt/ziru/venv uv sync --locked --no-dev --no-editable --all-packages
 
 # ---------------------------------------------------------------------------
 # Admin console (Next.js) build
@@ -39,7 +38,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /opt/ziru/source/admin
 
 COPY admin/package.json admin/package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN npm install --no-audit --no-fund --ignore-scripts --legacy-peer-deps
 
 FROM ${NODE_IMAGE} AS admin-builder
 
@@ -58,7 +57,7 @@ WORKDIR /opt/ziru/source/admin
 COPY --from=admin-deps /opt/ziru/source/admin/node_modules ./node_modules
 COPY admin/ ./
 
-RUN npm run build
+RUN rm -rf .next && npm run build
 
 # ---------------------------------------------------------------------------
 # WebUI (Next.js) build
@@ -70,7 +69,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /opt/ziru/source/webui
 
 COPY webui/package.json webui/package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN npm install --no-audit --no-fund --ignore-scripts --legacy-peer-deps
 
 FROM ${NODE_IMAGE} AS webui-builder
 
@@ -82,7 +81,7 @@ WORKDIR /opt/ziru/source/webui
 COPY --from=webui-deps /opt/ziru/source/webui/node_modules ./node_modules
 COPY webui/ ./
 
-RUN npm run build
+RUN rm -rf .next && npm run build
 
 # ---------------------------------------------------------------------------
 # Runtime: python venv + node runtime + built admin + built webui
