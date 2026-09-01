@@ -1,0 +1,12 @@
+.git
+.demo
+.scratch
+.venv
+node_modules
+.next
+core/.venv
+core/.uv-cache
+*.log
+deploy/.build
+deploy/.env
+deploy/.scratch

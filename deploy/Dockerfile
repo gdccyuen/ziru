@@ -1,89 +1,98 @@
 # syntax=docker/dockerfile:1.7
 
-ARG PYTHON_IMAGE=python:3.12-slim
+ARG PYTHON_IMAGE=python:3.13-slim
 ARG NODE_IMAGE=node:22-bookworm-slim
 
-FROM ${PYTHON_IMAGE} AS api-deps
+# ---------------------------------------------------------------------------
+# Python dependencies (one venv for the api + worker + shared-python workspace)
+# ---------------------------------------------------------------------------
+FROM ${PYTHON_IMAGE} AS python-deps
 
-WORKDIR /opt/ziru/source/api
+ENV UV_CACHE_DIR=/root/.cache/uv \
+    UV_LINK_MODE=copy \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /opt/ziru/source/core
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends gcc g++ curl \
+  && apt-get install -y --no-install-recommends gcc g++ curl ca-certificates \
   && rm -rf /var/lib/apt/lists/* \
   && python -m pip install --no-cache-dir uv
 
-COPY .build/sources/core/pyproject.toml .build/sources/core/uv.lock ./
-COPY .build/sources/core/packages/shared-python ./packages/shared-python
-COPY .build/sources/core/apps/api/pyproject.toml ./apps/api/pyproject.toml
-COPY .build/sources/core/apps/worker/pyproject.toml ./apps/worker/pyproject.toml
+# Only the manifests are needed to resolve the workspace; shared-python ships
+# its full source because it is the one buildable workspace member.
+COPY core/pyproject.toml core/uv.lock ./
+COPY core/apps/api/pyproject.toml apps/api/pyproject.toml
+COPY core/apps/worker/pyproject.toml apps/worker/pyproject.toml
+COPY core/packages/shared-python ./packages/shared-python
 
-RUN cd apps/api \
-  && UV_PROJECT_ENVIRONMENT=/opt/ziru/venvs/api uv sync --locked --no-dev
+RUN --mount=type=cache,target=/root/.cache/uv \
+  UV_PROJECT_ENVIRONMENT=/opt/ziru/venv uv sync --locked --no-dev --no-editable --all-packages
 
-FROM ${PYTHON_IMAGE} AS worker-deps
-
-WORKDIR /opt/ziru/source/api
-
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends gcc g++ curl \
-  && rm -rf /var/lib/apt/lists/* \
-  && python -m pip install --no-cache-dir uv
-
-COPY .build/sources/core/pyproject.toml .build/sources/core/uv.lock ./
-COPY .build/sources/core/packages/shared-python ./packages/shared-python
-COPY .build/sources/core/apps/api/pyproject.toml ./apps/api/pyproject.toml
-COPY .build/sources/core/apps/worker/pyproject.toml ./apps/worker/pyproject.toml
-
-RUN cd apps/worker \
-  && UV_PROJECT_ENVIRONMENT=/opt/ziru/venvs/worker uv sync --locked --no-dev \
-  && find /opt/ziru/venvs/worker -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true \
-  && find /opt/ziru/venvs/worker -type f -name '*.pyc' -delete \
-  && find /opt/ziru/venvs/worker -type f -name '*.pyo' -delete
-
-FROM ${NODE_IMAGE} AS dashboard-deps
+# ---------------------------------------------------------------------------
+# Admin console (Next.js) build
+# ---------------------------------------------------------------------------
+FROM ${NODE_IMAGE} AS admin-deps
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
-WORKDIR /opt/ziru/source/dashboard
+WORKDIR /opt/ziru/source/admin
 
-RUN corepack enable
+COPY admin/package.json admin/package-lock.json ./
+RUN npm ci --ignore-scripts
 
-COPY .build/sources/admin/package.json .build/sources/admin/pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+FROM ${NODE_IMAGE} AS admin-builder
 
-FROM dashboard-deps AS dashboard-builder
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_PUBLIC_API_URL=http://api:5005/api \
+    NEXT_PUBLIC_AUTH_BASE_URL=/api/auth \
+    NEXT_PUBLIC_APP_URL=http://localhost:81 \
+    BETTER_AUTH_SECRET=build-validation-only-auth-secret-32-chars \
+    BETTER_AUTH_URL=http://localhost:81 \
+    BILLING_ENABLED=false \
+    RESEND_API_KEY=re_build_validation_placeholder \
+    SKIP_ENV_VALIDATION=1
 
-ARG NEXT_PUBLIC_API_URL=http://127.0.0.1:5005/api
-ARG NEXT_PUBLIC_AUTH_BASE_URL=/api/auth
-ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+WORKDIR /opt/ziru/source/admin
 
-COPY .build/sources/admin ./
+COPY --from=admin-deps /opt/ziru/source/admin/node_modules ./node_modules
+COPY admin/ ./
 
-RUN BETTER_AUTH_SECRET=build-validation-only-auth-secret-32-chars \
-  BETTER_AUTH_URL=http://localhost:3000 \
-  NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL}" \
-  NEXT_PUBLIC_AUTH_BASE_URL="${NEXT_PUBLIC_AUTH_BASE_URL}" \
-  NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL}" \
-  BILLING_ENABLED=false \
-  RESEND_API_KEY=re_build_validation_placeholder \
-  SKIP_ENV_VALIDATION=1 \
-  pnpm build
+RUN npm run build
 
-FROM ${NODE_IMAGE} AS node-runtime
+# ---------------------------------------------------------------------------
+# WebUI (Next.js) build
+# ---------------------------------------------------------------------------
+FROM ${NODE_IMAGE} AS webui-deps
 
-FROM ${PYTHON_IMAGE} AS runner
-
-ARG APP_VERSION=dev
-ARG BUILD_TIME=""
-ARG GIT_COMMIT=""
-
-ENV APP_VERSION=${APP_VERSION}
-ENV BUILD_TIME=${BUILD_TIME}
-ENV GIT_COMMIT=${GIT_COMMIT}
-ENV PYTHONUNBUFFERED=1
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV HF_HOME=/data/models/huggingface
-ENV TRANSFORMERS_CACHE=/data/models/huggingface
+
+WORKDIR /opt/ziru/source/webui
+
+COPY webui/package.json webui/package-lock.json ./
+RUN npm ci --ignore-scripts
+
+FROM ${NODE_IMAGE} AS webui-builder
+
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_PUBLIC_API_URL=http://api:5005/api
+
+WORKDIR /opt/ziru/source/webui
+
+COPY --from=webui-deps /opt/ziru/source/webui/node_modules ./node_modules
+COPY webui/ ./
+
+RUN npm run build
+
+# ---------------------------------------------------------------------------
+# Runtime: python venv + node runtime + built admin + built webui
+# ---------------------------------------------------------------------------
+FROM ${PYTHON_IMAGE} AS runtime
+
+ENV PYTHONUNBUFFERED=1 \
+    NEXT_TELEMETRY_DISABLED=1 \
+    NODE_ENV=production \
+    PATH=/opt/ziru/venv/bin:/usr/local/bin:/usr/bin:/bin
 
 WORKDIR /opt/ziru
 
@@ -105,39 +114,31 @@ RUN apt-get update \
     tini \
   && rm -rf /var/lib/apt/lists/* \
   && update-ca-certificates \
-  && mkdir -p /data/users /data/models/huggingface /tmp/ziru
+  && mkdir -p /data/users /data/storage /tmp/ziru /opt/ziru/sitecustomize
 
-COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
-COPY --from=node-runtime /usr/local/bin/npm /usr/local/bin/npm
-COPY --from=node-runtime /usr/local/bin/npx /usr/local/bin/npx
-COPY --from=node-runtime /usr/local/bin/corepack /usr/local/bin/corepack
-COPY --from=node-runtime /usr/local/lib/node_modules /usr/local/lib/node_modules
+# Node runtime (binaries + npm/npx). Both images are Debian bookworm, so the
+# node binary is ABI-compatible with this python-slim base.
+COPY --from=admin-deps /usr/local/bin/node /usr/local/bin/node
+COPY --from=admin-deps /usr/local/bin/npm /usr/local/bin/npm
+COPY --from=admin-deps /usr/local/bin/npx /usr/local/bin/npx
+COPY --from=admin-deps /usr/local/lib/node_modules /usr/local/lib/node_modules
 
-COPY --from=api-deps /opt/ziru/venvs/api /opt/ziru/venvs/api
-COPY --from=worker-deps /opt/ziru/venvs/worker /opt/ziru/venvs/worker
+# Python venv + application source.
+COPY --from=python-deps /opt/ziru/venv /opt/ziru/venv
+COPY core /opt/ziru/source/core
+COPY sitecustomize.py /opt/ziru/sitecustomize/sitecustomize.py
 
-COPY .build/sources/core /opt/ziru/source/api
-COPY --from=dashboard-deps /opt/ziru/source/dashboard/node_modules /opt/ziru/dashboard/node_modules
-COPY --from=dashboard-builder /opt/ziru/source/dashboard/package.json /opt/ziru/dashboard/package.json
-COPY --from=dashboard-builder /opt/ziru/source/dashboard/pnpm-lock.yaml /opt/ziru/dashboard/pnpm-lock.yaml
-COPY --from=dashboard-builder /opt/ziru/source/dashboard/next.config.js /opt/ziru/dashboard/next.config.js
-COPY --from=dashboard-builder /opt/ziru/source/dashboard/tsconfig.json /opt/ziru/dashboard/tsconfig.json
-COPY --from=dashboard-builder /opt/ziru/source/dashboard/public /opt/ziru/dashboard/public
-COPY --from=dashboard-builder /opt/ziru/source/dashboard/.next /opt/ziru/dashboard/.next
-COPY --from=dashboard-builder /opt/ziru/source/dashboard/i18n /opt/ziru/dashboard/i18n
-COPY --from=dashboard-builder /opt/ziru/source/dashboard/drizzle.config.ts /opt/ziru/dashboard/drizzle.config.ts
-COPY --from=dashboard-builder /opt/ziru/source/dashboard/drizzle /opt/ziru/dashboard/drizzle
-COPY --from=dashboard-builder /opt/ziru/source/dashboard/lib/db /opt/ziru/dashboard/lib/db
+# Built Next.js apps (node_modules + .next + config/public stay together so
+# `next start` works without a rebuild).
+COPY --from=admin-builder /opt/ziru/source/admin /opt/ziru/admin
+COPY --from=webui-builder /opt/ziru/source/webui /opt/ziru/webui
 
-COPY scripts/entrypoint.sh /usr/local/bin/ziru-self-hosted-entrypoint
-COPY scripts/create-storage-buckets.py /usr/local/bin/ziru-create-storage-buckets
-COPY scripts/configure-storage-events.py /usr/local/bin/ziru-configure-storage-events
+# Make the gevent/billiard logging shim importable automatically on 3.13.
+RUN /opt/ziru/venv/bin/python -c 'import shutil, site; shutil.copy("/opt/ziru/sitecustomize/sitecustomize.py", site.getsitepackages()[0] + "/sitecustomize.py")'
 
-RUN chmod +x /usr/local/bin/ziru-self-hosted-entrypoint /usr/local/bin/ziru-create-storage-buckets /usr/local/bin/ziru-configure-storage-events
+COPY deploy/scripts/entrypoint.sh /usr/local/bin/ziru-entrypoint
+RUN chmod +x /usr/local/bin/ziru-entrypoint
 
-EXPOSE 3000 5005
+EXPOSE 3000 3001 5005
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=5 \
-  CMD curl -fsS http://127.0.0.1:3000/login >/dev/null && curl -fsS http://127.0.0.1:5005/health >/dev/null || exit 1
-
-ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/ziru-self-hosted-entrypoint"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/ziru-entrypoint"]

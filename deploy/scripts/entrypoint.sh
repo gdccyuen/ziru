@@ -1,369 +1,47 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-apiRoot="/opt/ziru/source/api"
-adminRoot="/opt/ziru/dashboard"
-apiVenv="/opt/ziru/venvs/api"
-workerVenv="/opt/ziru/venvs/worker"
+coreRoot="/opt/ziru/source/core"
+venv="/opt/ziru/venv"
+sitecustomizeDir="/opt/ziru/sitecustomize"
 
-apiPid=""
-workerPid=""
-adminPid=""
+export PATH="${venv}/bin:${PATH}"
 
-setDefault() {
-  local name="$1"
-  local value="$2"
-
-  if [ -z "${!name:-}" ]; then
-    export "${name}=${value}"
-  fi
-}
-
-generateRandomSecret() {
-  python -c 'import secrets; print(secrets.token_urlsafe(48))'
-}
-
-loadOrCreateSecret() {
-  local name="$1"
-  local filePath="$2"
-
-  if [ -n "${!name:-}" ]; then
-    return
-  fi
-
-  mkdir -p "$(dirname "$filePath")"
-
-  if [ ! -s "$filePath" ]; then
-    umask 077
-    generateRandomSecret > "$filePath"
-    chmod 600 "$filePath"
-    echo "Generated ${name} and saved it to ${filePath}"
-  fi
-
-  export "${name}=$(cat "$filePath")"
-}
-
-isEnabled() {
-  local value="${1:-}"
-  case "${value,,}" in
-    1 | true | yes | on) return 0 ;;
-    *) return 1 ;;
-  esac
-}
-
-# One-release backward compatibility: when a legacy DASHBOARD_* variable is
-# set and the matching ADMIN_* variable is not, carry the old value into the
-# new name and warn. The legacy variables are left in place so old app code
-# paths keep working during the transition.
-deprecatedEnv() {
-  local oldName="$1"
-  local newName="$2"
-
-  if [ -n "${!oldName:-}" ]; then
-    if [ -z "${!newName:-}" ]; then
-      export "${newName}=${!oldName}"
-      echo "DEPRECATION WARNING: ${oldName} is deprecated; use ${newName} instead." >&2
-    else
-      echo "DEPRECATION WARNING: both ${oldName} and ${newName} are set; ${newName} takes precedence." >&2
-    fi
-  fi
-}
-
-deprecatedEnv DASHBOARD_PORT ADMIN_PORT
-deprecatedEnv DASHBOARD_PUBLIC_URL ADMIN_PUBLIC_URL
-deprecatedEnv DASHBOARD_HOST_PORT ADMIN_HOST_PORT
-deprecatedEnv DASHBOARD_DATABASE_URL ADMIN_DATABASE_URL
-deprecatedEnv INTERNAL_DASHBOARD_ENDPOINT INTERNAL_ADMIN_ENDPOINT
-
-waitForPostgres() {
-  local attempts="${SELF_HOSTED_WAIT_ATTEMPTS:-60}"
-  local delaySeconds="${SELF_HOSTED_WAIT_DELAY_SECONDS:-2}"
-
-  for ((attempt = 1; attempt <= attempts; attempt++)); do
-    if PGPASSWORD="${POSTGRES_PASSWORD}" pg_isready \
-      --host="${POSTGRES_HOST}" \
-      --port="${POSTGRES_PORT}" \
-      --username="${POSTGRES_USER}" \
-      --dbname="${POSTGRES_DB}" >/dev/null 2>&1; then
-      echo "PostgreSQL is ready"
-      return
-    fi
-
-    echo "Waiting for PostgreSQL (${attempt}/${attempts})..."
-    sleep "$delaySeconds"
-  done
-
-  echo "PostgreSQL did not become ready" >&2
-  exit 1
-}
-
-waitForRedis() {
-  local attempts="${SELF_HOSTED_WAIT_ATTEMPTS:-60}"
-  local delaySeconds="${SELF_HOSTED_WAIT_DELAY_SECONDS:-2}"
-
-  for ((attempt = 1; attempt <= attempts; attempt++)); do
-    if redis-cli -h "${REDIS_HOST}" -p "${REDIS_PORT}" ping >/dev/null 2>&1; then
-      echo "Redis is ready"
-      return
-    fi
-
-    echo "Waiting for Redis (${attempt}/${attempts})..."
-    sleep "$delaySeconds"
-  done
-
-  echo "Redis did not become ready" >&2
-  exit 1
-}
-
-waitForApi() {
-  local attempts="${SELF_HOSTED_WAIT_ATTEMPTS:-60}"
-  local delaySeconds="${SELF_HOSTED_WAIT_DELAY_SECONDS:-2}"
-  local apiHealthUrl="http://127.0.0.1:${API_PORT}/health"
-
-  for ((attempt = 1; attempt <= attempts; attempt++)); do
-    if curl -fsS "$apiHealthUrl" >/dev/null 2>&1; then
-      echo "Ziru API is ready"
-      return
-    fi
-
-    echo "Waiting for Ziru API (${attempt}/${attempts})..."
-    sleep "$delaySeconds"
-  done
-
-  echo "Ziru API did not become ready" >&2
-  exit 1
-}
-
-ensurePostgresExtensions() {
-  if ! isEnabled "${SELF_HOSTED_INIT_POSTGRES_EXTENSIONS:-true}"; then
-    echo "Skipping PostgreSQL extension bootstrap"
-    return
-  fi
-
-  echo "Ensuring PostgreSQL extensions exist"
-  PGPASSWORD="${POSTGRES_PASSWORD}" psql \
-    --host="${POSTGRES_HOST}" \
-    --port="${POSTGRES_PORT}" \
-    --username="${POSTGRES_USER}" \
-    --dbname="${POSTGRES_DB}" \
-    --set=ON_ERROR_STOP=1 <<'SQL'
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pg_trgm";
-SQL
-}
-
-createStorageBuckets() {
-  if ! isEnabled "${SELF_HOSTED_CREATE_STORAGE_BUCKETS:-true}"; then
-    echo "Skipping storage bucket bootstrap"
-    return
-  fi
-
-  echo "Ensuring S3-compatible storage buckets exist"
-  DATABASE_URL="${API_DATABASE_URL}" \
-    PYTHONPATH="${apiRoot}/apps/api:${apiRoot}/packages/shared-python" \
-    PATH="${apiVenv}/bin:${PATH}" \
-    "${apiVenv}/bin/python" /usr/local/bin/ziru-create-storage-buckets
-}
-
-configureStorageEvents() {
-  if ! isEnabled "${SELF_HOSTED_CONFIGURE_STORAGE_EVENTS:-true}"; then
-    echo "Skipping storage event bootstrap"
-    return
-  fi
-
-  echo "Ensuring S3-compatible storage events are configured"
-  DATABASE_URL="${API_DATABASE_URL}" \
-    PYTHONPATH="${apiRoot}/apps/api:${apiRoot}/packages/shared-python" \
-    PATH="${apiVenv}/bin:${PATH}" \
-    "${apiVenv}/bin/python" /usr/local/bin/ziru-configure-storage-events
-}
-
-runAdminMigrations() {
-  echo "Running admin auth/account migrations"
+runAlembic() {
+  echo "Running database migrations (alembic upgrade head)"
   (
-    cd "$adminRoot"
-    DATABASE_URL="${ADMIN_DATABASE_URL}" \
-      NODE_ENV=production \
-      BETTER_AUTH_URL="${BETTER_AUTH_URL}" \
-      BETTER_AUTH_SECRET="${BETTER_AUTH_SECRET}" \
-      UNSAFE_DB_SSL_ENABLED="${UNSAFE_DB_SSL_ENABLED}" \
-      NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL}" \
-      NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL}" \
-      NEXT_PUBLIC_AUTH_BASE_URL="${NEXT_PUBLIC_AUTH_BASE_URL}" \
-      BILLING_ENABLED="${BILLING_ENABLED}" \
-      ./node_modules/.bin/drizzle-kit migrate
+    cd "${coreRoot}/apps/api"
+    DATABASE_URL="${DATABASE_URL}" python -m alembic upgrade head
   )
 }
 
-startApi() {
-  echo "Starting Ziru API on port ${API_PORT}"
-  (
-    cd "${apiRoot}/apps/api"
-    DATABASE_URL="${API_DATABASE_URL}" \
-      PATH="${apiVenv}/bin:${PATH}" \
-      PYTHONPATH="${apiRoot}/apps/api:${apiRoot}/packages/shared-python" \
-      python main.py
-  ) &
-  apiPid="$!"
-}
-
-startWorker() {
-  echo "Starting Ziru worker"
-  (
-    cd "${apiRoot}/apps/worker"
-    DATABASE_URL="${API_DATABASE_URL}" \
-      PATH="${workerVenv}/bin:${PATH}" \
-      PYTHONPATH="${apiRoot}/apps/worker:${apiRoot}/packages/shared-python" \
-      python worker.py
-  ) &
-  workerPid="$!"
-}
-
-startAdmin() {
-  echo "Starting Ziru admin console on port ${ADMIN_PORT}"
-  (
-    cd "$adminRoot"
-    DATABASE_URL="${ADMIN_DATABASE_URL}" \
-      NODE_ENV=production \
-      PORT="${ADMIN_PORT}" \
-      HOSTNAME=0.0.0.0 \
-      BETTER_AUTH_URL="${BETTER_AUTH_URL}" \
-      BETTER_AUTH_SECRET="${BETTER_AUTH_SECRET}" \
-      UNSAFE_DB_SSL_ENABLED="${UNSAFE_DB_SSL_ENABLED}" \
-      NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL}" \
-      NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL}" \
-      NEXT_PUBLIC_AUTH_BASE_URL="${NEXT_PUBLIC_AUTH_BASE_URL}" \
-      BILLING_ENABLED="${BILLING_ENABLED}" \
-      PASSWORD_LOGIN_ENABLED="${PASSWORD_LOGIN_ENABLED}" \
-      ./node_modules/.bin/next start --port "${ADMIN_PORT}" --hostname 0.0.0.0
-  ) &
-  adminPid="$!"
-}
-
-stopChildren() {
-  local signal="${1:-TERM}"
-  local pids=()
-
-  [ -n "$adminPid" ] && pids+=("$adminPid")
-  [ -n "$workerPid" ] && pids+=("$workerPid")
-  [ -n "$apiPid" ] && pids+=("$apiPid")
-
-  if [ "${#pids[@]}" -gt 0 ]; then
-    kill "-${signal}" "${pids[@]}" 2>/dev/null || true
-    wait "${pids[@]}" 2>/dev/null || true
-  fi
-}
-
-handleSignal() {
-  stopChildren TERM
-  exit 0
-}
-
-setDefault POSTGRES_HOST postgres
-setDefault POSTGRES_PORT 5432
-setDefault POSTGRES_DB ziru
-setDefault POSTGRES_USER root
-setDefault POSTGRES_PASSWORD root123
-setDefault API_DATABASE_URL "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
-setDefault ADMIN_DATABASE_URL "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
-setDefault DB_SSL_MODE disable
-setDefault UNSAFE_DB_SSL_ENABLED true
-
-setDefault REDIS_HOST redis
-setDefault REDIS_PORT 6379
-setDefault REDIS_DATABASE 0
-setDefault REDIS_PASSWORD ""
-setDefault CELERY_REDIS_URL "redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DATABASE}"
-
-setDefault ADMIN_HOST_PORT 81
-setDefault ADMIN_PORT 3000
-setDefault API_PORT 5005
-setDefault NEXT_PUBLIC_API_URL "http://127.0.0.1:${API_PORT}/api"
-setDefault NEXT_PUBLIC_AUTH_BASE_URL "/api/auth"
-setDefault ADMIN_PUBLIC_URL "http://localhost:${ADMIN_HOST_PORT}"
-setDefault NEXT_PUBLIC_APP_URL "${ADMIN_PUBLIC_URL}"
-setDefault BETTER_AUTH_URL "${NEXT_PUBLIC_APP_URL}"
-
-setDefault SELF_HOSTED_SECRETS_PATH /data/secrets
-setDefault SELF_HOSTED_INIT_POSTGRES_EXTENSIONS true
-loadOrCreateSecret SECRET_KEY "${SELF_HOSTED_SECRETS_PATH}/secret-key"
-loadOrCreateSecret BETTER_AUTH_SECRET "${SELF_HOSTED_SECRETS_PATH}/better-auth-secret"
-loadOrCreateSecret USERS_VERIFY_TOKEN_SECRET "${SELF_HOSTED_SECRETS_PATH}/users-verify-token-secret"
-loadOrCreateSecret USERS_RESET_PASSWORD_TOKEN_SECRET "${SELF_HOSTED_SECRETS_PATH}/users-reset-password-token-secret"
-
-setDefault API_STANDALONE_MODE_ENABLED false
-setDefault BILLING_ENABLED false
-setDefault RATE_LIMIT_ENABLED false
-setDefault PASSWORD_LOGIN_ENABLED true
-
-setDefault ENVIRONMENT production
-setDefault APP_ENV production
-setDefault LOG_LEVEL INFO
-setDefault TMP_PATH /tmp/ziru
-setDefault USERS_DATA_PATH /data/users
-setDefault FONT_PATH /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
-setDefault CHROMEDRIVER_PATH /usr/bin/chromedriver
-
-setDefault S3_TYPE s3
-setDefault S3_BUCKET_NAME ziru-uploads
-setDefault S3_UPLOADS_BUCKET "${S3_BUCKET_NAME}"
-setDefault S3_RESULTS_BUCKET ziru-results
-setDefault S3_ACCESS_KEY_ID test
-setDefault S3_SECRET_ACCESS_KEY test
-setDefault S3_ENDPOINT_URL http://localstack:4566
-setDefault S3_PRIVATE_DOMAIN http://localhost:4566
-setDefault S3_REGION us-west-1
-setDefault S3_USE_SSL false
-setDefault S3_ADDRESSING_STYLE path
-setDefault S3_TEMP_PATH /tmp/ziru
-setDefault S3_WEBHOOK_AUTH_TOKEN "change-me-storage-webhook-token"
-setDefault SNS_SIGNATURE_VERIFICATION false
-setDefault SELF_HOSTED_CREATE_STORAGE_BUCKETS true
-setDefault SELF_HOSTED_CONFIGURE_STORAGE_EVENTS true
-setDefault SELF_HOSTED_S3_EVENT_TOPIC_NAME ziru-s3-upload-events
-setDefault SELF_HOSTED_S3_EVENT_WEBHOOK_URL "http://app:${API_PORT}/v1/internal/s3-events"
-setDefault SELF_HOSTED_STORAGE_CORS_ALLOWED_ORIGINS ""
-
-setDefault PROVIDER_URL ""
-setDefault PROVIDER_KEY ""
-setDefault NORMAL_MODEL ""
-setDefault HIERARCHY_LLM_MODEL "${NORMAL_MODEL}"
-setDefault IMAGE_MODEL qwen3.6-flash
-setDefault IMAGE_MODEL_MAX "${IMAGE_MODEL}"
-setDefault EMBEDDING_MODEL text-embedding-v4
-setDefault PDF_PROFILE_TOC_ENABLED false
-
-setDefault FRONTEND_URL "${NEXT_PUBLIC_APP_URL}"
-setDefault INTERNAL_ADMIN_ENDPOINT "http://127.0.0.1:${ADMIN_HOST_PORT}"
-setDefault QSTASH_CALLBACK_BASE_URL "http://127.0.0.1:${API_PORT}/api/v1"
-setDefault TELEMETRY_ENABLED "true"
-export TELEMETRY_INSTALLATION_ID=""
-export TELEMETRY_INSTALLATION_ID_PATH="/data/secrets/telemetry-installation-id"
-export TELEMETRY_DEPLOYMENT_MODE="self_hosted_compose"
-setDefault MOESIF_APPLICATION_ID ""
-setDefault LOGFIRE_TOKEN ""
-
-mkdir -p "$TMP_PATH" "$USERS_DATA_PATH" "$SELF_HOSTED_SECRETS_PATH" /data/models/huggingface
-
-if [ -z "${GA_MEASUREMENT_ID:-}" ]; then
-  unset GA_MEASUREMENT_ID
-fi
-
-trap handleSignal INT TERM
-
-waitForPostgres
-ensurePostgresExtensions
-waitForRedis
-createStorageBuckets
-runAdminMigrations
-startApi
-waitForApi
-configureStorageEvents
-startWorker
-startAdmin
-
-wait -n "$apiPid" "$workerPid" "$adminPid"
-exitCode="$?"
-echo "A Ziru self-hosted process exited with code ${exitCode}; stopping remaining processes"
-stopChildren TERM
-exit "$exitCode"
+case "${MODE:-}" in
+  api)
+    runAlembic
+    export PYTHONPATH="${coreRoot}/apps/api:${coreRoot}/packages/shared-python${PYTHONPATH:+:${PYTHONPATH}}"
+    echo "Starting Ziru API on port 5005"
+    cd "${coreRoot}/apps/api"
+    exec python -m uvicorn main:app --host 0.0.0.0 --port 5005
+    ;;
+  worker)
+    runAlembic
+    export PYTHONPATH="${coreRoot}/apps/worker:${coreRoot}/packages/shared-python:${sitecustomizeDir}${PYTHONPATH:+:${PYTHONPATH}}"
+    echo "Starting Ziru worker"
+    cd "${coreRoot}/apps/worker"
+    exec python worker.py
+    ;;
+  admin)
+    echo "Starting Ziru admin console on port 3001"
+    cd /opt/ziru/admin
+    exec ./node_modules/.bin/next start -p 3001 --hostname 0.0.0.0
+    ;;
+  webui)
+    echo "Starting Ziru webui on port 3000"
+    cd /opt/ziru/webui
+    exec ./node_modules/.bin/next start -p 3000 --hostname 0.0.0.0
+    ;;
+  *)
+    echo "Unknown MODE '${MODE:-}'. Expected one of: api, worker, admin, webui." >&2
+    exit 1
+    ;;
+esac
