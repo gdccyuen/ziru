@@ -35,6 +35,7 @@ services:
     environment: &ziru_env
       MODE: api
       DATABASE_URL: postgresql+asyncpg://root:${POSTGRES_PASSWORD:-root123}@postgres:5432/ziru
+      DB_SSL_MODE: disable
       REDIS_HOST: redis
       REDIS_PORT: 6379
       CELERY_REDIS_URL: redis://redis:6379/0
