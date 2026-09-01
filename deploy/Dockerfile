@@ -37,7 +37,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /opt/ziru/source/admin
 
-COPY admin/package.json admin/package-lock.json ./
+COPY admin/package.json ./
 RUN npm install --no-audit --no-fund --ignore-scripts --legacy-peer-deps
 
 FROM ${NODE_IMAGE} AS admin-builder
@@ -68,7 +68,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /opt/ziru/source/webui
 
-COPY webui/package.json webui/package-lock.json ./
+COPY webui/package.json ./
 RUN npm install --no-audit --no-fund --ignore-scripts --legacy-peer-deps
 
 FROM ${NODE_IMAGE} AS webui-builder
