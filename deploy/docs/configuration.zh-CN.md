@@ -2,7 +2,7 @@
 
 [English](configuration.md) | 中文
 
-本文档记录启动服务以外的可选配置。普通本地部署只需要 README 中的 `MINERU_API_KEYS` 以及 `PROVIDER_URL` 和 `PROVIDER_KEY`。
+本文档记录启动服务以外的可选配置。普通本地部署只需要 README 中的 `MINERU_URL` 以及 `PROVIDER_URL` 和 `PROVIDER_KEY`。MinerU 始终在本地（on-premise）运行，通过 `/file_parse` 调用；不需要 API Key。
 
 Docker Compose 会先读取 `.env.defaults`，再读取 `.env`。`.env.defaults` 是内置默认值参考；实际部署时请新建一个小的 `.env`，只写需要覆盖的值，不要把真实密钥提交到 Git。
 
@@ -41,15 +41,12 @@ ZIRU_IMAGE=ghcr.io/gdccyuen/ziru:latest
 
 | 变量 | 用途 | 示例值 |
 | --- | --- | --- |
-| `MINERU_API_KEYS` | MinerU API Key 池，用于 PDF 解析。支持 JSON 数组、逗号分隔或换行分隔，条目也可写成 `token_id=api_key`。 | `mineru-key-1,mineru-key-2` |
+| `MINERU_URL` | 自托管 MinerU 实例的基础地址。worker 会在此地址上调用 `/file_parse`；MinerU 始终在本地运行，不需要 API Key。 | `http://host.docker.internal:8000` |
 | `PROVIDER_KEY` | 当前 OpenAI-compatible LLM 端点的 API Key。本地 Ollama / vLLM 通常接受任意非空值。 | `ollama`、`EMPTY` |
 | `PROVIDER_URL` | 当前 OpenAI-compatible LLM 端点的 base URL。 | `http://localhost:11434/v1`、`http://localhost:8000/v1` |
 
-`MINERU_API_KEYS` 支持多个 Key 是为了组成 Key 池，在单个 Key 触发额度或限流时可以轮换使用其他 Key。只有一个 Key 也可以正常运行。
+运行自托管 MinerU 实例，并把 `MINERU_URL` 指向其基础地址。worker 直接调用同步 `/file_parse` 接口，不配置 MinerU API Key。对于 LLM，`PROVIDER_URL` 可指向任意 OpenAI-compatible 模型端点：
 
-MinerU Key 请从官网获取；`PROVIDER_URL` 可指向任意 OpenAI-compatible 模型端点：
-
-- [MinerU](https://mineru.net/)
 - [Ollama](https://ollama.com/)
 - [vLLM](https://docs.vllm.ai/)
 
@@ -98,19 +95,11 @@ IMAGE_MODEL_MAX=Qwen/Qwen3-VL-32B-Instruct
 
 | 变量 | 用途 | 示例值 |
 | --- | --- | --- |
-| `MINERU_URL` | MinerU API base URL。 | `https://mineru.net/api/v4` |
-| `MINERU_UPLOAD_MODE_ENABLED` | 使用 MinerU 直传模式，不使用可复用 S3 URL。自托管默认设为 `true`，因为本地存储 URL 通常只在 compose 网络内可访问。 | `true` |
-| `MINERU_TOKEN_RPM_LIMIT` | 每个 MinerU Key 的每分钟请求上限。 | `300` |
-| `MINERU_TOKEN_DAILY_LIMIT` | 每个 MinerU Key 的每日请求上限。 | `10000` |
-| `MINERU_TOKEN_COOLDOWN_SECONDS` | MinerU Key 触发限流后的冷却秒数。 | `60` |
-| `MINERU_API_TIMEOUT` | MinerU API 请求超时，单位秒。 | `60` |
-| `MINERU_UPLOAD_CONNECT_TIMEOUT` | MinerU 文件上传连接超时，单位秒。 | `10` |
-| `MINERU_UPLOAD_READ_TIMEOUT` | MinerU 文件上传读取超时，单位秒。 | `600` |
-| `MINERU_RATE_LIMIT_MAX_RETRY_AFTER` | MinerU 429 retry-after 最大等待秒数。 | `60` |
-| `MINERU_POOL_MAXSIZE` | MinerU HTTP 连接池大小。 | `50` |
-| `MINERU_UPLOAD_RETRY_TOTAL` | MinerU 上传瞬时失败重试次数。 | `3` |
-| `MINERU_UPLOAD_RETRY_BACKOFF_FACTOR` | MinerU 上传重试退避系数。 | `2` |
-| `MINERU_URL_MODE_PRESIGN_EXPIRY` | MinerU URL 模式下预签名 URL 有效期，单位秒。 | `3600` |
+| `MINERU_URL` | 自托管 MinerU 实例的基础地址。worker 会在此地址上调用 `/file_parse`；不需要 API Key。 | `http://host.docker.internal:8000` |
+| `MINERU_LOCAL_LANG_LIST` | 传给 MinerU `/file_parse` `lang_list` 参数的语言代码。 | `ch` |
+| `MINERU_LOCAL_BACKEND` | 传给 MinerU `/file_parse` `backend` 参数的后端。 | `pipeline` |
+| `MINERU_LOCAL_TIMEOUT` | 同步 `/file_parse` 调用的每个分片超时时间，单位秒。 | `3600` |
+| `MINERU_SHARD_CONCURRENCY` | 分片解析时并发调用 MinerU `/file_parse` 的最大数量。 | `3` |
 
 ## 管理后台、WebUI、认证和品牌
 
@@ -391,7 +380,7 @@ TELEMETRY_ENABLED=false
 
 ```bash
 ADMIN_PUBLIC_URL=https://ziru.example.com
-MINERU_API_KEYS=your-mineru-api-key
+MINERU_URL=http://host.docker.internal:8000
 PROVIDER_URL=http://localhost:11434/v1
 PROVIDER_KEY=ollama
 NORMAL_MODEL=qwen3:32b

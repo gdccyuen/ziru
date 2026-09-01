@@ -8,14 +8,14 @@ Compose: the Ziru API, worker, admin console, and web UI in one stack.
 ## Requirements
 
 - Docker and Docker Compose.
-- A MinerU API key for the initial parsing of PDF documents.
+- A self-hosted MinerU instance reachable from the containers. MinerU is always local and uses the synchronous `/file_parse` endpoint; no API key is required.
 - An LLM provider key/URL for any OpenAI-compatible endpoint (e.g. local Ollama or vLLM).
 
-For now, our setup uses MinerU as the default PDF parser. If you customize the parsing pipeline, your own parser can also work as long as it produces Markdown (`.md`) files for Ziru to process. If you'd like to contribute support for additional PDF parsers, feel free to submit a pull request.
+Ziru uses MinerU as the default PDF parser. If you customize the parsing pipeline, your own parser can also work as long as it produces Markdown (`.md`) files for Ziru to process. If you'd like to contribute support for additional PDF parsers, feel free to submit a pull request.
 
-## 1. Prepare API Keys
+## 1. Prepare Services
 
-- [MinerU](https://mineru.net/)
+- MinerU: run a self-hosted MinerU instance and point `MINERU_URL` at its base URL (default `http://host.docker.internal:8000`). MinerU is always local via `/file_parse` and does not use an API key.
 - Any OpenAI-compatible model endpoint (local [Ollama](https://ollama.com/), [vLLM](https://docs.vllm.ai/), or a cloud provider)
 
 ## 2. Configure `.env`
@@ -25,7 +25,7 @@ Create a new `.env` file with only the values you need.
 For a local OpenAI-compatible model server such as Ollama:
 
 ```bash
-MINERU_API_KEYS=your-mineru-api-key
+MINERU_URL=http://host.docker.internal:8000
 PROVIDER_URL=http://localhost:11434/v1
 PROVIDER_KEY=ollama
 NORMAL_MODEL=qwen3:32b
@@ -37,7 +37,7 @@ IMAGE_MODEL_MAX=llava:latest
 For self-hosted vLLM:
 
 ```bash
-MINERU_API_KEYS=your-mineru-api-key
+MINERU_URL=http://host.docker.internal:8000
 PROVIDER_URL=http://localhost:8000/v1
 PROVIDER_KEY=EMPTY
 NORMAL_MODEL=Qwen/Qwen3-32B
@@ -46,11 +46,7 @@ IMAGE_MODEL=Qwen/Qwen3-VL-32B-Instruct
 IMAGE_MODEL_MAX=Qwen/Qwen3-VL-32B-Instruct
 ```
 
-`MINERU_API_KEYS` supports multiple keys separated by commas. Multiple keys are optional; they form a key pool so Ziru can rotate requests across keys when one key reaches provider quota or rate limits.
-
-```bash
-MINERU_API_KEYS=mineru-key-1,mineru-key-2
-```
+MinerU is always local (on-premise) and is called through `/file_parse`; it does not require an API key. Point `MINERU_URL` at your self-hosted MinerU base URL.
 
 The active LLM provider is configured with `PROVIDER_URL` and `PROVIDER_KEY`. Per-role model names (`NORMAL_MODEL`, `HIERARCHY_LLM_MODEL`, `IMAGE_MODEL`, `IMAGE_MODEL_MAX`) must be set explicitly for the roles you enable.
 

@@ -2,7 +2,7 @@
 
 English | [中文](configuration.zh-CN.md)
 
-This document covers optional configuration beyond the minimal startup path. A normal local deployment only needs `MINERU_API_KEYS` plus `PROVIDER_URL` and `PROVIDER_KEY`, as shown in the README.
+This document covers optional configuration beyond the minimal startup path. A normal local deployment only needs `MINERU_URL` plus `PROVIDER_URL` and `PROVIDER_KEY`, as shown in the README. MinerU is always local (on-premise) and is called through `/file_parse`; no API key is used.
 
 Docker Compose reads `.env.defaults` first, then reads `.env`. `.env.defaults` is the built-in default reference. For real deployments, create a small `.env` file that only contains values you need to override, and never commit real secrets to Git.
 
@@ -42,15 +42,12 @@ ZIRU_IMAGE=ghcr.io/gdccyuen/ziru:latest
 
 | Variable | Usage | Example values |
 | --- | --- | --- |
-| `MINERU_API_KEYS` | MinerU API key pool for PDF parsing. Supports JSON arrays, comma-separated values, newline-separated values, and `token_id=api_key` entries. | `mineru-key-1,mineru-key-2` |
+| `MINERU_URL` | Base URL of the self-hosted MinerU instance. The worker calls `/file_parse` on this base URL; MinerU is always local and does not use an API key. | `http://host.docker.internal:8000` |
 | `PROVIDER_KEY` | API key for the active OpenAI-compatible LLM endpoint. Local servers such as Ollama or vLLM often accept any non-empty value. | `ollama`, `EMPTY` |
 | `PROVIDER_URL` | Base URL for the active OpenAI-compatible LLM endpoint. | `http://localhost:11434/v1`, `http://localhost:8000/v1` |
 
-`MINERU_API_KEYS` supports multiple keys so they can form a key pool. When one key reaches provider quota or rate limits, Ziru can rotate to another key. A single key also works.
+Run a self-hosted MinerU instance and point `MINERU_URL` at its base URL. The worker calls the synchronous `/file_parse` endpoint directly; no MinerU API key is configured. For the LLM, point `PROVIDER_URL` at any OpenAI-compatible model endpoint:
 
-Get MinerU keys from the official website, or point `PROVIDER_URL` at any OpenAI-compatible model endpoint:
-
-- [MinerU](https://mineru.net/)
 - [Ollama](https://ollama.com/)
 - [vLLM](https://docs.vllm.ai/)
 
@@ -99,19 +96,11 @@ IMAGE_MODEL_MAX=Qwen/Qwen3-VL-32B-Instruct
 
 | Variable | Usage | Example values |
 | --- | --- | --- |
-| `MINERU_URL` | MinerU API base URL. | `https://mineru.net/api/v4` |
-| `MINERU_UPLOAD_MODE_ENABLED` | Use MinerU direct upload mode instead of reusable S3 URLs. Self-hosted defaults this to `true` because local storage URLs are usually private to the compose network. | `true` |
-| `MINERU_TOKEN_RPM_LIMIT` | Per-minute request limit for each MinerU key. | `300` |
-| `MINERU_TOKEN_DAILY_LIMIT` | Daily request limit for each MinerU key. | `10000` |
-| `MINERU_TOKEN_COOLDOWN_SECONDS` | Cooldown seconds after a MinerU key is rate-limited. | `60` |
-| `MINERU_API_TIMEOUT` | MinerU API request timeout, in seconds. | `60` |
-| `MINERU_UPLOAD_CONNECT_TIMEOUT` | MinerU file upload connection timeout, in seconds. | `10` |
-| `MINERU_UPLOAD_READ_TIMEOUT` | MinerU file upload read timeout, in seconds. | `600` |
-| `MINERU_RATE_LIMIT_MAX_RETRY_AFTER` | Maximum wait seconds for MinerU 429 retry-after handling. | `60` |
-| `MINERU_POOL_MAXSIZE` | MinerU HTTP connection pool size. | `50` |
-| `MINERU_UPLOAD_RETRY_TOTAL` | Retry count for transient MinerU upload failures. | `3` |
-| `MINERU_UPLOAD_RETRY_BACKOFF_FACTOR` | MinerU upload retry backoff factor. | `2` |
-| `MINERU_URL_MODE_PRESIGN_EXPIRY` | Presigned URL expiry for MinerU URL mode, in seconds. | `3600` |
+| `MINERU_URL` | Base URL of the self-hosted MinerU instance. The worker calls `/file_parse` on this base URL; no API key is used. | `http://host.docker.internal:8000` |
+| `MINERU_LOCAL_LANG_LIST` | Language code passed to MinerU's `/file_parse` `lang_list` parameter. | `ch` |
+| `MINERU_LOCAL_BACKEND` | Backend passed to MinerU's `/file_parse` `backend` parameter. | `pipeline` |
+| `MINERU_LOCAL_TIMEOUT` | Per-shard timeout in seconds for the synchronous `/file_parse` call. | `3600` |
+| `MINERU_SHARD_CONCURRENCY` | Maximum concurrent MinerU `/file_parse` calls for shard parsing. | `3` |
 
 ## Admin Console, WebUI, Auth, and Branding
 
@@ -405,7 +394,7 @@ These fields are retained for legacy code paths or internal path conventions. Mo
 
 ```bash
 ADMIN_PUBLIC_URL=https://ziru.example.com
-MINERU_API_KEYS=your-mineru-api-key
+MINERU_URL=http://host.docker.internal:8000
 PROVIDER_URL=http://localhost:11434/v1
 PROVIDER_KEY=ollama
 NORMAL_MODEL=qwen3:32b

@@ -125,7 +125,7 @@ cp apps/worker/.env.example apps/worker/.env
 - database and Redis connection settings
 - S3-compatible storage credentials
 - the active LLM provider: `PROVIDER_URL` and `PROVIDER_KEY`, plus the explicit per-role model names you use
-- `MINERU_API_KEYS` if you need PDF parsing
+- `MINERU_URL` (local MinerU `/file_parse` service; no API key) if you need PDF parsing
 - `IMAGE_MODEL` / `IMAGE_MODEL_MAX` if you need image summaries, OCR, atlas classification, or image-aware retrieval
 - any optional billing or webhook providers you want to enable
 

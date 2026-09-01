@@ -7,14 +7,14 @@ Ziru Self-Hosted 使用 Docker Compose 打包 Ziru 的自托管部署：Ziru API
 ## 准备工作
 
 - Docker 和 Docker Compose。
-- MinerU API Key，用于 PDF 文档的初始解析。
+- 一个容器可访问的自托管 MinerU 实例。MinerU 始终在本地运行，通过同步 `/file_parse` 接口调用；不需要 API Key。
 - 任意 OpenAI-compatible 模型端点的 Key/URL（例如本地 Ollama 或 vLLM）。
 
 目前，我们的配置默认使用 MinerU 作为 PDF 解析器。如果你需要自定义解析流程，也可以接入自己的解析器；只要它能产出 Markdown（`.md`）文件，Ziru 就可以继续处理。如果你想为更多 PDF 解析器贡献支持，欢迎提交 pull request。
 
-## 1. 准备 API Key
+## 1. 准备服务
 
-- [MinerU](https://mineru.net/)
+- MinerU：运行自托管 MinerU 实例，并把 `MINERU_URL` 指向其基础地址（默认 `http://host.docker.internal:8000`）。MinerU 始终通过 `/file_parse` 本地调用，不使用 API Key。
 - 任意 OpenAI-compatible 模型端点（本地 [Ollama](https://ollama.com/)、[vLLM](https://docs.vllm.ai/) 或云厂商）
 
 ## 2. 配置 `.env`
@@ -24,7 +24,7 @@ Ziru Self-Hosted 使用 Docker Compose 打包 Ziru 的自托管部署：Ziru API
 本地 OpenAI-compatible 模型服务器（Ollama）示例：
 
 ```bash
-MINERU_API_KEYS=your-mineru-api-key
+MINERU_URL=http://host.docker.internal:8000
 PROVIDER_URL=http://localhost:11434/v1
 PROVIDER_KEY=ollama
 NORMAL_MODEL=qwen3:32b
@@ -36,7 +36,7 @@ IMAGE_MODEL_MAX=llava:latest
 自托管 vLLM 示例：
 
 ```bash
-MINERU_API_KEYS=your-mineru-api-key
+MINERU_URL=http://host.docker.internal:8000
 PROVIDER_URL=http://localhost:8000/v1
 PROVIDER_KEY=EMPTY
 NORMAL_MODEL=Qwen/Qwen3-32B
@@ -45,11 +45,7 @@ IMAGE_MODEL=Qwen/Qwen3-VL-32B-Instruct
 IMAGE_MODEL_MAX=Qwen/Qwen3-VL-32B-Instruct
 ```
 
-`MINERU_API_KEYS` 支持多个 Key，用英文逗号分隔。多个 Key 不是必需的；它们会组成一个 Key 池，当某个 Key 触发限流时，Ziru 可以轮换使用其他 Key。
-
-```bash
-MINERU_API_KEYS=mineru-key-1,mineru-key-2
-```
+MinerU 始终在本地（on-premise）运行，通过 `/file_parse` 调用，不需要 API Key。将 `MINERU_URL` 指向你的自托管 MinerU 基础地址即可。
 
 当前大模型 provider 通过 `PROVIDER_URL` 和 `PROVIDER_KEY` 配置。每个角色的模型名（`NORMAL_MODEL`、`HIERARCHY_LLM_MODEL`、`IMAGE_MODEL`、`IMAGE_MODEL_MAX`）需要按启用的角色显式设置。
 

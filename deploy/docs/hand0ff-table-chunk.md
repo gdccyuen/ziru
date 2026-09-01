@@ -39,6 +39,6 @@ Every table chunk in the adobe workspace (`25034–25136.pdf`) showed the summar
 
 ## Gotchas
 
-- `MINERU_LOCAL_MODE=true`, `MINERU_URL=http://host.docker.internal:8000`; app container runs worker in-process (single `app` service).
+- `MINERU_URL=http://host.docker.internal:8000`; MinerU is always local via `/file_parse`. App container runs worker in-process (single `app` service).
 - MinerU 3.4.0 `/file_parse` is async-friendly: POST returns a ZIP immediately when `response_format_zip=true`; without it you get JSON with a `status_url`/`result_url`.
 - Old adobe sources stay table-less until re-uploaded/re-parsed (their S3 results are gone).
