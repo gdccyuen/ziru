@@ -447,9 +447,14 @@ function UploadDocumentDialog({
                 id="upload-file"
                 type="file"
                 multiple
-                disabled={submitting}
+                disabled={submitting || files.length >= MAX_UPLOAD_FILES}
                 onChange={handleFileChange}
               />
+              {files.length >= MAX_UPLOAD_FILES ? (
+                <p className="text-xs text-muted-foreground">
+                  {MAX_UPLOAD_FILES} files selected. Remove one to add more.
+                </p>
+              ) : null}
               {files.length > 0 ? (
                 <ul className="max-h-56 space-y-1.5 overflow-y-auto">
                   {files.map((entry) => (

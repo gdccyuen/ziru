@@ -68,7 +68,7 @@ Rule: no phase merges until its suite is green and the previous phase's checks s
 - Documents: upload (file or URL) with attributes, grade-gated (librarian/admin); list = profile ∩ filters (`GET /v2/documents`, browsing path); get; PATCH attributes (Q8 + 05 follow-up rules); DELETE admin-only; chunks + structure endpoints.
 - Attribute dictionary CRUD (admin) + read for all authenticated.
 - Retrieval: `POST /v2/search` — non-empty query required, mandatory filter bag, engine params unchanged (topK/internalRecallK/rerank/agentic); scope = caller profile ∩ filters, enforced server-side; namespace params removed; retrieval cache key reworked (was `(user_id, namespace, …)`).
-- Jobs: create; get own job (uploader/admin); list admin-only; admission = `MAX_CONCURRENT_JOBS` (default 4, global, env) replacing billing limits (`require_job_capacity`).
+- Jobs: create; get own job (uploader/admin); list admin-only; admission = `MAX_CONCURRENT_JOBS` (default 10, global, env) replacing billing limits (`require_job_capacity`).
 - Remove v1 namespaces/user-scoped list endpoints; webhooks kept.
 - **Tests:** access-control matrix (3 grades × attribute scenarios × fail-closed edge cases: empty profile, missing keys, multi-value, strip-to-built-ins), retrieval smoke against re-uploaded demo documents, existing engine tests unchanged.
 

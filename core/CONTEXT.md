@@ -166,7 +166,7 @@ inference.
 
 The policy checks that must pass before a new Job is created: authentication,
 Layer-0 system limits, and the global concurrent-job cap
-(`MAX_CONCURRENT_JOBS`, default 4; 0 or -1 = unlimited).
+(`MAX_CONCURRENT_JOBS`, default 10; 0 or -1 = unlimited).
 
 ### Job Admission Route Policy
 

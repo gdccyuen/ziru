@@ -63,8 +63,12 @@ export default function JobsPage() {
   const [error, setError] = useState<string | null>(null);
   const pageSize = 20;
 
-  const load = async (nextPage: number, nextStatus: JobStatus | "all") => {
-    setLoading(true);
+  const load = async (
+    nextPage: number,
+    nextStatus: JobStatus | "all",
+    options?: { silent?: boolean }
+  ) => {
+    if (!options?.silent) setLoading(true);
     try {
       const response = await api.jobs({
         page: nextPage,
@@ -78,15 +82,24 @@ export default function JobsPage() {
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to load jobs");
     } finally {
-      setLoading(false);
+      if (!options?.silent) setLoading(false);
     }
   };
 
   const loadRef = useRef(load);
   loadRef.current = load;
 
+  const pageRef = useRef(page);
+  pageRef.current = page;
+  const statusRef = useRef(status);
+  statusRef.current = status;
+
   useEffect(() => {
     void loadRef.current(1, "all");
+    const intervalId = setInterval(() => {
+      void loadRef.current(pageRef.current, statusRef.current, { silent: true });
+    }, 60_000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
