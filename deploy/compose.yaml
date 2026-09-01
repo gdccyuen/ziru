@@ -39,6 +39,12 @@ services:
       REDIS_PORT: 6379
       CELERY_REDIS_URL: redis://redis:6379/0
       S3_TYPE: filesystem
+      S3_BUCKET_NAME: ziru-uploads
+      S3_RESULTS_BUCKET: ziru-results
+      S3_ACCESS_KEY_ID: test
+      S3_SECRET_ACCESS_KEY: test
+      S3_TEMP_PATH: /tmp/ziru
+      TMP_PATH: /tmp/ziru
       OBJECT_STORAGE_LOCAL_ROOT: /data/storage
       USERS_DATA_PATH: /data/users
       PROVIDER_URL: http://host.docker.internal:8888/v1
