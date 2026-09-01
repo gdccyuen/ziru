@@ -125,7 +125,7 @@ COPY --from=admin-deps /usr/local/lib/node_modules /usr/local/lib/node_modules
 # Python venv + application source.
 COPY --from=python-deps /opt/ziru/venv /opt/ziru/venv
 COPY core /opt/ziru/source/core
-COPY sitecustomize.py /opt/ziru/sitecustomize/sitecustomize.py
+COPY deploy/sitecustomize.py /opt/ziru/sitecustomize/sitecustomize.py
 
 # Built Next.js apps (node_modules + .next + config/public stay together so
 # `next start` works without a rebuild).
