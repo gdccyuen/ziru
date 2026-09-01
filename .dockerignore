@@ -2,13 +2,13 @@
 .demo
 .scratch
 .venv
-node_modules
-.next
+**/node_modules
+**/.next
 core/.venv
 core/.uv-cache
 *.log
 deploy/.build
 deploy/.env
 deploy/.scratch
-admin/package-lock.json
+**/package-lock.json
 webui/package-lock.json
