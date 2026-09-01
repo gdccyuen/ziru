@@ -57,6 +57,7 @@ WORKDIR /opt/ziru/source/admin
 
 COPY --from=admin-deps /opt/ziru/source/admin/node_modules ./node_modules
 COPY admin/ ./
+RUN node -e 'console.log("BUILDER next:", require("./node_modules/next/package.json").version)'
 
 RUN rm -rf .next && npm run build
 
@@ -82,6 +83,7 @@ WORKDIR /opt/ziru/source/webui
 
 COPY --from=webui-deps /opt/ziru/source/webui/node_modules ./node_modules
 COPY webui/ ./
+RUN node -e 'console.log("BUILDER next:", require("./node_modules/next/package.json").version)'
 
 RUN rm -rf .next && npm run build
 
