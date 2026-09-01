@@ -10,6 +10,18 @@ from shared.core.database_sync import get_sync_db_context
 from shared.models.database.job import Job
 
 
+def estimate_duration_seconds(page_count: int) -> int:
+    """Estimate total parse duration from the known page count.
+
+    PM-approved heuristic: 90 + pages*2 + max(0, round(pages*0.5))*8
+    plus 600 seconds for documents over 150 pages.
+    """
+    pages = max(0, int(page_count))
+    page_batch_seconds = max(0, round(pages * 0.5)) * 8
+    oversized_penalty = 600 if pages > 150 else 0
+    return 90 + pages * 2 + page_batch_seconds + oversized_penalty
+
+
 def record_workload_estimate(
     *,
     job_id: str,
@@ -43,6 +55,9 @@ def record_processing_start(
         "page_count": workload_estimate.page_count,
         "processing_started_at": processing_started_at.isoformat(),
         "workload_estimate_method": workload_estimate.method,
+        "estimated_duration_s": estimate_duration_seconds(
+            workload_estimate.page_count
+        ),
     }
     if workload_estimate.fallback_reason is not None:
         metadata_updates["workload_estimate_fallback_reason"] = (

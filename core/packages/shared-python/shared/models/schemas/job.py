@@ -180,6 +180,10 @@ class JobResultResponse(BaseModel):
     duration_seconds: Optional[float] = Field(
         None, description="Job duration (updated_at - created_at, in seconds)"
     )
+    estimated_duration_s: Optional[int] = Field(
+        None,
+        description="Estimated total processing duration in seconds, set once workload estimation is known",
+    )
 
 
 class JobList(BaseModel):

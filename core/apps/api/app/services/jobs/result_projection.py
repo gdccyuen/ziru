@@ -59,6 +59,7 @@ async def build_job_result_response(
         model=parsing_params.get("model"),
         ocr_enabled=parsing_params.get("ocr_enabled"),
         duration_seconds=_resolve_duration_seconds(job),
+        estimated_duration_s=_resolve_estimated_duration_s(job_metadata),
     )
 
 JobStatusValue = Literal[
@@ -159,5 +160,17 @@ def _resolve_duration_seconds(job: Any) -> float | None:
     if job.updated_at and job.created_at:
         return (job.updated_at - job.created_at).total_seconds()
     return None
+
+
+def _resolve_estimated_duration_s(
+    job_metadata: Optional[dict[str, Any]],
+) -> int | None:
+    raw = JobMetadataHelper.get_field(job_metadata, "estimated_duration_s")
+    if raw is None or isinstance(raw, bool):
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
 
 
