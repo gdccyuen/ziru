@@ -52,7 +52,7 @@ services:
       PROVIDER_KEY: ${PROVIDER_KEY:-}
       MINERU_URL: http://host.docker.internal:8000
       MINERU_API_KEYS: ${MINERU_API_KEYS:-}
-      MINERU_LOCAL_MODE: "false"
+      MINERU_LOCAL_MODE: "true"
       ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-admin@ziru.local}
       ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
       ENVIRONMENT: production
