@@ -76,7 +76,8 @@ type UploadFileEntry = {
   error?: string;
 };
 
-const MAX_UPLOAD_FILES = 20;
+// Must stay <= MAX_CONCURRENT_JOBS (backend admission cap).
+const MAX_UPLOAD_FILES = 10;
 
 const BUILTIN_ATTRIBUTE_KEYS = ["createBy", "createTime", "fileHash", "originalFile"];
 
@@ -415,7 +416,7 @@ function UploadDocumentDialog({
         <DialogHeader>
           <DialogTitle>Upload document</DialogTitle>
           <DialogDescription>
-            Attach one or more files and optional dictionary attributes. A parse job is started
+            Attach up to 10 files and optional dictionary attributes. A parse job is started
             immediately for each file.
           </DialogDescription>
         </DialogHeader>
