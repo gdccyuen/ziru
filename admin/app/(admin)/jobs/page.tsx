@@ -43,6 +43,17 @@ const STATUS_VARIANT: Record<JobStatus, "default" | "secondary" | "destructive" 
   "waiting-file": "outline",
 };
 
+function elapsedSeconds(createdAt: string): number {
+  const normalized = /Z$|[+-]\d{2}:\d{2}$/.test(createdAt) ? createdAt : `${createdAt}Z`;
+  const created = new Date(normalized);
+  if (Number.isNaN(created.getTime())) return 0;
+  return Math.max(0, (Date.now() - created.getTime()) / 1000);
+}
+
+function formatMinutes(seconds: number): string {
+  return `~${Math.max(0, Math.round(seconds / 60))}m`;
+}
+
 export default function JobsPage() {
   const [jobs, setJobs] = useState<JobItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -134,6 +145,7 @@ export default function JobsPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Duration</TableHead>
+                  <TableHead>Estimate</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -151,6 +163,18 @@ export default function JobsPage() {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {job.duration_seconds === null ? "—" : `${job.duration_seconds.toFixed(1)}s`}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {job.status === "running" && job.estimated_duration_s != null ? (
+                        <span className="text-amber-600">
+                          est total {formatMinutes(job.estimated_duration_s)} · remaining{" "}
+                          {formatMinutes(
+                            Math.max(0, job.estimated_duration_s - elapsedSeconds(job.created_at))
+                          )}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

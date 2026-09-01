@@ -76,6 +76,7 @@ export type JobItem = {
   result_url_expires_at: string;
   file_name: string | null;
   duration_seconds: number | null;
+  estimated_duration_s?: number | null;
 };
 
 export type JobsResponse = {
