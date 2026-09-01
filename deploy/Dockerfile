@@ -116,7 +116,7 @@ RUN apt-get update \
     redis-tools \
     tini \
   && rm -rf /var/lib/apt/lists/* \
-  && update-ca-certificates \
+  && (update-ca-certificates || true) \
   && mkdir -p /data/users /data/storage /tmp/ziru /opt/ziru/sitecustomize
 
 # Node runtime (binaries + npm/npx). Both images are Debian bookworm, so the
