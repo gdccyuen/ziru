@@ -30,6 +30,7 @@ services:
       retries: 10
 
   api:
+    restart: unless-stopped
     image: ziru:local
     environment: &ziru_env
       MODE: api
@@ -68,6 +69,7 @@ services:
       retries: 10
 
   worker:
+    restart: unless-stopped
     image: ziru:local
     environment:
       <<: *ziru_env
@@ -82,6 +84,7 @@ services:
         condition: service_healthy
 
   admin:
+    restart: unless-stopped
     image: ziru:local
     environment:
       MODE: admin
@@ -98,6 +101,7 @@ services:
       retries: 10
 
   webui:
+    restart: unless-stopped
     image: ziru:local
     environment:
       MODE: webui

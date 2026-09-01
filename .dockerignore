@@ -10,3 +10,5 @@ core/.uv-cache
 deploy/.build
 deploy/.env
 deploy/.scratch
+admin/package-lock.json
+webui/package-lock.json
