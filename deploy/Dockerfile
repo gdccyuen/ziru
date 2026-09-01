@@ -39,6 +39,7 @@ WORKDIR /opt/ziru/source/admin
 
 COPY admin/package.json ./
 RUN npm install --no-audit --no-fund --ignore-scripts --legacy-peer-deps
+RUN node -e 'console.log("DEPS next:", require("./node_modules/next/package.json").version)'
 
 FROM ${NODE_IMAGE} AS admin-builder
 
@@ -70,6 +71,7 @@ WORKDIR /opt/ziru/source/webui
 
 COPY webui/package.json ./
 RUN npm install --no-audit --no-fund --ignore-scripts --legacy-peer-deps
+RUN node -e 'console.log("DEPS next:", require("./node_modules/next/package.json").version)'
 
 FROM ${NODE_IMAGE} AS webui-builder
 
