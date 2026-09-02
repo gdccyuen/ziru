@@ -31,6 +31,21 @@ function filtersEqual(left: AttributeFilter[], right: AttributeFilter[]): boolea
   return JSON.stringify(normalize(left)) === JSON.stringify(normalize(right));
 }
 
+function optimisticUserMessage(threadId: string, content: string): ChatMessage {
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
+  return {
+    id: `optimistic-${id}`,
+    thread_id: threadId,
+    role: "user",
+    content,
+    citations: [],
+    created_at: new Date().toISOString(),
+  };
+}
+
 export default function ChatPage() {
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -40,6 +55,7 @@ export default function ChatPage() {
   const [creating, setCreating] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sendNotice, setSendNotice] = useState<string | null>(null);
   const [retrievalSettings, setRetrievalSettings] = useState<RetrievalSettings>(
     RETRIEVAL_DEFAULTS,
   );
@@ -47,6 +63,8 @@ export default function ChatPage() {
     getCorpusScope(),
   );
   const initializedRef = useRef(false);
+  const activeThreadIdRef = useRef<string | null>(null);
+  const refetchTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
   const loadThreads = useCallback(async () => {
     setLoadingThreads(true);
@@ -77,7 +95,42 @@ export default function ChatPage() {
     }
   }, []);
 
+  const refreshMessages = useCallback(async (threadId: string) => {
+    try {
+      const response = await api.chatThreads.messages(threadId);
+      setMessages(response.messages);
+      setRetrievalSettings(settingsFromThread(response.thread));
+    } catch {
+      // Transient refetch failure: keep whatever is already on screen.
+    }
+  }, []);
+
+  const clearScheduledRefetches = useCallback(() => {
+    for (const timer of refetchTimersRef.current) clearTimeout(timer);
+    refetchTimersRef.current = [];
+  }, []);
+
+  const scheduleRefetch = useCallback(
+    (threadId: string) => {
+      for (const delay of [8000, 30000]) {
+        const timer = setTimeout(() => {
+          if (activeThreadIdRef.current === threadId) {
+            void refreshMessages(threadId);
+          }
+        }, delay);
+        refetchTimersRef.current.push(timer);
+      }
+    },
+    [refreshMessages],
+  );
+
   useEffect(() => subscribeCorpusScope((scope) => setCorpusScopeState(scope)), []);
+
+  useEffect(() => {
+    activeThreadIdRef.current = activeThreadId;
+  }, [activeThreadId]);
+
+  useEffect(() => () => clearScheduledRefetches(), [clearScheduledRefetches]);
 
   useEffect(() => {
     if (initializedRef.current) return;
@@ -93,6 +146,8 @@ export default function ChatPage() {
 
   function handleSelectThread(threadId: string) {
     setActiveThreadId(threadId);
+    setSendNotice(null);
+    clearScheduledRefetches();
     void loadMessages(threadId);
   }
 
@@ -100,6 +155,8 @@ export default function ChatPage() {
     if (creating) return;
     setCreating(true);
     setError(null);
+    setSendNotice(null);
+    clearScheduledRefetches();
     try {
       const thread = await api.chatThreads.create(
         corpusScope.length > 0 ? { filters: corpusScope } : {},
@@ -146,6 +203,8 @@ export default function ChatPage() {
   }
 
   async function handleDeleteThread(threadId: string) {
+    setSendNotice(null);
+    clearScheduledRefetches();
     try {
       await api.chatThreads.archive(threadId);
       const remaining = threads.filter((thread) => thread.id !== threadId);
@@ -179,13 +238,29 @@ export default function ChatPage() {
     if (!activeThreadId || sending) return;
     setSending(true);
     setError(null);
+    setSendNotice(null);
+    clearScheduledRefetches();
+
+    const optimistic = optimisticUserMessage(activeThreadId, text);
+    setMessages((current) => [...current, optimistic]);
+
     try {
       await ensureThreadScope(activeThreadId);
+    } catch (err) {
+      setMessages((current) => current.filter((item) => item.id !== optimistic.id));
+      setError(
+        err instanceof ApiError ? err.message : "Could not update thread scope.",
+      );
+      setSending(false);
+      return;
+    }
+
+    try {
       const result = await api.chatThreads.postMessage(activeThreadId, {
         content: text,
       });
       setMessages((current) => [
-        ...current,
+        ...current.filter((item) => item.id !== optimistic.id),
         result.user_message,
         result.assistant_message,
       ]);
@@ -197,8 +272,11 @@ export default function ChatPage() {
             : thread,
         ),
       );
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not send message.");
+    } catch {
+      setSendNotice(
+        "Your question was sent; the answer may still be generating - refresh to see it.",
+      );
+      scheduleRefetch(activeThreadId);
     } finally {
       setSending(false);
     }
@@ -272,6 +350,11 @@ export default function ChatPage() {
                   </Button>
                 </div>
               </div>
+            ) : null}
+            {sendNotice ? (
+              <p className="shrink-0 border-t border-border/70 bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
+                {sendNotice}
+              </p>
             ) : null}
             <ChatComposer
               disabled={!activeThread}

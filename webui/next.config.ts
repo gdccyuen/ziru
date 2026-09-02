@@ -29,6 +29,12 @@ const nextConfig: NextConfig = {
     "127.0.0.1",
     "localhost",
   ],
+  experimental: {
+    // The core API can take >30s to synthesize chat answers locally; without
+    // this the rewrite proxy cuts the browser at its 30s default while the API
+    // keeps working and persists the answer later.
+    proxyTimeout: 300000,
+  },
   turbopack: {
     root: process.cwd(),
   },
