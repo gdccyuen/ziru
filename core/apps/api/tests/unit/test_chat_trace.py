@@ -118,3 +118,65 @@ def test_retrieval_trace_queries_handles_empty_citations() -> None:
             "top_scores": [],
         }
     ]
+
+
+class _FakeSynthesisClient:
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.calls = []
+
+    def chat_completion_with_usage(self, **kwargs):
+        self.calls.append(kwargs)
+        return self.responses.pop(0)
+
+
+def _empty_usage():
+    return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
+
+def test_synthesis_answer_retries_once_when_first_response_is_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = _chat_service()
+    usage1 = _empty_usage()
+    usage2 = {"prompt_tokens": 12, "completion_tokens": 4, "total_tokens": 16}
+    client = _FakeSynthesisClient([("", usage1), ("  retried answer  ", usage2)])
+    monkeypatch.setattr(service, "get_text_client", lambda: (client, "test-model"))
+
+    answer, usage = service._synthesis_answer_sync("question?", [])
+
+    assert answer == "retried answer"
+    assert usage == usage2
+    assert [call["max_tokens"] for call in client.calls] == [8192, 16384]
+    assert client.calls[0]["messages"] == client.calls[1]["messages"]
+
+
+def test_synthesis_answer_returns_empty_after_two_empty_responses(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = _chat_service()
+    usage1 = _empty_usage()
+    usage2 = _empty_usage()
+    client = _FakeSynthesisClient([("", usage1), ("   ", usage2)])
+    monkeypatch.setattr(service, "get_text_client", lambda: (client, "test-model"))
+
+    answer, usage = service._synthesis_answer_sync("question?", [])
+
+    assert answer == ""
+    assert usage == usage2
+    assert [call["max_tokens"] for call in client.calls] == [8192, 16384]
+
+
+def test_synthesis_answer_does_not_retry_when_first_response_is_nonempty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = _chat_service()
+    usage = {"prompt_tokens": 3, "completion_tokens": 2, "total_tokens": 5}
+    client = _FakeSynthesisClient([("  first answer  ", usage)])
+    monkeypatch.setattr(service, "get_text_client", lambda: (client, "test-model"))
+
+    answer, returned_usage = service._synthesis_answer_sync("question?", [])
+
+    assert answer == "first answer"
+    assert returned_usage == usage
+    assert [call["max_tokens"] for call in client.calls] == [8192]

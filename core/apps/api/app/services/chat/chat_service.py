@@ -279,6 +279,10 @@ def _synthesis_answer_sync(question, results):
         {"role": "user", "content": _synthesis_prompt(question, results)},
     ]
     raw, usage = client.chat_completion_with_usage(messages=messages, model=model, temperature=0.0, max_tokens=8192, usage_task="chat.answer_synthesis")
+    answer = (raw or "").strip()
+    if answer:
+        return answer, usage
+    raw, usage = client.chat_completion_with_usage(messages=messages, model=model, temperature=0.0, max_tokens=16384, usage_task="chat.answer_synthesis")
     return (raw or "").strip(), usage
 
 
