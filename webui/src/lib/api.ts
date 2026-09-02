@@ -300,6 +300,8 @@ export const api = {
       apiRequest<{ thread: ChatThread; messages: ChatMessage[] }>(
         `/v2/chat/threads/${encodeURIComponent(threadId)}/messages`,
       ),
+    // Streaming (Phase 4) is deferred per docs/CHAT-ANSWER-PRESENTATION.md §6;
+    // keep this single-shot contract and evolve a v3 stream from its trace shape.
     postMessage: (
       threadId: string,
       input: { content: string; filters?: AttributeFilter[] },

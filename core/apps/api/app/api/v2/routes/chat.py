@@ -155,6 +155,9 @@ async def get_thread_messages(
     return {"thread": thread, "messages": messages}
 
 
+# Phase 4 (streaming) is intentionally deferred per §6 of
+# docs/CHAT-ANSWER-PRESENTATION.md: keep this single-shot contract. A future
+# v3 stream route should emit the same turn trace fields as NDJSON events.
 @router.post("/threads/{thread_id}/messages", summary="Send a message in a thread")
 async def post_thread_message(
     thread_id: str,
