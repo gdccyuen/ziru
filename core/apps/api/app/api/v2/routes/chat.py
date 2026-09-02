@@ -162,7 +162,7 @@ async def post_thread_message(
     current_user: CurrentUser = Depends(with_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    user_message, assistant_message = await run_message_turn(
+    user_message, assistant_message, trace = await run_message_turn(
         db,
         current_user,
         thread_id,
@@ -172,6 +172,7 @@ async def post_thread_message(
     return {
         "user_message": user_message,
         "assistant_message": assistant_message,
+        "trace": trace,
     }
 
 

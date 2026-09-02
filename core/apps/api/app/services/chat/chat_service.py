@@ -18,6 +18,8 @@ from app.services.rate_limit.data_structures import CurrentUser
 from app.services.search.knowledge_search import empty_evidence_response
 import asyncio
 import os
+import time
+
 from shared.services.ai.llm_overrides import get_text_client
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -87,6 +89,7 @@ def message_payload(message: ChatMessage) -> dict[str, Any]:
         "role": message.role,
         "content": message.content,
         "citations": message.citations or [],
+        "trace": message.trace or None,
         "created_at": message.created_at.isoformat() if message.created_at else None,
     }
 
@@ -260,19 +263,53 @@ def _synthesis_prompt(question, results):
     return ("Answer the user question using ONLY the evidence blocks below. "
             "If the evidence is insufficient, say so explicitly. "
             "Write a concise, well-organized answer (short paragraphs or bullets). "
-            "Reference sections by their paths in parentheses. Do not invent facts.\n\n"
+            "After each claim, cite the supporting evidence with an inline "
+            "marker formatted exactly as [Source N: label], where N is the "
+            "evidence-block number and label is the section path (or file "
+            "name when no section path is available). Do not use any other "
+            "citation syntax. Do not invent facts.\n\n"
             "Question: " + question + "\n\nEVIDENCE:\n" + "\n".join(blocks))
 
-def _synthesize_answer_sync(question, results):
+def _synthesis_answer_sync(question, results):
     client, model = get_text_client()
     if client is None:
-        return ""
+        return "", {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
     messages = [
         {"role": "system", "content": "You are Ziru chat assistant. Ground every claim in the provided evidence."},
         {"role": "user", "content": _synthesis_prompt(question, results)},
     ]
-    raw, _ = client.chat_completion_with_usage(messages=messages, model=model, temperature=0.0, max_tokens=8192, usage_task="chat.answer_synthesis")
-    return (raw or "").strip()
+    raw, usage = client.chat_completion_with_usage(messages=messages, model=model, temperature=0.0, max_tokens=8192, usage_task="chat.answer_synthesis")
+    return (raw or "").strip(), usage
+
+
+def _top_scores(citations: list[dict[str, Any]], *, limit: int = 5) -> list[float]:
+    scores: list[float] = []
+    for item in citations:
+        score = item.get("score")
+        if isinstance(score, (int, float)):
+            scores.append(round(float(score), 4))
+    return scores[:limit]
+
+
+def _retrieval_trace_queries(
+    query: str,
+    evidence: dict[str, Any],
+    citations: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    chunk_ids = {
+        str(item["chunk_id"])
+        for item in citations
+        if item.get("chunk_id") is not None
+    }
+    return [
+        {
+            "query": query,
+            "namespace": str(evidence.get("router_used") or "chat"),
+            "result_count": len(citations),
+            "referenced_chunk_count": len(chunk_ids),
+            "top_scores": _top_scores(citations),
+        }
+    ]
 
 
 async def run_message_turn(
@@ -282,13 +319,14 @@ async def run_message_turn(
     *,
     content: str,
     filters: list[dict[str, Any]] | None,
-) -> tuple[dict[str, Any], dict[str, Any]]:
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     thread = await _get_owned_thread(db, current_user.user_id, thread_id)
     text = (content or "").strip()
     if not text:
         raise validation_error_422("content must not be empty", "content")
     if filters is not None:
         thread.filters = filters
+    turn_started = time.monotonic()
 
     user_message = ChatMessage(
         thread_id=thread.id,
@@ -326,13 +364,31 @@ async def run_message_turn(
 
     answer_content = (evidence.get("evidence_text") or "").strip()
     citations = evidence.get("results") or []
+    synthesis_usage: dict[str, Any] = {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0,
+    }
+    llm_call_count = 0
     if _chat_answer_synthesis_enabled() and citations:
+        llm_call_count += 1
         try:
-            synthesized = await asyncio.to_thread(_synthesize_answer_sync, text, citations)
+            synthesized, synthesis_usage = await asyncio.to_thread(
+                _synthesize_answer_sync,
+                text,
+                citations,
+            )
             if synthesized:
                 answer_content = synthesized
         except Exception:
             pass
+    trace = {
+        "duration_seconds": round(time.monotonic() - turn_started, 3),
+        "llm_call_count": llm_call_count,
+        "input_tokens": int(synthesis_usage.get("prompt_tokens") or 0),
+        "output_tokens": int(synthesis_usage.get("completion_tokens") or 0),
+        "queries": _retrieval_trace_queries(text, evidence, citations),
+    }
     if not answer_content:
         if citations:
             answer_content = (
@@ -349,6 +405,7 @@ async def run_message_turn(
         role="assistant",
         content=answer_content,
         citations=citations,
+        trace=trace,
     )
     db.add(assistant_message)
     if thread.title == DEFAULT_THREAD_TITLE:
@@ -357,7 +414,7 @@ async def run_message_turn(
     await db.commit()
     await db.refresh(user_message)
     await db.refresh(assistant_message)
-    return message_payload(user_message), message_payload(assistant_message)
+    return message_payload(user_message), message_payload(assistant_message), trace
 
 
 __all__ = [

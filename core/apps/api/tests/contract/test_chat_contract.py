@@ -184,11 +184,20 @@ async def test_chat_message_turn_persists_evidence_and_citations(
         body = turn.json()
         user_message = body["user_message"]
         assistant_message = body["assistant_message"]
+        trace = body["trace"]
         assert user_message["role"] == "user"
         assert user_message["content"] == "alpha"
         assert assistant_message["role"] == "assistant"
         assert assistant_message["content"]
         assert len(assistant_message["citations"]) >= 1
+        assert trace == assistant_message["trace"]
+        assert trace["duration_seconds"] >= 0
+        assert trace["llm_call_count"] in (0, 1)
+        assert trace["input_tokens"] >= 0
+        assert trace["output_tokens"] >= 0
+        assert trace["queries"][0]["query"] == "alpha"
+        assert trace["queries"][0]["result_count"] >= 1
+        assert isinstance(trace["queries"][0]["top_scores"], list)
         source = cast(
             dict[str, object],
             assistant_message["citations"][0]["source"],
@@ -208,6 +217,7 @@ async def test_chat_message_turn_persists_evidence_and_citations(
         assert messages[0]["id"] == user_message["id"]
         assert messages[1]["id"] == assistant_message["id"]
         assert messages[1]["citations"] == assistant_message["citations"]
+        assert messages[1]["trace"] == trace
 
 
 @pytest.mark.asyncio
@@ -234,8 +244,10 @@ async def test_chat_empty_profile_fails_closed(
         )
         assert turn.status_code == 200, turn.text
         assistant = turn.json()["assistant_message"]
+        trace = turn.json()["trace"]
         assert "No matching knowledge" in assistant["content"]
         assert assistant["citations"] == []
+        assert trace["queries"][0]["result_count"] == 0
 
 
 @pytest.mark.asyncio

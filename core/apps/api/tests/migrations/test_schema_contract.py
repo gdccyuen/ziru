@@ -319,6 +319,7 @@ def test_chat_threads_and_messages_tables_exist(
         "role",
         "content",
         "citations",
+        "trace",
         "created_at",
     }.issubset(message_columns)
 

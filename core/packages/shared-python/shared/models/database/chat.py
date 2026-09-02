@@ -74,6 +74,9 @@ class ChatMessage(Base):
     citations: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(
         JSON, nullable=True
     )
+    trace: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        JSON, nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now_naive, nullable=False
     )
