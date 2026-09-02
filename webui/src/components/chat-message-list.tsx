@@ -1,9 +1,13 @@
 "use client";
 
-import ReactMarkdown from "react-markdown";
+import { useState } from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { FileText, Link2 } from "lucide-react";
 import type { ChatMessage, RetrievalResult } from "@/lib/api";
+import { annotateSourceMarkers, citationLabel, numberedCitations } from "@/lib/chat-citations";
+import { ChatRetrievalTrace } from "@/components/chat-retrieval-trace";
+import { CollapsibleSection } from "@/components/collapsible-section";
 import { cn } from "@/lib/utils";
 
 export function ChatMessageList({
@@ -41,6 +45,39 @@ export function ChatMessageList({
 
 function ChatBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
+  const [selectedCitation, setSelectedCitation] = useState<number | null>(null);
+
+  function openCitation(index: number) {
+    setSelectedCitation(index);
+    document
+      .getElementById("source-" + (index + 1))
+      ?.scrollIntoView({ block: "nearest" });
+  }
+
+  const markdownComponents: Components = {
+    a: ({ href, children, node, ...props }) => {
+      void node;
+      const marker =
+        typeof href === "string" ? href.match(/^#source-(\d+)$/) : null;
+      if (marker) {
+        return (
+          <button
+            type="button"
+            onClick={() => openCitation(Number(marker[1]) - 1)}
+            className="font-medium text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary"
+          >
+            {children}
+          </button>
+        );
+      }
+      return (
+        <a href={href} {...props}>
+          {children}
+        </a>
+      );
+    },
+  };
+
   return (
     <div
       className={cn(
@@ -54,12 +91,17 @@ function ChatBubble({ message }: { message: ChatMessage }) {
         ) : (
           <div>
             <div className="chat-markdown-content">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {message.content}
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                {annotateSourceMarkers(message.content)}
               </ReactMarkdown>
             </div>
+            <ChatRetrievalTrace trace={message.trace} />
             {message.citations.length > 0 ? (
-              <Citations citations={message.citations} />
+              <Sources
+                citations={message.citations}
+                selectedCitation={selectedCitation}
+                onOpenCitation={openCitation}
+              />
             ) : null}
           </div>
         )}
@@ -68,54 +110,83 @@ function ChatBubble({ message }: { message: ChatMessage }) {
   );
 }
 
-function Citations({ citations }: { citations: readonly RetrievalResult[] }) {
-  const seen = new Set<string>();
-  const unique = citations.filter((citation) => {
-    const source = citation.source;
-    const key =
-      String(source?.document_id ?? "") + "|" + String(citation.chunk_id ?? "");
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+function Sources({
+  citations,
+  selectedCitation,
+  onOpenCitation,
+}: {
+  citations: readonly RetrievalResult[];
+  selectedCitation: number | null;
+  onOpenCitation: (index: number) => void;
+}) {
+  const numbered = numberedCitations(citations);
 
   return (
-    <div className="mt-3 border-t border-border/60 pt-2.5">
-      <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-        <Link2 className="size-3" />
-        Sources
-      </p>
-      <div className="grid gap-1.5">
-        {unique.slice(0, 5).map((citation, index) => {
-          const source = citation.source;
-          const title =
-            source?.source_file_name ?? source?.document_id ?? "Source " + (index + 1);
-          const href = source?.document_id
-            ? "/documents?document=" + encodeURIComponent(source.document_id)
+    <CollapsibleSection
+      title="Sources"
+      badge={
+        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+          {numbered.length}
+        </span>
+      }
+      icon={<Link2 className="size-3" />}
+    >
+      <div className="space-y-1.5">
+        {numbered.map(({ citation, index }) => {
+          const title = citationLabel(citation, index);
+          const href = citation.source?.document_id
+            ? "/documents?document=" + encodeURIComponent(citation.source.document_id)
             : undefined;
           return (
-            <div key={source?.document_id + "-" + index} className="rounded-md border border-border/50 bg-muted/30 px-2.5 py-1.5">
-              <a
-                href={href}
-                className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-              >
-                <FileText className="size-3.5 shrink-0" />
-                <span className="truncate">{title}</span>
-              </a>
-              {source?.section_path ? (
+            <div
+              key={citation.source?.document_id + "-" + index}
+              id={"source-" + (index + 1)}
+              className={cn(
+                "rounded-md border border-border/50 bg-muted/30 px-2.5 py-1.5",
+                selectedCitation === index && "border-primary/60 bg-primary/5",
+              )}
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="shrink-0 text-[10px] font-semibold text-muted-foreground">
+                  {index + 1}.
+                </span>
+                {href ? (
+                  <a
+                    href={href}
+                    className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                  >
+                    <FileText className="size-3.5 shrink-0" />
+                    <span className="truncate">{title}</span>
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onOpenCitation(index)}
+                    className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                  >
+                    <FileText className="size-3.5 shrink-0" />
+                    <span className="truncate">{title}</span>
+                  </button>
+                )}
+              </div>
+              {citation.source?.section_path ? (
                 <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
-                  {source.section_path}
+                  {citation.source.section_path}
                 </p>
               ) : null}
               {citation.content ? (
-                <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">
+                <button
+                  type="button"
+                  onClick={() => onOpenCitation(index)}
+                  className="mt-1 block w-full text-left line-clamp-2 text-[11px] text-muted-foreground hover:text-foreground"
+                >
                   {citation.content}
-                </p>
+                </button>
               ) : null}
             </div>
           );
         })}
       </div>
-    </div>
+    </CollapsibleSection>
   );
 }

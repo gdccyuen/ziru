@@ -103,6 +103,22 @@ export type SearchResponse = {
   decision_trace: unknown[] | null;
 };
 
+export type RetrievalTraceQuery = {
+  query: string;
+  namespace: string;
+  result_count: number;
+  referenced_chunk_count: number;
+  top_scores: number[];
+};
+
+export type RetrievalTrace = {
+  duration_seconds: number;
+  llm_call_count: number;
+  input_tokens: number;
+  output_tokens: number;
+  queries: RetrievalTraceQuery[];
+};
+
 export type ChatThread = {
   id: string;
   title: string;
@@ -119,6 +135,7 @@ export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   citations: RetrievalResult[];
+  trace: RetrievalTrace | null;
   created_at: string | null;
 };
 
@@ -290,6 +307,7 @@ export const api = {
       apiRequest<{
         user_message: ChatMessage;
         assistant_message: ChatMessage;
+        trace: RetrievalTrace;
       }>(`/v2/chat/threads/${encodeURIComponent(threadId)}/messages`, {
         method: "POST",
         body: JSON.stringify(input),

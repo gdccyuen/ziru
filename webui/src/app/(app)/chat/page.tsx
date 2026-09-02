@@ -42,6 +42,7 @@ function optimisticUserMessage(threadId: string, content: string): ChatMessage {
     role: "user",
     content,
     citations: [],
+    trace: null,
     created_at: new Date().toISOString(),
   };
 }
