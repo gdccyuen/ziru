@@ -6,9 +6,11 @@ import remarkGfm from "remark-gfm";
 import { ExternalLink, FileText, Link2 } from "lucide-react";
 import type { ChatMessage, RetrievalResult } from "@/lib/api";
 import { annotateSourceMarkers, citationLabel, numberedCitations } from "@/lib/chat-citations";
+import { ChatArtifacts } from "@/components/chat-artifacts";
 import { ChatChunkPane } from "@/components/chat-chunk-pane";
 import { ChatRetrievalTrace } from "@/components/chat-retrieval-trace";
 import { CollapsibleSection } from "@/components/collapsible-section";
+import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export function ChatMessageList({
@@ -29,9 +31,18 @@ export function ChatMessageList({
     );
   }
 
+  const orderedMessages = messages.slice().sort((left, right) => {
+    const leftTime = left.created_at ? Date.parse(left.created_at) : Number.NaN;
+    const rightTime = right.created_at ? Date.parse(right.created_at) : Number.NaN;
+    const leftSafe = Number.isNaN(leftTime) ? 0 : leftTime;
+    const rightSafe = Number.isNaN(rightTime) ? 0 : rightTime;
+    if (leftSafe !== rightSafe) return leftSafe - rightSafe;
+    return left.id.localeCompare(right.id);
+  });
+
   return (
     <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6">
-      {messages.map((message) => (
+      {orderedMessages.map((message) => (
         <ChatBubble key={message.id} message={message} />
       ))}
       {pending ? (
@@ -86,11 +97,11 @@ function ChatBubble({ message }: { message: ChatMessage }) {
     <>
       <div
         className={cn(
-          "flex",
-          isUser ? "justify-end" : "justify-start",
+          "flex max-w-[85%] flex-col",
+          isUser ? "items-end" : "items-start",
         )}
       >
-        <div className={cn("max-w-[85%] rounded-lg border border-border/70 bg-background px-3.5 py-2.5", isUser ? "bg-primary/5" : "")}>
+        <div className={cn("w-full rounded-lg border border-border/70 bg-background px-3.5 py-2.5", isUser ? "bg-primary/5" : "")}>
           {isUser ? (
             <p className="whitespace-pre-wrap text-sm text-foreground">{message.content}</p>
           ) : (
@@ -108,9 +119,16 @@ function ChatBubble({ message }: { message: ChatMessage }) {
                   onOpenCitation={openCitation}
                 />
               ) : null}
+              <ChatArtifacts
+                citations={message.citations}
+                onOpenCitation={openCitation}
+              />
             </div>
           )}
         </div>
+        <time className="mt-1 text-[10px] text-muted-foreground">
+          {formatDateTime(message.created_at)}
+        </time>
       </div>
       <ChatChunkPane
         open={selectedCitation !== null}
