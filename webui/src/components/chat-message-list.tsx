@@ -3,9 +3,10 @@
 import { useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { FileText, Link2 } from "lucide-react";
+import { ExternalLink, FileText, Link2 } from "lucide-react";
 import type { ChatMessage, RetrievalResult } from "@/lib/api";
 import { annotateSourceMarkers, citationLabel, numberedCitations } from "@/lib/chat-citations";
+import { ChatChunkPane } from "@/components/chat-chunk-pane";
 import { ChatRetrievalTrace } from "@/components/chat-retrieval-trace";
 import { CollapsibleSection } from "@/components/collapsible-section";
 import { cn } from "@/lib/utils";
@@ -78,35 +79,45 @@ function ChatBubble({ message }: { message: ChatMessage }) {
     },
   };
 
+  const activeCitation =
+    selectedCitation === null ? null : (message.citations[selectedCitation] ?? null);
+
   return (
-    <div
-      className={cn(
-        "flex",
-        isUser ? "justify-end" : "justify-start",
-      )}
-    >
-      <div className={cn("max-w-[85%] rounded-lg border border-border/70 bg-background px-3.5 py-2.5", isUser ? "bg-primary/5" : "")}>
-        {isUser ? (
-          <p className="whitespace-pre-wrap text-sm text-foreground">{message.content}</p>
-        ) : (
-          <div>
-            <div className="chat-markdown-content">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                {annotateSourceMarkers(message.content)}
-              </ReactMarkdown>
-            </div>
-            <ChatRetrievalTrace trace={message.trace} />
-            {message.citations.length > 0 ? (
-              <Sources
-                citations={message.citations}
-                selectedCitation={selectedCitation}
-                onOpenCitation={openCitation}
-              />
-            ) : null}
-          </div>
+    <>
+      <div
+        className={cn(
+          "flex",
+          isUser ? "justify-end" : "justify-start",
         )}
+      >
+        <div className={cn("max-w-[85%] rounded-lg border border-border/70 bg-background px-3.5 py-2.5", isUser ? "bg-primary/5" : "")}>
+          {isUser ? (
+            <p className="whitespace-pre-wrap text-sm text-foreground">{message.content}</p>
+          ) : (
+            <div>
+              <div className="chat-markdown-content">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {annotateSourceMarkers(message.content)}
+                </ReactMarkdown>
+              </div>
+              <ChatRetrievalTrace trace={message.trace} />
+              {message.citations.length > 0 ? (
+                <Sources
+                  citations={message.citations}
+                  selectedCitation={selectedCitation}
+                  onOpenCitation={openCitation}
+                />
+              ) : null}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+      <ChatChunkPane
+        open={selectedCitation !== null}
+        citation={activeCitation}
+        onClose={() => setSelectedCitation(null)}
+      />
+    </>
   );
 }
 
@@ -150,24 +161,23 @@ function Sources({
                 <span className="shrink-0 text-[10px] font-semibold text-muted-foreground">
                   {index + 1}.
                 </span>
+                <button
+                  type="button"
+                  onClick={() => onOpenCitation(index)}
+                  className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                >
+                  <FileText className="size-3.5 shrink-0" />
+                  <span className="truncate">{title}</span>
+                </button>
                 {href ? (
                   <a
                     href={href}
-                    className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                    aria-label={"Open document for " + title}
+                    className="ml-auto shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                   >
-                    <FileText className="size-3.5 shrink-0" />
-                    <span className="truncate">{title}</span>
+                    <ExternalLink className="size-3" />
                   </a>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => onOpenCitation(index)}
-                    className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-                  >
-                    <FileText className="size-3.5 shrink-0" />
-                    <span className="truncate">{title}</span>
-                  </button>
-                )}
+                ) : null}
               </div>
               {citation.source?.section_path ? (
                 <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
