@@ -67,7 +67,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
   }
 
   const markdownComponents: Components = {
-    a: ({ href, children, node, ...props }) => {
+    a: ({ href, children, node, title, ...props }) => {
       void node;
       const marker =
         typeof href === "string" ? href.match(/^#source-(\d+)$/) : null;
@@ -76,6 +76,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
           <button
             type="button"
             onClick={() => openCitation(Number(marker[1]) - 1)}
+            title={title}
             className="font-medium text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary"
           >
             {children}
@@ -83,7 +84,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
         );
       }
       return (
-        <a href={href} {...props}>
+        <a href={href} title={title} {...props}>
           {children}
         </a>
       );

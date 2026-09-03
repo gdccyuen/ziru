@@ -1,12 +1,19 @@
 import type { RetrievalResult } from "@/lib/api";
 
-export const SOURCE_MARKER = /\[Source\s+(\d+)\s*:\s*([^\]]+)\]/g;
+export const SOURCE_MARKER = /\[Source\s+(\d+)\s*(?::\s*([^\]]*))?\]/g;
+
+export function sourceMarkerTitle(ordinal: string, label?: string): string {
+  const source = "Source " + ordinal;
+  return label && label.trim() ? source + ": " + label : source;
+}
 
 export function annotateSourceMarkers(content: string): string {
   return content.replace(
     SOURCE_MARKER,
-    (_match, ordinal: string, label: string) =>
-      "[Source " + ordinal + ": " + label + "](#source-" + ordinal + ")",
+    (_match, ordinal: string, label?: string) => {
+      const title = sourceMarkerTitle(ordinal, label).replace(/"/g, '\"');
+      return "[" + ordinal + "](#source-" + ordinal + ' "' + title + '")';
+    },
   );
 }
 
