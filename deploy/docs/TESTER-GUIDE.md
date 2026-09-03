@@ -6,10 +6,10 @@ Time: ~45–60 min. All commands run in a Terminal on the host Mac.
 ## 0. Prerequisites
 
 - OrbStack is running (`docker info` shows the server)
-- Optional external services (only needed for full ingestion tests):
-  - **MinerU API** on http://127.0.0.1:8000 (health: `curl http://127.0.0.1:8000/health`)
-  - **Local LLM** (Unsloth Desktop) on http://127.0.0.1:8888/v1 with a model loaded
-- If those are absent, tests marked *(needs MinerU/LLM)* will fail on ingestion — everything else still works.
+- Local parsing/LLM services (already configured in `deploy/.env`):
+  - **Local MinerU** on http://127.0.0.1:8000 (synchronous `/file_parse`; no cloud endpoint, no API key). Health: `curl http://127.0.0.1:8000/health`
+  - **Local Qwen** (OpenAI-compatible) on http://127.0.0.1:8888/v1 with a model loaded
+- These are always local. If either is absent, tests marked *(needs MinerU/LLM)* fail on ingestion/chat — everything else still works.
 
 ## 1. Docker image
 
@@ -27,7 +27,7 @@ docker compose up -d
 docker compose ps
 ```
 
-Expected: `api`, `admin`, `webui`, `worker` up; `postgres`, `redis` healthy.
+Expected: `api`, `admin`, `webui`, `worker` up; `postgres`, `redis` healthy. The application containers (`api`, `admin`, `webui`, `worker`) are configured with `restart: unless-stopped`.
 
 ## 3. Health checks
 
@@ -55,12 +55,12 @@ open http://localhost:80               # webui (login page)
 | 2 | **Batch cap** | Upload dialog: pick 11 files | Only 10 queued; picker disabled; warning shown |
 | 3 | **Job ETA** | Jobs page while job runs | Estimate column shows ~total/remaining |
 | 4 | **Jobs auto-refresh** | Leave Jobs open 60s | List refreshes silently |
-| 5 | *(needs MinerU/LLM)* **Ingestion completes** | Watch `docker compose logs -f worker` | Job → done; MinerU console shows ONLY `POST /file_parse 200` (no batch endpoints) |
+| 5 | *(needs MinerU/LLM)* **Ingestion completes** | Watch `docker compose logs -f worker` | Job → done; worker logs show only local MinerU `/file_parse` calls (no cloud/batch endpoints) |
 | 6 | **Document visibility (admin)** | Documents page | All documents visible incl. createBy as email |
 | 7 | **Profile scoping (user)** | Log in as the plain user on :80 → Documents | Only docs matching `division: product` |
 | 8 | **Search** | Webui Search: query "wifi" | Results (hyphen normalization: wifi ≡ Wi-Fi) |
-| 9 | **Chat answer** | Webui Chat: ask a question | User echo appears instantly; answer appears (≤ a few min on local LLM); folded RETRIEVAL stats + SOURCES; inline [Source N] links |
-| 10 | **Chunk pane** | Click a source / [Source N] | Pane opens; **Text/Tree toggle** works; tree highlights current section |
+| 9 | **Chat answer** | Webui Chat: ask a question | User echo appears instantly; the assistant returns a synthesized plain-English answer with inline [Source N] markers. It may take up to a few minutes (local Qwen gets up to 3 attempts); only if all 3 return empty does it fall back to the retrieved evidence. Folded Retrieval stats + Sources appear below, and message timestamps render in the browser's local timezone |
+| 10 | **Chunk pane** | Click a source / [Source N] | Pane opens in **Tree** mode with the selected document's real section tree, chunk-count badges, expandable sections, and chunk-leaf cards; clicking a leaf opens **Text** mode with full chunk content (fetched on demand when it is not already in the citation); Text/Tree toggle works |
 | 11 | **Invisibility warning** | As librarian, upload dialog: set attributes not matching own profile | Amber warning shown before submit |
 | 12 | **Edit attributes** | Admin console Documents → Edit on a row | Save works; built-ins read-only/unchanged |
 | 13 | **Resilience** | `docker compose restart api`; wait; reload page | Auto-recovers (restart: unless-stopped) |

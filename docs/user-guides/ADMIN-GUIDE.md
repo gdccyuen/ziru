@@ -91,7 +91,7 @@ Open **Documents** from the sidebar.
 
 ![Documents list](screenshots/admin-documents.png)
 
-Administrators see all documents. The **Attributes** column includes the document's dictionary attributes and the creator email (rendered from the `createBy` built-in attribute). You can filter the list with key/value filters; the same key is OR-ed and different keys are AND-ed.
+Administrators see all documents in a denser table with columns **Document**, **Status**, **Attributes**, **Created**, and **Actions** (there is no **Updated** column). The **Attributes** column shows the document's custom dictionary attributes plus the creator email (rendered from the `createBy` built-in attribute); the `createTime`, `fileHash`, and `originalFile` built-ins are hidden from the table but remain visible in the **View** dialog. Both administrators and librarians see the **Edit** action; only administrators see **Archive**. You can filter the list with key/value filters; the same key is OR-ed and different keys are AND-ed.
 
 ### Uploading a document
 

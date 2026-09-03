@@ -45,7 +45,7 @@ Open **Chat**.
 2. Type a question in the composer.
 3. Press **Enter** or click **Send**.
 
-The assistant returns a synthesized answer with citations.
+The assistant returns a synthesized plain-English answer with inline [Source N] markers. It may take up to a few minutes on the local Qwen model (the answer retries up to three times, then falls back to the retrieved evidence only if all three attempts come back empty). Message timestamps use your browser's local timezone.
 
 ![Chat answer](screenshots/user-webui-chat.png)
 
@@ -53,13 +53,13 @@ Below the answer, expand **Retrieval** to see the trace (queries, hit counts, LL
 
 ![Chat trace and sources](screenshots/user-webui-chat-sources.png)
 
-Click a source passage to open the **Source chunk** pane. It starts in **Text** view, showing the chunk type, score, section breadcrumb, and chunk text.
-
-![Chunk pane text view](screenshots/chat-chunk-pane-text.png)
-
-Switch the pane to **Tree** view to see the document/section hierarchy for the cited chunk.
+Click a source passage (or a [Source N] marker) to open the **Source chunk** pane. It opens in **Tree** view, showing the selected document's real section tree with chunk-count badges, expandable sections, and chunk-leaf cards.
 
 ![Chunk pane tree view](screenshots/chat-chunk-pane-tree.png)
+
+Click a chunk leaf to switch to **Text** view with that chunk's full content. The full text is fetched on demand when the leaf is not already one of the cited passages. You can also use the **Text/Tree** toggle at any time.
+
+![Chunk pane text view](screenshots/chat-chunk-pane-text.png)
 
 ## 5. Settings
 

@@ -54,7 +54,7 @@ Use the filter card to narrow the list by key/value pairs. The same key is OR-ed
 
 ![Upload dialog with prefill](screenshots/lib-upload-prefill.png)
 
-3. Choose one or more files.
+3. Choose one or more files (up to 10 per batch; the picker disables at 10).
 4. Adjust attributes if needed.
 5. Click **Upload** to start a parse job for each file.
 
