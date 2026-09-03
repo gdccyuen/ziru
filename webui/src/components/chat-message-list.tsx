@@ -131,6 +131,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
         open={selectedCitation !== null}
         citations={message.citations}
         selectedIndex={selectedCitation}
+        initialMode="tree"
         onClose={() => setSelectedCitation(null)}
         onSelectCitation={setSelectedCitation}
       />

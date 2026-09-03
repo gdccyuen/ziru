@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChatChunkPane } from "./chat-chunk-pane";
 
 const alphaCitation = {
+  chunk_id: "chunk_8_2_1",
   chunk_type: "text",
   content: "alpha chunk body",
   score: 0.82,
@@ -18,6 +19,7 @@ const alphaCitation = {
 };
 
 const betaCitation = {
+  chunk_id: "chunk_8_1",
   chunk_type: "text",
   content: "beta chunk body",
   score: 0.71,
@@ -29,6 +31,7 @@ const betaCitation = {
 };
 
 const gammaCitation = {
+  chunk_id: "chunk_policy_overview",
   chunk_type: "text",
   content: "gamma chunk body",
   score: 0.64,
@@ -54,6 +57,7 @@ const documentTree = {
       chunk_count: 0,
       has_content: false,
       content_snippet: null,
+      chunks: [],
       sort_order: 0,
     },
     {
@@ -66,6 +70,13 @@ const documentTree = {
       chunk_count: 1,
       has_content: true,
       content_snippet: "8.1 snippet body",
+      chunks: [
+        {
+          chunk_id: "chunk_8_1",
+          snippet: "8.1 snippet body",
+          section_path: "8/8.1",
+        },
+      ],
       sort_order: 1,
     },
     {
@@ -78,6 +89,7 @@ const documentTree = {
       chunk_count: 0,
       has_content: false,
       content_snippet: null,
+      chunks: [],
       sort_order: 2,
     },
     {
@@ -90,6 +102,7 @@ const documentTree = {
       chunk_count: 0,
       has_content: false,
       content_snippet: null,
+      chunks: [],
       sort_order: 3,
     },
     {
@@ -102,6 +115,13 @@ const documentTree = {
       chunk_count: 1,
       has_content: true,
       content_snippet: "8.2.1 chunk body",
+      chunks: [
+        {
+          chunk_id: "chunk_8_2_1",
+          snippet: "8.2.1 chunk body",
+          section_path: "8/8.2/8.2.1",
+        },
+      ],
       sort_order: 0,
     },
     {
@@ -114,6 +134,7 @@ const documentTree = {
       chunk_count: 0,
       has_content: false,
       content_snippet: null,
+      chunks: [],
       sort_order: 1,
     },
   ],
@@ -130,6 +151,7 @@ function jsonResponse(body: unknown) {
 function installDocumentTreeFetch(
   documentId = "doc_1",
   body: unknown = documentTree,
+  chunkDetails: Record<string, unknown> = {},
 ) {
   const fetchMock = vi.fn((input: RequestInfo | URL) => {
     const url =
@@ -140,6 +162,25 @@ function installDocumentTreeFetch(
           : input.url;
     if (url === "/api/v2/documents/" + documentId + "/sections") {
       return Promise.resolve(jsonResponse(body));
+    }
+    const chunkMatch = url.match(
+      /^\/api\/v2\/documents\/([^/]+)\/chunks\/([^/]+)$/,
+    );
+    if (chunkMatch) {
+      const chunkId = decodeURIComponent(chunkMatch[2]);
+      if (chunkDetails[chunkId]) {
+        return Promise.resolve(jsonResponse(chunkDetails[chunkId]));
+      }
+      return Promise.resolve(
+        jsonResponse({
+          document_id: chunkMatch[1],
+          chunk_id: chunkId,
+          section_path: null,
+          content: null,
+          chunk_type: "text",
+          metadata: {},
+        }),
+      );
     }
     return Promise.reject(new Error("Unexpected fetch: " + url));
   });
@@ -234,13 +275,15 @@ describe("ChatChunkPane", () => {
     });
 
     expect(within(tree).getByRole("treeitem", { name: "8" })).toBeTruthy();
-    expect(within(tree).queryByRole("treeitem", { name: "8.1" })).toBeNull();
+    expect(within(tree).queryByRole("treeitem", { name: /8.1/ })).toBeNull();
     expect(within(tree).queryByRole("treeitem", { name: "8.2" })).toBeNull();
     expect(within(tree).queryByRole("treeitem", { name: "8.3" })).toBeNull();
 
     await user.click(within(tree).getByRole("treeitem", { name: "8" }));
 
-    expect(within(tree).getByRole("treeitem", { name: "8.1" })).toBeTruthy();
+    const section81 = within(tree).getByRole("treeitem", { name: /8.1/ });
+    expect(section81).toBeTruthy();
+    expect(within(section81).getByText("1")).toBeTruthy();
     expect(within(tree).getByRole("treeitem", { name: "8.2" })).toBeTruthy();
     expect(within(tree).getByRole("treeitem", { name: "8.3" })).toBeTruthy();
 
@@ -271,7 +314,7 @@ describe("ChatChunkPane", () => {
     await user.click(within(tree).getByRole("treeitem", { name: "8.2" }));
     await user.click(within(tree).getByRole("treeitem", { name: /8.2.1/ }));
     await user.click(
-      within(tree).getByRole("treeitem", { name: /alpha chunk body/ }),
+      within(tree).getByRole("treeitem", { name: /8.2.1 chunk body/ }),
     );
 
     expect(screen.queryByRole("tree", { name: "Source section tree" })).toBeNull();
@@ -279,9 +322,18 @@ describe("ChatChunkPane", () => {
     expect(screen.getByText("alpha chunk body")).toBeTruthy();
   });
 
-  it("opens a non-cited section chunk leaf from its content snippet", async () => {
+  it("opens a non-cited section chunk leaf from its full fetched content", async () => {
     const user = userEvent.setup();
-    installDocumentTreeFetch();
+    installDocumentTreeFetch("doc_1", documentTree, {
+      chunk_8_1: {
+        document_id: "doc_1",
+        chunk_id: "chunk_8_1",
+        section_path: "8/8.1",
+        content: "8.1 FULL chunk body",
+        chunk_type: "text",
+        metadata: { page: 3 },
+      },
+    });
     render(
       <ChatChunkPane
         open
@@ -297,14 +349,14 @@ describe("ChatChunkPane", () => {
     });
 
     await user.click(within(tree).getByRole("treeitem", { name: "8" }));
-    await user.click(within(tree).getByRole("treeitem", { name: "8.1" }));
+    await user.click(within(tree).getByRole("treeitem", { name: /8.1/ }));
     await user.click(
       within(tree).getByRole("treeitem", { name: /8.1 snippet body/ }),
     );
 
     expect(screen.queryByRole("tree", { name: "Source section tree" })).toBeNull();
     expect(screen.getByText("8.1")).toBeTruthy();
-    expect(screen.getByText("8.1 snippet body")).toBeTruthy();
+    expect(screen.getByText("8.1 FULL chunk body")).toBeTruthy();
   });
 
   it("roots tree mode at the selected document instead of aggregating all citations", async () => {

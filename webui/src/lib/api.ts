@@ -74,6 +74,12 @@ export type DocumentsResponse = {
   pagination: Pagination;
 };
 
+export type DocumentChunkLeaf = {
+  chunk_id: string;
+  snippet: string | null;
+  section_path: string | null;
+};
+
 export type DocumentSectionNode = {
   id: string;
   section_path: string;
@@ -84,6 +90,7 @@ export type DocumentSectionNode = {
   chunk_count: number;
   has_content: boolean;
   content_snippet: string | null;
+  chunks: DocumentChunkLeaf[];
   sort_order: number;
 };
 
@@ -92,6 +99,15 @@ export type DocumentSectionsResponse = {
   source_file_name: string | null;
   job_result_id: string | null;
   sections: DocumentSectionNode[];
+};
+
+export type DocumentChunkDetail = {
+  document_id: string;
+  chunk_id: string;
+  section_path: string | null;
+  content: string | null;
+  chunk_type: string;
+  metadata: Record<string, unknown> | null;
 };
 
 export type RetrievalResult = {
@@ -286,6 +302,10 @@ export const api = {
   documentSections: (documentId: string) =>
     apiRequest<DocumentSectionsResponse>(
       `/v2/documents/${encodeURIComponent(documentId)}/sections`,
+    ),
+  documentChunk: (documentId: string, chunkId: string) =>
+    apiRequest<DocumentChunkDetail>(
+      `/v2/documents/${encodeURIComponent(documentId)}/chunks/${encodeURIComponent(chunkId)}`,
     ),
   apiKeys: () =>
     apiRequest<{ api_keys: ApiKey[]; total: number }>("/v2/api-keys"),

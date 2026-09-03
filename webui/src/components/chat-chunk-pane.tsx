@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, FileText, X } from "lucide-react";
 import {
   api,
@@ -22,10 +22,11 @@ type SectionTreeNode = {
   citationIndex?: number;
   children: SectionTreeNode[];
   kind?: "document" | "section" | "chunk";
-  sectionPath?: string;
+  sectionPath?: string | null;
   content?: string;
   contentSnippet?: string;
   chunkCount?: number;
+  chunkId?: string;
   documentId?: string;
   sourceFile?: string | null;
 };
@@ -37,6 +38,8 @@ type ActiveChunk = {
   chunkType: string | null;
   sourceFile: string | null;
   documentId: string | null;
+  chunkId: string | null;
+  status: "loading" | "ready" | "error";
 };
 
 type DocumentTreeState =
@@ -79,7 +82,10 @@ function sectionTitle(section: DocumentSectionNode): string {
   return parts[parts.length - 1] ?? section.section_path;
 }
 
-function chunkContentLabel(kind: string | undefined, content: string | null | undefined): string {
+function chunkContentLabel(
+  kind: string | undefined,
+  content: string | null | undefined,
+): string {
   const chunkKind = kind ? kind + " chunk" : "chunk";
   const snippet = content?.trim();
   if (!snippet) return "No content snippet";
@@ -94,14 +100,24 @@ function buildCitationTree(
 ): SectionTreeNode[] {
   const groups = new Map<
     string,
-    { label: string; entries: { citation: RetrievalResult; index: number }[] }
+    {
+      label: string;
+      documentId: string | null;
+      sourceFile: string | null;
+      entries: { citation: RetrievalResult; index: number }[];
+    }
   >();
 
   citations.forEach((citation, index) => {
     const key = documentKey(citation);
     let group = groups.get(key);
     if (!group) {
-      group = { label: documentLabel(citation), entries: [] };
+      group = {
+        label: documentLabel(citation),
+        documentId: citation.source?.document_id ?? null,
+        sourceFile: citation.source?.source_file_name ?? null,
+        entries: [],
+      };
       groups.set(key, group);
     }
     group.entries.push({ citation, index });
@@ -114,6 +130,9 @@ function buildCitationTree(
       label: group.label,
       depth: 0,
       current: false,
+      kind: "document",
+      documentId: group.documentId ?? undefined,
+      sourceFile: group.sourceFile,
       children: [],
     };
 
@@ -125,6 +144,7 @@ function buildCitationTree(
         let child = parent.children.find(
           (candidate) =>
             candidate.citation === undefined &&
+            candidate.kind !== "chunk" &&
             candidate.label === segment &&
             candidate.depth === depth + 1,
         );
@@ -134,6 +154,7 @@ function buildCitationTree(
             label: segment,
             depth: depth + 1,
             current: false,
+            kind: "section",
             children: [],
           };
           parent.children.push(child);
@@ -148,6 +169,10 @@ function buildCitationTree(
         current: false,
         citation,
         citationIndex: index,
+        kind: "chunk",
+        sectionPath: citation.source?.section_path ?? null,
+        contentSnippet: citation.content,
+        chunkId: citation.chunk_id,
         children: [],
       });
     }
@@ -171,6 +196,7 @@ function buildCitationTree(
     const child = parent.children.find(
       (candidate) =>
         candidate.citation === undefined &&
+        candidate.kind !== "chunk" &&
         candidate.label === segment &&
         candidate.depth === depth + 1,
     );
@@ -210,37 +236,33 @@ function buildDocumentTree(
 
   const selectedPath = normalizeSectionPath(selected?.source?.section_path);
 
-  function buildSection(section: DocumentSectionNode, depth: number): SectionTreeNode {
+  function buildSection(
+    section: DocumentSectionNode,
+    depth: number,
+  ): SectionTreeNode {
     const normalizedPath = normalizeSectionPath(section.section_path);
-    const citationIndex = citations.findIndex(
-      (citation) =>
-        normalizeSectionPath(citation.source?.section_path) === normalizedPath,
-    );
-    const matchedCitation =
-      citationIndex >= 0 ? citations[citationIndex] : undefined;
     const children: SectionTreeNode[] = [];
 
     for (const child of childrenByParent.get(section.id) ?? []) {
       children.push(buildSection(child, depth + 1));
     }
 
-    const hasChunkLeaf =
-      section.has_content || matchedCitation !== undefined;
-    if (hasChunkLeaf) {
-      const content =
-        matchedCitation?.content?.trim() ||
-        section.content_snippet?.trim() ||
-        "";
+    for (const chunk of section.chunks ?? []) {
+      const citationIndex = citations.findIndex(
+        (citation) => citation.chunk_id === chunk.chunk_id,
+      );
+      const matchedCitation =
+        citationIndex >= 0 ? citations[citationIndex] : undefined;
       children.push({
-        id: "sec:" + section.id + ":chunk",
-        label: chunkContentLabel("text", content),
+        id: "sec:" + section.id + ":chunk:" + chunk.chunk_id,
+        label: chunkContentLabel("text", chunk.snippet),
         depth: depth + 1,
-        current: false,
+        current: matchedCitation === selected,
         citation: matchedCitation,
         citationIndex: citationIndex >= 0 ? citationIndex : undefined,
-        sectionPath: section.section_path,
-        content: content || undefined,
-        contentSnippet: section.content_snippet ?? undefined,
+        sectionPath: chunk.section_path ?? section.section_path,
+        contentSnippet: chunk.snippet ?? undefined,
+        chunkId: chunk.chunk_id,
         kind: "chunk",
         children: [],
       });
@@ -301,6 +323,7 @@ function SectionTree({
     const isExpanded = hasChildren && !isCollapsed;
     const isLeaf =
       !hasChildren && (node.kind === "chunk" || node.citation !== undefined);
+    const isChunkLeaf = isLeaf && node.kind === "chunk";
 
     function handleClick() {
       if (hasChildren) {
@@ -321,10 +344,15 @@ function SectionTree({
           onClick={handleClick}
           style={{ paddingLeft: 8 + node.depth * 14 }}
           className={cn(
-            "flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-xs",
-            node.current
-              ? "bg-primary/10 font-medium text-primary"
-              : "text-foreground hover:bg-muted",
+            "flex w-full gap-1.5 rounded-md px-2 text-left text-xs",
+            isChunkLeaf
+              ? "items-start border border-violet-200/80 bg-violet-50/70 py-1.5 text-violet-950 hover:bg-violet-100/80 dark:border-violet-800/70 dark:bg-violet-950/40 dark:text-violet-100 dark:hover:bg-violet-950/60"
+              : "items-center py-1",
+            !isChunkLeaf &&
+              (node.current
+                ? "bg-primary/10 font-medium text-primary"
+                : "text-foreground hover:bg-muted"),
+            isChunkLeaf && node.current && "border-primary/60 bg-primary/5",
           )}
         >
           {hasChildren ? (
@@ -334,11 +362,31 @@ function SectionTree({
               <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
             )
           ) : isLeaf ? (
-            <FileText className="size-3.5 shrink-0 text-muted-foreground" />
+            <FileText className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
           ) : (
             <span className="size-3.5 shrink-0" />
           )}
-          <span className="min-w-0 flex-1 truncate">{node.label}</span>
+          {isChunkLeaf ? (
+            <span className="min-w-0 flex-1">
+              <span className="line-clamp-2 block whitespace-pre-wrap break-words leading-snug">
+                {node.contentSnippet ?? node.label}
+              </span>
+              {node.sectionPath ? (
+                <span className="mt-0.5 block text-[9px] font-normal text-muted-foreground">
+                  {node.sectionPath}
+                </span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="min-w-0 flex-1 truncate">{node.label}</span>
+          )}
+          {!isChunkLeaf &&
+          typeof node.chunkCount === "number" &&
+          node.chunkCount > 0 ? (
+            <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+              {node.chunkCount}
+            </span>
+          ) : null}
           {node.current ? (
             <span className="shrink-0 text-[9px] font-medium uppercase tracking-wide text-primary/70">
               current
@@ -365,12 +413,14 @@ export function ChatChunkPane({
   open,
   citations,
   selectedIndex,
+  initialMode = "text",
   onClose,
   onSelectCitation,
 }: {
   open: boolean;
   citations: readonly RetrievalResult[];
   selectedIndex: number | null;
+  initialMode?: ChunkPaneMode;
   onClose: () => void;
   onSelectCitation?: (index: number) => void;
 }) {
@@ -378,9 +428,10 @@ export function ChatChunkPane({
 
   return (
     <ChatChunkPaneContent
-      key={(selectedIndex ?? "none") + ":" + citations.length}
+      key={citations.length}
       citations={citations}
       initialIndex={selectedIndex}
+      initialMode={initialMode}
       onClose={onClose}
       onSelectCitation={onSelectCitation}
     />
@@ -390,17 +441,20 @@ export function ChatChunkPane({
 function ChatChunkPaneContent({
   citations,
   initialIndex,
+  initialMode,
   onClose,
   onSelectCitation,
 }: {
   citations: readonly RetrievalResult[];
   initialIndex: number | null;
+  initialMode: ChunkPaneMode;
   onClose: () => void;
   onSelectCitation?: (index: number) => void;
 }) {
-  const [mode, setMode] = useState<ChunkPaneMode>("text");
+  const [mode, setMode] = useState<ChunkPaneMode>(initialMode);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(initialIndex);
   const [activeChunk, setActiveChunk] = useState<ActiveChunk | null>(null);
+  const activeChunkRequest = useRef(0);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
@@ -445,26 +499,98 @@ function ChatChunkPaneContent({
   }, [mode, documentId]);
 
   function selectCitation(index: number) {
+    activeChunkRequest.current += 1;
     setActiveChunk(null);
     setSelectedIndex(index);
     setMode("text");
     onSelectCitation?.(index);
   }
 
-  function selectSyntheticChunk(node: SectionTreeNode) {
+  function selectChunkLeaf(node: SectionTreeNode) {
+    const matchedCitation =
+      node.citation ??
+      (node.chunkId
+        ? citations.find((citation) => citation.chunk_id === node.chunkId)
+        : undefined);
+    const chunkDocumentId = node.documentId ?? documentId;
+    const sectionPath =
+      node.sectionPath ?? matchedCitation?.source?.section_path ?? null;
+    const sourceFile =
+      node.sourceFile ??
+      matchedCitation?.source?.source_file_name ??
+      citation?.source?.source_file_name ??
+      null;
+    const chunkType = matchedCitation?.chunk_type ?? "text";
+    const matchedContent = matchedCitation?.content?.trim();
+    const requestId = ++activeChunkRequest.current;
+
+    setMode("text");
+
+    if (matchedContent) {
+      setActiveChunk({
+        title: node.label,
+        sectionPath,
+        content: matchedContent,
+        chunkType,
+        sourceFile,
+        documentId: chunkDocumentId,
+        chunkId: node.chunkId ?? null,
+        status: "ready",
+      });
+      return;
+    }
+
+    if (!chunkDocumentId || !node.chunkId) {
+      setActiveChunk({
+        title: node.label,
+        sectionPath,
+        content: "No chunk content available.",
+        chunkType,
+        sourceFile,
+        documentId: chunkDocumentId,
+        chunkId: node.chunkId ?? null,
+        status: "error",
+      });
+      return;
+    }
+
     setActiveChunk({
       title: node.label,
-      sectionPath: node.sectionPath ?? null,
-      content: node.content ?? node.contentSnippet ?? "No citation content available.",
-      chunkType: node.citation?.chunk_type ?? "text",
-      sourceFile:
-        node.sourceFile ??
-        node.citation?.source?.source_file_name ??
-        citation?.source?.source_file_name ??
-        null,
-      documentId: node.documentId ?? documentId,
+      sectionPath,
+      content: "Loading chunk content…",
+      chunkType,
+      sourceFile,
+      documentId: chunkDocumentId,
+      chunkId: node.chunkId,
+      status: "loading",
     });
-    setMode("text");
+
+    api
+      .documentChunk(chunkDocumentId, node.chunkId)
+      .then((detail) => {
+        if (requestId !== activeChunkRequest.current) return;
+        setActiveChunk((current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            sectionPath: detail.section_path ?? current.sectionPath,
+            content: detail.content ?? "No chunk content available.",
+            chunkType: detail.chunk_type ?? current.chunkType,
+            status: "ready",
+          };
+        });
+      })
+      .catch(() => {
+        if (requestId !== activeChunkRequest.current) return;
+        setActiveChunk((current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            content: "No chunk content available.",
+            status: "error",
+          };
+        });
+      });
   }
 
   function handleTreeSelect(node: SectionTreeNode) {
@@ -473,7 +599,7 @@ function ChatChunkPaneContent({
       return;
     }
     if (node.kind === "chunk") {
-      selectSyntheticChunk(node);
+      selectChunkLeaf(node);
     }
   }
 
@@ -520,7 +646,11 @@ function ChatChunkPaneContent({
       );
     }
 
-    return <p className="py-6 text-center text-xs text-muted-foreground">Loading document tree…</p>;
+    return (
+      <p className="py-6 text-center text-xs text-muted-foreground">
+        Loading document tree…
+      </p>
+    );
   }
 
   function toggleNode(nodeId: string) {
@@ -541,11 +671,12 @@ function ChatChunkPaneContent({
   const chunkType = activeChunk?.chunkType ?? citation?.chunk_type;
   const content = activeChunk
     ? activeChunk.content
-    : (citation?.content ?? "No chunk content was persisted.");
+    : (citation?.content ?? "No chunk content available.");
   const sourceFile =
     activeChunk?.sourceFile ??
     citation?.source?.source_file_name ??
     "Unknown source";
+  const linkDocumentId = activeChunk?.documentId ?? documentId;
 
   return (
     <div
@@ -558,12 +689,12 @@ function ChatChunkPaneContent({
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border/70 px-4 py-3">
           <div className="min-w-0">
             <h3 className="truncate text-sm font-bold text-foreground">{title}</h3>
-            {documentId ? (
+            {linkDocumentId ? (
               <a
-                href={"/documents?document=" + encodeURIComponent(documentId)}
+                href={"/documents?document=" + encodeURIComponent(linkDocumentId)}
                 className="text-[10px] text-muted-foreground hover:text-foreground"
               >
-                {documentId}
+                {linkDocumentId}
               </a>
             ) : null}
           </div>
