@@ -13,9 +13,16 @@ export function gradeLabel(grade: string): string {
 
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return "—";
-  const date = new Date(value);
+  const utcValue = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value) ? value : value + "Z";
+  const date = new Date(utcValue);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString();
+  return date.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export function profileSummary(

@@ -59,6 +59,17 @@ describe("formatDateTime", () => {
     expect(formatDateTime("2026-01-02T03:04:05")).toContain("2026");
   });
 
+  it("treats naive timestamps as UTC", () => {
+    const expected = new Date("2026-01-02T03:04:05Z").toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    expect(formatDateTime("2026-01-02T03:04:05")).toBe(expected);
+  });
+
   it("handles null", () => {
     expect(formatDateTime(null)).toBe("—");
   });

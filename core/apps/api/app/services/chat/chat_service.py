@@ -258,16 +258,19 @@ def _synthesis_prompt(question, results):
     for i, res in enumerate(results[:5], start=1):
         src = res.get("source") or {}
         path = str(src.get("section_path") or src.get("source_file_name") or "unknown")
-        content = str(res.get("content") or res.get("evidence_text") or "")[:1500]
+        content = str(res.get("content") or res.get("evidence_text") or "")[:900]
         blocks.append(f"[{i}] Section: {path}\n    {content}")
     return ("Answer the user question using ONLY the evidence blocks below. "
             "If the evidence is insufficient, say so explicitly. "
-            "Write a concise, well-organized answer (short paragraphs or bullets). "
-            "After each claim, cite the supporting evidence with an inline "
-            "marker formatted exactly as [Source N: label], where N is the "
-            "evidence-block number and label is the section path (or file "
-            "name when no section path is available). Do not use any other "
-            "citation syntax. Do not invent facts.\n\n"
+            "Write in PLAIN, SIMPLE English for a non-technical reader. "
+            "Be CONCISE: use short bullet points or 2-3 short paragraphs. "
+            "Never restate the question, never use filler (e.g. certainly, "
+            "definitely, it is important to note). Do not exceed about 250 "
+            "words. After each claim, cite the supporting evidence with an "
+            "inline marker formatted exactly as [Source N: label], where N "
+            "is the evidence-block number and label is the section path (or "
+            "file name when no section path is available). Do not use any "
+            "other citation syntax. Do not invent facts.\n\n"
             "Question: " + question + "\n\nEVIDENCE:\n" + "\n".join(blocks))
 
 def _synthesis_answer_sync(question, results):
