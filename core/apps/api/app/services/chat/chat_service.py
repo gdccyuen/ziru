@@ -275,14 +275,31 @@ def _synthesis_answer_sync(question, results):
     if client is None:
         return "", {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
     messages = [
-        {"role": "system", "content": "You are Ziru chat assistant. Ground every claim in the provided evidence."},
+        {"role": "system", "content": "You are Ziru chat assistant. Ground every claim in the provided evidence. Answer directly and concisely; do not include internal reasoning or thinking tags."},
         {"role": "user", "content": _synthesis_prompt(question, results)},
     ]
-    raw, usage = client.chat_completion_with_usage(messages=messages, model=model, temperature=0.0, max_tokens=8192, usage_task="chat.answer_synthesis")
-    answer = (raw or "").strip()
-    if answer:
-        return answer, usage
-    raw, usage = client.chat_completion_with_usage(messages=messages, model=model, temperature=0.0, max_tokens=16384, usage_task="chat.answer_synthesis")
+    for max_tokens in (8192, 16384):
+        raw, usage = client.chat_completion_with_usage(
+            messages=messages,
+            model=model,
+            temperature=0.0,
+            max_tokens=max_tokens,
+            usage_task="chat.answer_synthesis",
+        )
+        answer = (raw or "").strip()
+        if answer:
+            return answer, usage
+
+    # Thinking-mode models can still spend the whole budget on reasoning tokens and
+    # return empty content. Give the final attempt an even larger budget before
+    # falling back to the raw evidence answer.
+    raw, usage = client.chat_completion_with_usage(
+        messages=messages,
+        model=model,
+        temperature=0.0,
+        max_tokens=24576,
+        usage_task="chat.answer_synthesis",
+    )
     return (raw or "").strip(), usage
 
 
@@ -378,7 +395,7 @@ async def run_message_turn(
         llm_call_count += 1
         try:
             synthesized, synthesis_usage = await asyncio.to_thread(
-                _synthesize_answer_sync,
+                _synthesis_answer_sync,
                 text,
                 citations,
             )

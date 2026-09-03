@@ -149,22 +149,48 @@ def test_synthesis_answer_retries_once_when_first_response_is_empty(
     assert usage == usage2
     assert [call["max_tokens"] for call in client.calls] == [8192, 16384]
     assert client.calls[0]["messages"] == client.calls[1]["messages"]
+    assert client.calls[0]["messages"][0]["content"] == (
+        "You are Ziru chat assistant. Ground every claim in the provided "
+        "evidence. Answer directly and concisely; do not include internal "
+        "reasoning or thinking tags."
+    )
 
 
-def test_synthesis_answer_returns_empty_after_two_empty_responses(
+def test_synthesis_answer_uses_third_attempt_when_first_two_are_empty(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     service = _chat_service()
     usage1 = _empty_usage()
     usage2 = _empty_usage()
-    client = _FakeSynthesisClient([("", usage1), ("   ", usage2)])
+    usage3 = {"prompt_tokens": 18, "completion_tokens": 6, "total_tokens": 24}
+    client = _FakeSynthesisClient(
+        [("", usage1), ("   ", usage2), ("  third answer  ", usage3)]
+    )
+    monkeypatch.setattr(service, "get_text_client", lambda: (client, "test-model"))
+
+    answer, usage = service._synthesis_answer_sync("question?", [])
+
+    assert answer == "third answer"
+    assert usage == usage3
+    assert [call["max_tokens"] for call in client.calls] == [8192, 16384, 24576]
+    assert client.calls[0]["messages"] == client.calls[2]["messages"]
+
+
+def test_synthesis_answer_returns_empty_after_three_empty_responses(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = _chat_service()
+    usage1 = _empty_usage()
+    usage2 = _empty_usage()
+    usage3 = _empty_usage()
+    client = _FakeSynthesisClient([("", usage1), ("   ", usage2), ("", usage3)])
     monkeypatch.setattr(service, "get_text_client", lambda: (client, "test-model"))
 
     answer, usage = service._synthesis_answer_sync("question?", [])
 
     assert answer == ""
-    assert usage == usage2
-    assert [call["max_tokens"] for call in client.calls] == [8192, 16384]
+    assert usage == usage3
+    assert [call["max_tokens"] for call in client.calls] == [8192, 16384, 24576]
 
 
 def test_synthesis_answer_does_not_retry_when_first_response_is_nonempty(
