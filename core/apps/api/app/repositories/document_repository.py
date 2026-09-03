@@ -147,6 +147,64 @@ class DocumentRepository:
         )
         return result.scalar_one_or_none()
 
+    async def list_document_sections(
+        self,
+        db: AsyncSession,
+        *,
+        document_id: str,
+        job_result_id: str,
+    ) -> Sequence[DocumentSection]:
+        result = await db.execute(
+            select(DocumentSection)
+            .where(DocumentSection.document_id == document_id)
+            .where(DocumentSection.job_result_id == job_result_id)
+            .order_by(
+                DocumentSection.sort_order.asc(),
+                DocumentSection.section_level.asc(),
+                DocumentSection.section_path.asc(),
+                DocumentSection.section_id.asc(),
+            )
+        )
+        return result.scalars().all()
+
+    async def count_document_chunks_by_section(
+        self,
+        db: AsyncSession,
+        *,
+        document_id: str,
+        job_result_id: str,
+    ) -> dict[str, int]:
+        result = await db.execute(
+            select(DocumentChunk.section_id, func.count(DocumentChunk.id))
+            .where(DocumentChunk.document_id == document_id)
+            .where(DocumentChunk.job_result_id == job_result_id)
+            .where(DocumentChunk.section_id.is_not(None))
+            .group_by(DocumentChunk.section_id)
+        )
+        return {section_id: int(count) for section_id, count in result.all()}
+
+    async def list_first_document_chunks_per_section(
+        self,
+        db: AsyncSession,
+        *,
+        document_id: str,
+        job_result_id: str,
+    ) -> Sequence[DocumentChunk]:
+        result = await db.execute(
+            select(DocumentChunk)
+            .where(DocumentChunk.document_id == document_id)
+            .where(DocumentChunk.job_result_id == job_result_id)
+            .where(DocumentChunk.section_id.is_not(None))
+            .where(func.lower(DocumentChunk.chunk_type) == "text")
+            .distinct(DocumentChunk.section_id)
+            .order_by(
+                DocumentChunk.section_id.asc(),
+                DocumentChunk.sort_order.asc(),
+                DocumentChunk.id.asc(),
+            )
+        )
+        return result.scalars().all()
+
     async def get_current_document_job_revision(
         self,
         db: AsyncSession,

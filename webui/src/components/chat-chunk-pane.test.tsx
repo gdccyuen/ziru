@@ -13,7 +13,7 @@ const alphaCitation = {
   source: {
     document_id: "doc_1",
     source_file_name: "finance.pdf",
-    section_path: "contract/intro",
+    section_path: "8/8.2/8.2.1",
   },
 };
 
@@ -24,7 +24,7 @@ const betaCitation = {
   source: {
     document_id: "doc_1",
     source_file_name: "finance.pdf",
-    section_path: "contract/terms",
+    section_path: "8/8.1",
   },
 };
 
@@ -39,9 +39,118 @@ const gammaCitation = {
   },
 };
 
+const documentTree = {
+  document_id: "doc_1",
+  source_file_name: "finance.pdf",
+  job_result_id: "jr_1",
+  sections: [
+    {
+      id: "sec_8",
+      section_path: "8",
+      title: "8",
+      level: 0,
+      parent: null,
+      leaf: false,
+      chunk_count: 0,
+      has_content: false,
+      content_snippet: null,
+      sort_order: 0,
+    },
+    {
+      id: "sec_8_1",
+      section_path: "8/8.1",
+      title: "8.1",
+      level: 1,
+      parent: "sec_8",
+      leaf: true,
+      chunk_count: 1,
+      has_content: true,
+      content_snippet: "8.1 snippet body",
+      sort_order: 1,
+    },
+    {
+      id: "sec_8_2",
+      section_path: "8/8.2",
+      title: "8.2",
+      level: 1,
+      parent: "sec_8",
+      leaf: false,
+      chunk_count: 0,
+      has_content: false,
+      content_snippet: null,
+      sort_order: 2,
+    },
+    {
+      id: "sec_8_3",
+      section_path: "8/8.3",
+      title: "8.3",
+      level: 1,
+      parent: "sec_8",
+      leaf: true,
+      chunk_count: 0,
+      has_content: false,
+      content_snippet: null,
+      sort_order: 3,
+    },
+    {
+      id: "sec_8_2_1",
+      section_path: "8/8.2/8.2.1",
+      title: "8.2.1",
+      level: 2,
+      parent: "sec_8_2",
+      leaf: true,
+      chunk_count: 1,
+      has_content: true,
+      content_snippet: "8.2.1 chunk body",
+      sort_order: 0,
+    },
+    {
+      id: "sec_8_2_2",
+      section_path: "8/8.2/8.2.2",
+      title: "8.2.2",
+      level: 2,
+      parent: "sec_8_2",
+      leaf: true,
+      chunk_count: 0,
+      has_content: false,
+      content_snippet: null,
+      sort_order: 1,
+    },
+  ],
+};
+
+function jsonResponse(body: unknown) {
+  return {
+    ok: true,
+    status: 200,
+    text: async () => JSON.stringify(body),
+  };
+}
+
+function installDocumentTreeFetch(
+  documentId = "doc_1",
+  body: unknown = documentTree,
+) {
+  const fetchMock = vi.fn((input: RequestInfo | URL) => {
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
+    if (url === "/api/v2/documents/" + documentId + "/sections") {
+      return Promise.resolve(jsonResponse(body));
+    }
+    return Promise.reject(new Error("Unexpected fetch: " + url));
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
 describe("ChatChunkPane", () => {
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
 
   it("renders nothing when closed", () => {
@@ -70,15 +179,16 @@ describe("ChatChunkPane", () => {
     );
 
     expect(screen.getByRole("dialog", { name: "Source chunk" })).toBeTruthy();
-    expect(screen.getByText("contract/intro")).toBeTruthy();
+    expect(screen.getByText("8/8.2/8.2.1")).toBeTruthy();
     expect(screen.getByText("alpha chunk body")).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Close source chunk" }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("switches between text and tree views", async () => {
+  it("switches between text and tree views rooted at the selected document", async () => {
     const user = userEvent.setup();
+    installDocumentTreeFetch();
     render(
       <ChatChunkPane
         open
@@ -93,14 +203,11 @@ describe("ChatChunkPane", () => {
 
     await user.click(screen.getByRole("button", { name: "Tree" }));
 
-    const tree = screen.getByRole("tree", { name: "Source section tree" });
-    expect(tree).toBeTruthy();
+    const tree = await screen.findByRole("tree", {
+      name: "Source section tree",
+    });
     expect(within(tree).getByRole("treeitem", { name: /finance.pdf/ })).toBeTruthy();
-    expect(within(tree).getByRole("treeitem", { name: /contract/ })).toBeTruthy();
-    expect(within(tree).getByRole("treeitem", { name: /intro/ })).toBeTruthy();
-    expect(
-      within(tree).getByRole("treeitem", { name: /intro/ }).getAttribute("aria-current"),
-    ).toBe("true");
+    expect(within(tree).getByRole("treeitem", { name: "8" })).toBeTruthy();
     expect(screen.queryByText("alpha chunk body")).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "Text" }));
@@ -109,8 +216,9 @@ describe("ChatChunkPane", () => {
     expect(screen.queryByRole("tree", { name: "Source section tree" })).toBeNull();
   });
 
-  it("collapses and expands parent sections in tree view", async () => {
+  it("expands the document hierarchy 8 -> 8.1/8.2/8.3 and nested 8.2 -> 8.2.1/8.2.2", async () => {
     const user = userEvent.setup();
+    installDocumentTreeFetch();
     render(
       <ChatChunkPane
         open
@@ -121,20 +229,87 @@ describe("ChatChunkPane", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Tree" }));
+    const tree = await screen.findByRole("tree", {
+      name: "Source section tree",
+    });
 
-    const root = screen.getByRole("treeitem", { name: /finance.pdf/ });
-    expect(screen.getByText("intro")).toBeTruthy();
+    expect(within(tree).getByRole("treeitem", { name: "8" })).toBeTruthy();
+    expect(within(tree).queryByRole("treeitem", { name: "8.1" })).toBeNull();
+    expect(within(tree).queryByRole("treeitem", { name: "8.2" })).toBeNull();
+    expect(within(tree).queryByRole("treeitem", { name: "8.3" })).toBeNull();
 
-    await user.click(root);
-    expect(screen.queryByText("contract")).toBeNull();
-    expect(screen.queryByText("intro")).toBeNull();
+    await user.click(within(tree).getByRole("treeitem", { name: "8" }));
 
-    await user.click(root);
-    expect(screen.getByText("intro")).toBeTruthy();
+    expect(within(tree).getByRole("treeitem", { name: "8.1" })).toBeTruthy();
+    expect(within(tree).getByRole("treeitem", { name: "8.2" })).toBeTruthy();
+    expect(within(tree).getByRole("treeitem", { name: "8.3" })).toBeTruthy();
+
+    await user.click(within(tree).getByRole("treeitem", { name: "8.2" }));
+
+    expect(within(tree).getByRole("treeitem", { name: /8.2.1/ })).toBeTruthy();
+    expect(within(tree).getByRole("treeitem", { name: "8.2.2" })).toBeTruthy();
   });
 
-  it("shows sibling documents and sibling sections from the citation set", async () => {
+  it("opens a cited chunk leaf in text mode", async () => {
     const user = userEvent.setup();
+    installDocumentTreeFetch();
+    render(
+      <ChatChunkPane
+        open
+        citations={[alphaCitation]}
+        selectedIndex={0}
+        onClose={() => {}}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Tree" }));
+    const tree = await screen.findByRole("tree", {
+      name: "Source section tree",
+    });
+
+    await user.click(within(tree).getByRole("treeitem", { name: "8" }));
+    await user.click(within(tree).getByRole("treeitem", { name: "8.2" }));
+    await user.click(within(tree).getByRole("treeitem", { name: /8.2.1/ }));
+    await user.click(
+      within(tree).getByRole("treeitem", { name: /alpha chunk body/ }),
+    );
+
+    expect(screen.queryByRole("tree", { name: "Source section tree" })).toBeNull();
+    expect(screen.getByText("8/8.2/8.2.1")).toBeTruthy();
+    expect(screen.getByText("alpha chunk body")).toBeTruthy();
+  });
+
+  it("opens a non-cited section chunk leaf from its content snippet", async () => {
+    const user = userEvent.setup();
+    installDocumentTreeFetch();
+    render(
+      <ChatChunkPane
+        open
+        citations={[alphaCitation]}
+        selectedIndex={0}
+        onClose={() => {}}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Tree" }));
+    const tree = await screen.findByRole("tree", {
+      name: "Source section tree",
+    });
+
+    await user.click(within(tree).getByRole("treeitem", { name: "8" }));
+    await user.click(within(tree).getByRole("treeitem", { name: "8.1" }));
+    await user.click(
+      within(tree).getByRole("treeitem", { name: /8.1 snippet body/ }),
+    );
+
+    expect(screen.queryByRole("tree", { name: "Source section tree" })).toBeNull();
+    expect(screen.getByText("8.1")).toBeTruthy();
+    expect(screen.getByText("8.1 snippet body")).toBeTruthy();
+  });
+
+  it("roots tree mode at the selected document instead of aggregating all citations", async () => {
+    const user = userEvent.setup();
+    installDocumentTreeFetch();
     render(
       <ChatChunkPane
         open
@@ -145,40 +320,12 @@ describe("ChatChunkPane", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Tree" }));
+    const tree = await screen.findByRole("tree", {
+      name: "Source section tree",
+    });
 
-    const tree = screen.getByRole("tree", { name: "Source section tree" });
     expect(within(tree).getByRole("treeitem", { name: /finance.pdf/ })).toBeTruthy();
-    expect(within(tree).getByRole("treeitem", { name: /policy.pdf/ })).toBeTruthy();
-    expect(within(tree).getByRole("treeitem", { name: /intro/ })).toBeTruthy();
-    expect(within(tree).getByRole("treeitem", { name: /terms/ })).toBeTruthy();
-    expect(
-      within(tree).getByRole("treeitem", { name: /alpha chunk body/ }),
-    ).toBeTruthy();
-    expect(
-      within(tree).getByRole("treeitem", { name: /beta chunk body/ }),
-    ).toBeTruthy();
-  });
-
-  it("opens the clicked leaf's chunk in text mode", async () => {
-    const user = userEvent.setup();
-    render(
-      <ChatChunkPane
-        open
-        citations={[alphaCitation, betaCitation]}
-        selectedIndex={0}
-        onClose={() => {}}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: "Tree" }));
-
-    await user.click(
-      screen.getByRole("treeitem", { name: /beta chunk body/ }),
-    );
-
-    expect(screen.queryByRole("tree", { name: "Source section tree" })).toBeNull();
-    expect(screen.getByText("contract/terms")).toBeTruthy();
-    expect(screen.getByText("beta chunk body")).toBeTruthy();
-    expect(screen.queryByText("alpha chunk body")).toBeNull();
+    expect(within(tree).queryByRole("treeitem", { name: /policy.pdf/ })).toBeNull();
+    expect(within(tree).getByRole("treeitem", { name: "8" })).toBeTruthy();
   });
 });

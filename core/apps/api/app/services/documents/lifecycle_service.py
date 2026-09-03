@@ -27,6 +27,7 @@ _PAGE_CITATION_SOURCE_VARIANT = "normalized_pdf"
 _PAGE_MEMORY_PARSE_TRACK = "page_memory"
 _MINERU_RAW_EXPIRES_SECONDS = 7 * 24 * 60 * 60
 _MINERU_RAW_FILE_NAME = "mineru_raw.zip"
+_SECTION_SNIPPET_MAX_CHARS = 500
 
 
 def _datetime_payload(value: datetime | None) -> str | None:
@@ -163,6 +164,22 @@ def _positive_int(value: Any) -> int | None:
     except (TypeError, ValueError):
         return None
     return number if number > 0 else None
+
+
+def _section_title_from_path(section_path: str) -> str:
+    parts = [part.strip() for part in section_path.split("/") if part.strip()]
+    return parts[-1] if parts else section_path.strip() or "Untitled section"
+
+
+def _truncate_snippet(value: str | None) -> str | None:
+    if value is None:
+        return None
+    snippet = value.strip()
+    if not snippet:
+        return None
+    if len(snippet) <= _SECTION_SNIPPET_MAX_CHARS:
+        return snippet
+    return snippet[:_SECTION_SNIPPET_MAX_CHARS].rstrip() + "…"
 
 
 def document_payload(
@@ -472,6 +489,85 @@ class DocumentService:
         if document is None:
             return None
         return document_payload(document)
+
+    async def get_document_sections(
+        self,
+        db: AsyncSession,
+        *,
+        document_id: str,
+    ) -> dict[str, Any] | None:
+        document = await self._repository.get_document(
+            db,
+            document_id=document_id,
+        )
+        if document is None or document.status == "archived":
+            return None
+
+        job_result_id = document.current_job_result_id
+        if not job_result_id:
+            return {
+                "document_id": document.document_id,
+                "source_file_name": document.source_file_name,
+                "job_result_id": None,
+                "sections": [],
+            }
+
+        sections = await self._repository.list_document_sections(
+            db,
+            document_id=document_id,
+            job_result_id=job_result_id,
+        )
+        chunk_counts = await self._repository.count_document_chunks_by_section(
+            db,
+            document_id=document_id,
+            job_result_id=job_result_id,
+        )
+        first_chunks = await self._repository.list_first_document_chunks_per_section(
+            db,
+            document_id=document_id,
+            job_result_id=job_result_id,
+        )
+        snippet_by_section_id = {
+            chunk.section_id: _truncate_snippet(chunk.content)
+            for chunk in first_chunks
+            if chunk.section_id is not None and chunk.content
+        }
+
+        section_ids = {section.section_id for section in sections}
+        parent_section_ids = {
+            section.parent_section_id
+            for section in sections
+            if section.parent_section_id is not None
+        }
+        section_payloads: list[dict[str, Any]] = []
+        for section in sections:
+            chunk_count = chunk_counts.get(section.section_id, 0)
+            content_snippet = snippet_by_section_id.get(section.section_id)
+            section_payloads.append(
+                {
+                    "id": section.section_id,
+                    "section_path": section.section_path,
+                    "title": section.section_title
+                    or _section_title_from_path(section.section_path),
+                    "level": section.section_level,
+                    "parent": section.parent_section_id,
+                    "leaf": section.section_id not in parent_section_ids,
+                    "chunk_count": chunk_count,
+                    "has_content": chunk_count > 0 and content_snippet is not None,
+                    "content_snippet": content_snippet,
+                    "sort_order": section.sort_order,
+                }
+            )
+        # Keep only parent links that point at a section in this revision.
+        for section_payload in section_payloads:
+            if section_payload["parent"] not in section_ids:
+                section_payload["parent"] = None
+        return {
+            "document_id": document.document_id,
+            "source_file_name": document.source_file_name,
+            "job_result_id": job_result_id,
+            "sections": section_payloads,
+        }
 
     async def get_document_page_citation_source(
         self,

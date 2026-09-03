@@ -74,6 +74,26 @@ export type DocumentsResponse = {
   pagination: Pagination;
 };
 
+export type DocumentSectionNode = {
+  id: string;
+  section_path: string;
+  title: string;
+  level: number;
+  parent: string | null;
+  leaf: boolean;
+  chunk_count: number;
+  has_content: boolean;
+  content_snippet: string | null;
+  sort_order: number;
+};
+
+export type DocumentSectionsResponse = {
+  document_id: string;
+  source_file_name: string | null;
+  job_result_id: string | null;
+  sections: DocumentSectionNode[];
+};
+
 export type RetrievalResult = {
   chunk_id?: string;
   chunk_type?: string;
@@ -263,6 +283,10 @@ export const api = {
       "/v2/documents" + (queryString ? "?" + queryString : "");
     return apiRequest<DocumentsResponse>(documentsPath);
   },
+  documentSections: (documentId: string) =>
+    apiRequest<DocumentSectionsResponse>(
+      `/v2/documents/${encodeURIComponent(documentId)}/sections`,
+    ),
   apiKeys: () =>
     apiRequest<{ api_keys: ApiKey[]; total: number }>("/v2/api-keys"),
   chatThreads: {
