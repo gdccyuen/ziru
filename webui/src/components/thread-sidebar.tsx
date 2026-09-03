@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import type { ChatThread } from "@/lib/api";
+import { DEFAULT_THREAD_TITLE, type ChatThread } from "@/lib/api";
 
 export type ThreadSidebarProps = {
   threads: readonly ChatThread[];
+  threadTitles?: Readonly<Record<string, string>>;
   activeThreadId: string | null;
   loading?: boolean;
   creating?: boolean;
@@ -21,6 +22,7 @@ export type ThreadSidebarProps = {
 
 export function ThreadSidebar({
   threads,
+  threadTitles,
   activeThreadId,
   loading = false,
   creating = false,
@@ -31,6 +33,13 @@ export function ThreadSidebar({
 }: ThreadSidebarProps): ReactElement {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
+
+  function displayTitle(thread: ChatThread): string {
+    const derivedTitle = threadTitles?.[thread.id];
+    if (derivedTitle) return derivedTitle;
+    if (thread.title !== DEFAULT_THREAD_TITLE) return thread.title;
+    return DEFAULT_THREAD_TITLE;
+  }
 
   function startRename(thread: ChatThread) {
     setEditingId(thread.id);
@@ -137,7 +146,7 @@ export function ThreadSidebar({
                     className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
                   >
                     <MessageSquare className="size-3.5 shrink-0" />
-                    <span className="truncate text-xs font-medium">{thread.title}</span>
+                    <span className="truncate text-xs font-medium">{displayTitle(thread)}</span>
                   </button>
                   <div className="hidden shrink-0 items-center gap-0.5 group-hover:flex">
                     <Button

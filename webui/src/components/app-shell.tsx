@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { WebUILogoMark } from "@/components/webui-logo-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AccountMenu } from "@/components/account-menu";
@@ -9,10 +9,13 @@ import { AppTabs } from "@/components/app-tabs";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/lib/auth-context";
 import { gradeLabel } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const isChat = pathname === "/chat";
 
   useEffect(() => {
     if (!loading && !user) {
@@ -59,7 +62,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <AccountMenu />
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 lg:px-6">
+      <main
+        className={cn(
+          "mx-auto w-full flex-1 py-6",
+          isChat ? "max-w-[1700px] px-2 lg:px-3" : "max-w-6xl px-4 lg:px-6",
+        )}
+      >
         {children}
       </main>
     </div>

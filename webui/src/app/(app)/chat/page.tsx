@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
-import { ApiError, api, type AttributeFilter, type ChatMessage, type ChatThread } from "@/lib/api";
+import { ApiError, api, DEFAULT_THREAD_TITLE, type AttributeFilter, type ChatMessage, type ChatThread } from "@/lib/api";
 import { ChatComposer } from "@/components/chat-composer";
 import { ChatMessageList } from "@/components/chat-message-list";
 import {
@@ -288,11 +288,35 @@ export default function ChatPage() {
   const messageCountLabel =
     messages.length === 1 ? "1 message" : messages.length + " messages";
 
+  const threadDisplayTitles = useMemo(() => {
+    const labels: Record<string, string> = {};
+    if (!activeThread) return labels;
+    const firstUserMessage = messages.find((message) => message.role === "user");
+    if (!firstUserMessage) return labels;
+
+    const firstContent = firstUserMessage.content.trim();
+    if (!firstContent) return labels;
+
+    const isAutoTitle =
+      activeThread.title === DEFAULT_THREAD_TITLE ||
+      activeThread.title === firstContent.slice(0, 60);
+    if (isAutoTitle) {
+      labels[activeThread.id] = firstContent;
+    }
+    return labels;
+  }, [activeThread, messages]);
+
+  const activeThreadDisplayTitle =
+    threadDisplayTitles[activeThreadId ?? ""] ??
+    activeThread?.title ??
+    DEFAULT_THREAD_TITLE;
+
   return (
     <div className="flex h-[calc(100vh-7rem)] min-h-[480px] overflow-hidden rounded-xl border border-border/70 bg-background">
-      <div className="hidden w-64 shrink-0 md:block">
+      <div className="hidden w-60 shrink-0 md:block">
         <ThreadSidebar
           threads={threads}
+          threadTitles={threadDisplayTitles}
           activeThreadId={activeThreadId}
           loading={loadingThreads}
           creating={creating}
@@ -306,7 +330,7 @@ export default function ChatPage() {
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border/70 bg-background px-4 py-3">
           <div className="min-w-0">
             <h2 className="truncate text-sm font-bold text-foreground">
-              {activeThread?.title ?? "New chat"}
+              {activeThreadDisplayTitle}
             </h2>
             <p className="text-xs text-muted-foreground">
               {activeThread ? messageCountLabel : "Create a thread to begin"}

@@ -41,7 +41,7 @@ export function ChatMessageList({
   });
 
   return (
-    <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6">
+    <div className="flex-1 space-y-4 overflow-y-auto px-3 py-4 sm:px-5">
       {orderedMessages.map((message) => (
         <ChatBubble key={message.id} message={message} />
       ))}
@@ -103,7 +103,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
       >
         <div className={cn("w-full rounded-lg border border-border/70 bg-background px-3.5 py-2.5", isUser ? "bg-primary/5" : "")}>
           {isUser ? (
-            <p className="whitespace-pre-wrap text-sm text-foreground">{message.content}</p>
+            <p className="whitespace-pre-wrap text-base leading-7 text-foreground">{message.content}</p>
           ) : (
             <div>
               <div className="chat-markdown-content">

@@ -119,6 +119,8 @@ export type RetrievalTrace = {
   queries: RetrievalTraceQuery[];
 };
 
+export const DEFAULT_THREAD_TITLE = "New chat";
+
 export type ChatThread = {
   id: string;
   title: string;
