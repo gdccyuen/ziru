@@ -205,6 +205,44 @@ class DocumentRepository:
         )
         return result.scalars().all()
 
+    async def list_document_chunks_by_section(
+        self,
+        db: AsyncSession,
+        *,
+        document_id: str,
+        job_result_id: str,
+        section_ids: Sequence[str],
+        limit_per_section: int,
+    ) -> dict[str, list[DocumentChunk]]:
+        """Return up to `limit_per_section` text chunks per section.
+
+        The response is bounded per section even though the underlying query
+        reads all text chunks for the requested revision; group slicing keeps
+        the section payload small for very large documents.
+        """
+        chunks_by_section: dict[str, list[DocumentChunk]] = {}
+        if not section_ids:
+            return chunks_by_section
+        result = await db.execute(
+            select(DocumentChunk)
+            .where(DocumentChunk.document_id == document_id)
+            .where(DocumentChunk.job_result_id == job_result_id)
+            .where(DocumentChunk.section_id.in_(list(section_ids)))
+            .where(func.lower(DocumentChunk.chunk_type) == "text")
+            .order_by(
+                DocumentChunk.section_id.asc(),
+                DocumentChunk.sort_order.asc(),
+                DocumentChunk.id.asc(),
+            )
+        )
+        for chunk in result.scalars().all():
+            if chunk.section_id is None:
+                continue
+            bucket = chunks_by_section.setdefault(chunk.section_id, [])
+            if len(bucket) < limit_per_section:
+                bucket.append(chunk)
+        return chunks_by_section
+
     async def get_current_document_job_revision(
         self,
         db: AsyncSession,
@@ -305,6 +343,31 @@ class DocumentRepository:
             .where(DocumentChunk.document_id == document_id)
             .where(DocumentChunk.job_result_id == job_result_id)
             .where(DocumentChunk.id == document_chunk_id)
+            .limit(1)
+        )
+
+        result = await db.execute(stmt)
+        row = result.first()
+        return cast(DocumentChunkRow | None, row)
+
+    async def get_current_document_chunk_by_chunk_id(
+        self,
+        db: AsyncSession,
+        *,
+        document_id: str,
+        job_result_id: str,
+        chunk_id: str,
+    ) -> DocumentChunkRow | None:
+        stmt = (
+            select(DocumentChunk, DocumentSection, JobResult)
+            .outerjoin(
+                DocumentSection,
+                DocumentSection.section_id == DocumentChunk.section_id,
+            )
+            .join(JobResult, JobResult.id == DocumentChunk.job_result_id)
+            .where(DocumentChunk.document_id == document_id)
+            .where(DocumentChunk.job_result_id == job_result_id)
+            .where(DocumentChunk.chunk_id == chunk_id)
             .limit(1)
         )
 

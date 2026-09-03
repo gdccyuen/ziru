@@ -458,7 +458,7 @@ async def get_document_original_file(
 
 @router.get(
     "/{document_id}/sections",
-    summary="Return one document's section tree with per-section chunk snippets",
+    summary="Return one document's section tree with chunk leaves",
 )
 async def get_document_sections(
     document_id: str,
@@ -494,6 +494,50 @@ async def get_document_sections(
             resource="Document sections",
             resource_id=document_id,
             internal_message="Document sections not found",
+        )
+    return response
+
+
+@router.get(
+    "/{document_id}/chunks/{chunk_id}",
+    summary="Return one document chunk's full detail",
+)
+async def get_document_chunk_detail(
+    document_id: str,
+    chunk_id: str,
+    current_user: CurrentUser = Depends(with_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await _document_service.get_document_or_raise(
+        db,
+        document_id=document_id,
+    )
+    attributes = await _document_service.get_document_attributes(
+        db,
+        document_id=document_id,
+    )
+
+    if current_user.grade != GRADE_ADMINISTRATOR:
+        profile = normalize_profile(current_user.profile or [])
+        if not profile_matches(profile, attributes):
+            raise PermissionDeniedException(
+                user_message="Document is not visible to your profile",
+                internal_message=(
+                    f"Document chunk access denied for non-visible document: "
+                    f"document_id={document_id}, user_id={current_user.user_id}"
+                ),
+            )
+
+    response = await _document_service.get_document_chunk_detail(
+        db,
+        document_id=document_id,
+        chunk_id=chunk_id,
+    )
+    if response is None:
+        raise NotFoundException(
+            resource="Document chunk",
+            resource_id=chunk_id,
+            internal_message="Document chunk not found",
         )
     return response
 

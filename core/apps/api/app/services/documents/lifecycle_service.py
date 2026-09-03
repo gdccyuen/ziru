@@ -28,6 +28,8 @@ _PAGE_MEMORY_PARSE_TRACK = "page_memory"
 _MINERU_RAW_EXPIRES_SECONDS = 7 * 24 * 60 * 60
 _MINERU_RAW_FILE_NAME = "mineru_raw.zip"
 _SECTION_SNIPPET_MAX_CHARS = 500
+_SECTION_CHUNK_SNIPPET_MAX_CHARS = 200
+_SECTION_CHUNKS_PER_SECTION = 100
 
 
 def _datetime_payload(value: datetime | None) -> str | None:
@@ -171,15 +173,26 @@ def _section_title_from_path(section_path: str) -> str:
     return parts[-1] if parts else section_path.strip() or "Untitled section"
 
 
-def _truncate_snippet(value: str | None) -> str | None:
+def _truncate_snippet(
+    value: str | None,
+    *,
+    max_chars: int = _SECTION_SNIPPET_MAX_CHARS,
+) -> str | None:
     if value is None:
         return None
     snippet = value.strip()
     if not snippet:
         return None
-    if len(snippet) <= _SECTION_SNIPPET_MAX_CHARS:
+    if len(snippet) <= max_chars:
         return snippet
-    return snippet[:_SECTION_SNIPPET_MAX_CHARS].rstrip() + "…"
+    return snippet[:max_chars].rstrip() + "…"
+
+
+def _truncate_chunk_snippet(value: str | None) -> str | None:
+    return _truncate_snippet(
+        value,
+        max_chars=_SECTION_CHUNK_SNIPPET_MAX_CHARS,
+    )
 
 
 def document_payload(
@@ -457,6 +470,42 @@ class DocumentService:
             ),
         }
 
+    async def get_document_chunk_detail(
+        self,
+        db: AsyncSession,
+        *,
+        document_id: str,
+        chunk_id: str,
+    ) -> dict[str, Any] | None:
+        document = await self._repository.get_document(
+            db,
+            document_id=document_id,
+        )
+        if document is None or document.status == "archived":
+            return None
+        job_result_id = document.current_job_result_id
+        if not job_result_id:
+            return None
+
+        row = await self._repository.get_current_document_chunk_by_chunk_id(
+            db,
+            document_id=document_id,
+            job_result_id=job_result_id,
+            chunk_id=chunk_id,
+        )
+        if row is None:
+            return None
+
+        chunk, section, _job_result = row
+        return {
+            "document_id": document.document_id,
+            "chunk_id": chunk.chunk_id,
+            "section_path": section.section_path if section else None,
+            "content": chunk.content,
+            "chunk_type": _normalize_chunk_type(chunk.chunk_type),
+            "metadata": dict(chunk.chunk_metadata or {}),
+        }
+
     async def get_document_or_raise(
         self,
         db: AsyncSession,
@@ -533,16 +582,33 @@ class DocumentService:
             if chunk.section_id is not None and chunk.content
         }
 
-        section_ids = {section.section_id for section in sections}
+        section_ids = [section.section_id for section in sections]
         parent_section_ids = {
             section.parent_section_id
             for section in sections
             if section.parent_section_id is not None
         }
+        chunks_by_section = await self._repository.list_document_chunks_by_section(
+            db,
+            document_id=document_id,
+            job_result_id=job_result_id,
+            section_ids=section_ids,
+            limit_per_section=_SECTION_CHUNKS_PER_SECTION,
+        )
+
         section_payloads: list[dict[str, Any]] = []
         for section in sections:
             chunk_count = chunk_counts.get(section.section_id, 0)
             content_snippet = snippet_by_section_id.get(section.section_id)
+            section_chunks = chunks_by_section.get(section.section_id, [])
+            chunk_payloads = [
+                {
+                    "chunk_id": chunk.chunk_id,
+                    "snippet": _truncate_chunk_snippet(chunk.content),
+                    "section_path": section.section_path,
+                }
+                for chunk in section_chunks
+            ]
             section_payloads.append(
                 {
                     "id": section.section_id,
@@ -555,6 +621,7 @@ class DocumentService:
                     "chunk_count": chunk_count,
                     "has_content": chunk_count > 0 and content_snippet is not None,
                     "content_snippet": content_snippet,
+                    "chunks": chunk_payloads,
                     "sort_order": section.sort_order,
                 }
             )

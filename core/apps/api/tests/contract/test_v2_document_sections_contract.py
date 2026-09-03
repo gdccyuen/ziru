@@ -139,6 +139,13 @@ async def test_admin_gets_document_section_tree(
     assert by_path["8/8.1"]["chunk_count"] == 1
     assert by_path["8/8.1"]["has_content"] is True
     assert by_path["8/8.1"]["content_snippet"] == "8.1 snippet body"
+    assert by_path["8/8.1"]["chunks"] == [
+        {
+            "chunk_id": "chunk_8_1",
+            "snippet": "8.1 snippet body",
+            "section_path": "8/8.1",
+        }
+    ]
 
     assert by_path["8/8.2/8.2.1"]["chunk_count"] == 1
     assert by_path["8/8.2/8.2.1"]["has_content"] is True
@@ -146,6 +153,15 @@ async def test_admin_gets_document_section_tree(
     assert len(snippet) == 501
     assert snippet.startswith("x" * 500)
     assert snippet.endswith("…")
+
+    chunk_leaves = cast(list[dict[str, object]], by_path["8/8.2/8.2.1"]["chunks"])
+    assert len(chunk_leaves) == 1
+    assert chunk_leaves[0]["chunk_id"] == "chunk_8_2_1"
+    assert chunk_leaves[0]["section_path"] == "8/8.2/8.2.1"
+    leaf_snippet = cast(str, chunk_leaves[0]["snippet"])
+    assert len(leaf_snippet) == 201
+    assert leaf_snippet.startswith("x" * 200)
+    assert leaf_snippet.endswith("…")
 
 
 @pytest.mark.asyncio
@@ -187,6 +203,92 @@ async def test_missing_document_sections_returns_404(
         admin_cookie = await bootstrap_admin(client)
         response = await client.get(
             "/api/v2/documents/doc_does_not_exist/sections",
+            headers=_cookie_headers(admin_cookie),
+        )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_admin_gets_document_chunk_detail(
+    api_client_factory: Callable[
+        [], AbstractAsyncContextManager[AsyncClient]
+    ],
+) -> None:
+    async with api_client_factory() as client:
+        admin_cookie = await bootstrap_admin(client)
+        await _seed_section_tree()
+        response = await client.get(
+            f"/api/v2/documents/{_SECTION_TREE_DOCUMENT_ID}/chunks/chunk_8_1",
+            headers=_cookie_headers(admin_cookie),
+        )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["document_id"] == _SECTION_TREE_DOCUMENT_ID
+    assert body["chunk_id"] == "chunk_8_1"
+    assert body["section_path"] == "8/8.1"
+    assert body["content"] == "8.1 snippet body"
+    assert body["chunk_type"] == "text"
+    assert body["metadata"] == {}
+
+
+@pytest.mark.asyncio
+async def test_non_admin_gets_403_for_invisible_document_chunk_detail(
+    api_client_factory: Callable[
+        [], AbstractAsyncContextManager[AsyncClient]
+    ],
+) -> None:
+    async with api_client_factory() as client:
+        admin_cookie = await bootstrap_admin(client)
+        await seed_attribute_dictionary({"division": ["finance", "sales"]})
+        await seed_document_with_attributes(
+            document_id="doc_chunk_invisible",
+            attributes={"division": ["finance"]},
+            source_file_name="hidden.pdf",
+        )
+        _, sales_key = await create_user_with_key(
+            client,
+            admin_cookie,
+            email="chunk-sales@contract.ziru.local",
+            grade="user",
+            profile=[{"key": "division", "values": ["sales"]}],
+        )
+        response = await client.get(
+            "/api/v2/documents/doc_chunk_invisible/chunks/chunk_does_not_matter",
+            headers=_bearer(sales_key),
+        )
+
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_unknown_document_chunk_returns_404(
+    api_client_factory: Callable[
+        [], AbstractAsyncContextManager[AsyncClient]
+    ],
+) -> None:
+    async with api_client_factory() as client:
+        admin_cookie = await bootstrap_admin(client)
+        await _seed_section_tree()
+        response = await client.get(
+            f"/api/v2/documents/{_SECTION_TREE_DOCUMENT_ID}/chunks/chunk_unknown",
+            headers=_cookie_headers(admin_cookie),
+        )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_missing_document_chunk_detail_returns_404(
+    api_client_factory: Callable[
+        [], AbstractAsyncContextManager[AsyncClient]
+    ],
+) -> None:
+    async with api_client_factory() as client:
+        admin_cookie = await bootstrap_admin(client)
+        response = await client.get(
+            "/api/v2/documents/doc_does_not_exist/chunks/chunk_8_1",
             headers=_cookie_headers(admin_cookie),
         )
 
