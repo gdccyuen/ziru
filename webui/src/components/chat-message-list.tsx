@@ -90,9 +90,6 @@ function ChatBubble({ message }: { message: ChatMessage }) {
     },
   };
 
-  const activeCitation =
-    selectedCitation === null ? null : (message.citations[selectedCitation] ?? null);
-
   return (
     <>
       <div
@@ -132,8 +129,10 @@ function ChatBubble({ message }: { message: ChatMessage }) {
       </div>
       <ChatChunkPane
         open={selectedCitation !== null}
-        citation={activeCitation}
+        citations={message.citations}
+        selectedIndex={selectedCitation}
         onClose={() => setSelectedCitation(null)}
+        onSelectCitation={setSelectedCitation}
       />
     </>
   );
