@@ -45,7 +45,7 @@ Open **Chat**.
 2. Type a question in the composer.
 3. Press **Enter** or click **Send**.
 
-The assistant returns a synthesized plain-English answer with inline [Source N] markers. It may take up to a few minutes on the local Qwen model (the answer retries up to three times, then falls back to the retrieved evidence only if all three attempts come back empty). Message timestamps use your browser's local timezone.
+The assistant returns a synthesized plain-English answer with compact inline [N] markers. Hover a marker to see its `Source N: label` tooltip, and click it to open the source chunk. It may take up to a few minutes on the local Qwen model (the answer retries up to three times, then falls back to the retrieved evidence only if all three attempts come back empty). Message timestamps use your browser's local timezone.
 
 ![Chat answer](screenshots/user-webui-chat.png)
 
@@ -53,7 +53,7 @@ Below the answer, expand **Retrieval** to see the trace (queries, hit counts, LL
 
 ![Chat trace and sources](screenshots/user-webui-chat-sources.png)
 
-Click a source passage (or a [Source N] marker) to open the **Source chunk** pane. It opens in **Tree** view, showing the selected document's real section tree with chunk-count badges, expandable sections, and chunk-leaf cards.
+Click a source passage (or a compact [N] marker) to open the **Source chunk** pane. It opens in **Tree** view, showing the selected document's real section tree with chunk-count badges, expandable sections, and chunk-leaf cards.
 
 ![Chunk pane tree view](screenshots/chat-chunk-pane-tree.png)
 
