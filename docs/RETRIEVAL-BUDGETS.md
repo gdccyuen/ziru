@@ -72,13 +72,13 @@ An Agentic turn returns a `decision_trace`; each entry carries a `budget` snapsh
   `RETRIEVAL_WALLET_PER_RETRIEVE_STEP_BUDGET=120000` in deploy/.env; the same symptom
   on another corpus should be fixed by raising these two (they are now forwarded by
   deploy/compose.yaml and documented in deploy/.env.example).
-- Third live finding (open): even with budgets fixed, the **LLM document-selection step
-  is unreliable on a real corpus** — it often returns an empty array even when relevant
-  documents exist (reproduced both via the HTTP API and in-process; an identical probe
-  selecting with the same prompt succeeded for a differently-worded query). When it
-  returns empty, the engine stops with `stop_reason: no_documents_selected` and returns
-  chunk references with **zero evidence text**, so agentic mode silently degrades.
-  Options under discussion: (a) fall back to the BM25 discovery top documents for
-  navigation when the LLM selects none; (b) retry selection once with a strengthened
-  prompt (pattern used by chat answer synthesis); (c) keep agentic off by default until
-  one of these lands.
+- Third finding — **addressed with the P1 selection ladder** (implemented in
+  `agentic/discovery/phase.py`): the LLM document-selection step is unreliable on a real
+  corpus (narrow wordings returned empty ~60% of the time in eval). P1 now runs:
+  1. original LLM selection;
+  2. if empty → one **auto-broadened retry** (LLM restates the question more broadly,
+     discovery hints recomputed for the new wording);
+  3. if still empty → **BM25 top-document fallback** (zero LLM cost).
+  The container deployment raises `RETRIEVAL_AGENTIC_LATENCY_BUDGET_MS=240000` in
+  deploy/.env so the added retry time does not starve navigation (the latency check
+  runs between document selection and navigation).

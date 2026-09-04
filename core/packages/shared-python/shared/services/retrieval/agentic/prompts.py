@@ -30,6 +30,13 @@ Do not include any explanation.
 """
 
 
+RETRY_BROADEN_PROMPT = """\
+You route questions to security-standard documents. A previous routing attempt found NO relevant documents for this question:
+{query}
+Rephrase the question so it is BROADER and easier to match against document titles and summaries: use general security terms, keep the same core topic, and remove audience or role restrictions. Output ONLY the rephrased question as one sentence, no explanation.
+"""
+
+
 COLLECTOR_PROMPT = """\
 You are a document navigation agent running an observe-act loop.
 

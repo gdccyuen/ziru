@@ -4,9 +4,12 @@ from __future__ import annotations
 from typing import Any
 
 from loguru import logger
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from shared.models.database.document import Document
 from shared.services.retrieval.agentic import tools
+from shared.services.retrieval.agentic.prompts import RETRY_BROADEN_PROMPT
 from shared.services.retrieval.agentic.core.budget import BudgetExceeded
 from shared.services.retrieval.agentic.core.trace import TraceRecorder
 from shared.services.retrieval.agentic.core.types import AgentState, CandidateDoc, ToolResult
@@ -84,6 +87,7 @@ async def run_initial_discovery(
             exclude_document_ids=exclude_document_ids,
             bootstrap_llm_fn=bootstrap_llm_fn,
             discovery_signals=discovery_signals,
+            discovery_kwargs=dict(discovery_kwargs),
         )
 
     return discovery_rows
@@ -128,27 +132,70 @@ async def _select_documents(
     exclude_document_ids: list[str],
     bootstrap_llm_fn: LLMFn,
     discovery_signals: dict[str, list[str]] | None = None,
+    discovery_kwargs: dict[str, Any] | None = None,
 ) -> None:
-    try:
-        kg_result = await tools.kg_document_select(
+    """P1 document-selection ladder.
+
+    Layer 1: original LLM selection over the KG overview.
+    Layer 2: if empty, retry once with an LLM-broadened restatement of the
+             question (discovery hints recomputed for the broader wording).
+    Layer 3: if still empty, fall back to the BM25 top discovery documents so
+             the turn navigates real candidates instead of returning empty
+             evidence (no LLM cost).
+    """
+    kg_result = await _run_selection_attempt(
+        db,
+        state=state,
+        exclude_document_ids=exclude_document_ids,
+        query=query,
+        llm_fn=bootstrap_llm_fn,
+        discovery_signals=discovery_signals,
+        attempt_label="original",
+    )
+
+    if kg_result.status != "selected_docs" and discovery_kwargs is not None:
+        broadened = await _broaden_query(query, bootstrap_llm_fn)
+        if broadened and broadened.lower().strip() != query.lower().strip():
+            logger.info(
+                "  agentic: original selection empty - retrying with broadened query"
+            )
+            retry_kwargs = dict(discovery_kwargs)
+            retry_kwargs["query"] = broadened
+            retry_discovery = await tools.bottom_discovery(db, **retry_kwargs)
+            retry_signals: dict[str, list[str]] | None = None
+            if retry_discovery.status != "error":
+                retry_rows = retry_discovery.payload.get("fused_rows", []) or []
+                retry_signals = build_discovery_signals(retry_rows)
+            retry_result = await _run_selection_attempt(
+                db,
+                state=state,
+                exclude_document_ids=exclude_document_ids,
+                query=broadened,
+                llm_fn=bootstrap_llm_fn,
+                discovery_signals=retry_signals,
+                attempt_label="broadened",
+            )
+            if retry_result.status == "selected_docs":
+                kg_result = retry_result
+
+    if kg_result.status != "selected_docs":
+        fallback = await _fallback_to_discovery_top_docs(
             db,
-            query=query,
-            llm_fn=bootstrap_llm_fn,
-            exclude_document_ids=list(state.ever_explored_doc_ids | set(exclude_document_ids)),
-            budget_snapshot=state.ledger.snapshot() if state.ledger else None,
-            discovery_signals=discovery_signals,
+            state=state,
+            exclude_document_ids=exclude_document_ids,
         )
-    except BudgetExceeded:
-        logger.info("  agentic: bootstrap budget exhausted during document selection")
-        if trace_enabled:
-            trace.record_budget_stop("bootstrap_exhausted")
-        kg_result = ToolResult(
-            status="no_confident_doc",
-            payload={"reason": "bootstrap budget exhausted"},
-        )
+        if fallback.status == "selected_docs":
+            logger.info(
+                "  agentic: LLM selection empty after retry - BM25 discovery fallback "
+                f"selected {len(fallback.payload.get('candidate_docs', []))} docs"
+            )
+            kg_result = fallback
+
     state.step_count += 1
 
     if trace_enabled:
+        if kg_result.payload.get("reason") == "bootstrap budget exhausted":
+            trace.record_budget_stop("bootstrap_exhausted")
         trace.record_step(
             "kg_document_select",
             kg_result,
@@ -161,6 +208,121 @@ async def _select_documents(
         f"  agentic step {state.step_count}: kg_document_select "
         f"status={kg_result.status} docs={len(state.selected_docs)} "
         f"latency={kg_result.latency_ms}ms"
+    )
+
+
+async def _run_selection_attempt(
+    db: AsyncSession,
+    *,
+    state: AgentState,
+    exclude_document_ids: list[str],
+    query: str,
+    llm_fn: LLMFn,
+    discovery_signals: dict[str, list[str]] | None,
+    attempt_label: str,
+) -> ToolResult:
+    """One LLM document-selection attempt (budget-guarded)."""
+    try:
+        return await tools.kg_document_select(
+            db,
+            query=query,
+            llm_fn=llm_fn,
+            exclude_document_ids=list(state.ever_explored_doc_ids | set(exclude_document_ids)),
+            budget_snapshot=state.ledger.snapshot() if state.ledger else None,
+            discovery_signals=discovery_signals,
+        )
+    except BudgetExceeded:
+        logger.info(
+            f"  agentic: bootstrap budget exhausted during document selection "
+            f"({attempt_label} attempt)"
+        )
+        return ToolResult(
+            status="no_confident_doc",
+            payload={"reason": "bootstrap budget exhausted"},
+        )
+
+
+async def _broaden_query(query: str, llm_fn: LLMFn) -> str | None:
+    """Ask the LLM for one broader restatement of a failed routing query."""
+    try:
+        raw = await llm_fn(RETRY_BROADEN_PROMPT.format(query=query))
+    except BudgetExceeded:
+        logger.info("  agentic: bootstrap budget exhausted during query broadening")
+        return None
+    text = str(raw or "").strip().strip('"').strip()
+    if len(text) < 8:
+        logger.info(
+            "  agentic: query broadening returned unusable text - skipping retry"
+        )
+        return None
+    logger.info(f"  agentic: broadened query: {text[:140]!r}")
+    return text
+
+
+async def _fallback_to_discovery_top_docs(
+    db: AsyncSession,
+    *,
+    state: AgentState,
+    exclude_document_ids: list[str],
+) -> ToolResult:
+    """P1 layer 3: select the BM25 top discovery documents for navigation."""
+    excluded = set(exclude_document_ids) | state.ever_explored_doc_ids
+    candidate_ids = [
+        doc_id
+        for doc_id in state.discovery_top_doc_ids
+        if doc_id not in excluded
+    ]
+    if not candidate_ids:
+        return ToolResult(
+            status="no_confident_doc",
+            payload={"reason": "no BM25 discovery candidates for fallback"},
+        )
+    result = await db.execute(
+        select(
+            Document.document_id,
+            Document.source_file_name,
+            Document.current_job_result_id,
+        ).where(Document.document_id.in_(candidate_ids))
+    )
+    info: dict[str, tuple[str, str | None]] = {}
+    for document_id, source_file_name, job_result_id in result.all():
+        info[str(document_id)] = (
+            source_file_name or str(document_id),
+            job_result_id,
+        )
+    candidate_docs: list[dict[str, Any]] = []
+    doc_id_to_name: dict[str, str] = {}
+    doc_job_map: dict[str, str] = {}
+    for doc_id in candidate_ids:
+        entry = info.get(doc_id)
+        if entry is None or not entry[1]:
+            continue
+        name, job_result_id = entry
+        candidate_docs.append(
+            {
+                "document_id": doc_id,
+                "source_file_name": name,
+                "confidence": 1.0,
+                "reason": "BM25 discovery fallback after empty LLM selection",
+                "source": "bm25_fallback",
+            }
+        )
+        doc_id_to_name[doc_id] = name
+        doc_job_map[doc_id] = str(job_result_id)
+    if not candidate_docs:
+        return ToolResult(
+            status="no_confident_doc",
+            payload={
+                "reason": "BM25 discovery fallback found no navigable documents"
+            },
+        )
+    return ToolResult(
+        status="selected_docs",
+        payload={
+            "candidate_docs": candidate_docs,
+            "doc_id_to_name": doc_id_to_name,
+            "doc_job_map": doc_job_map,
+        },
     )
 
 

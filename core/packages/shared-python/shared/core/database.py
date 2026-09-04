@@ -33,7 +33,10 @@ engine_options: dict[str, Any] = {
             "application_name": "ziru_api",
             "timezone": "UTC",
             "statement_timeout": "30000",
-            "idle_in_transaction_session_timeout": "60000",
+            # Agentic retrieval holds a DB session open across slow local-LLM
+            # calls (navigation can exceed 60s on Qwen 27B); 10 minutes keeps
+            # Postgres from killing the session mid-navigation.
+            "idle_in_transaction_session_timeout": "600000",
         },
         "command_timeout": 30,
         **ssl_connect_args,
