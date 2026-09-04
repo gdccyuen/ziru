@@ -280,8 +280,8 @@ export const api = {
         filters: input.filters,
         top_k: input.top_k ?? 8,
         internal_recall_k: input.internal_recall_k ?? 30,
-        rerank: input.rerank ?? false,
-        use_agentic: input.use_agentic ?? false,
+        rerank: input.rerank ?? true,
+        use_agentic: input.use_agentic ?? true,
       }),
     }),
   documents: (query: {

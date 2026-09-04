@@ -27,10 +27,10 @@ export type RetrievalSettings = {
 };
 
 export const RETRIEVAL_DEFAULTS: RetrievalSettings = {
-  rerank: false,
+  rerank: true,
   top_k: 8,
   internal_recall_k: 30,
-  use_agentic: false,
+  use_agentic: true,
 };
 
 type PromptTemplate = {
@@ -150,7 +150,7 @@ export function RetrievalSettingsRow({
         ariaLabel="Top K results"
         disabled={disabled}
         label="Top K"
-        max={20}
+        max={50}
         min={1}
         step={1}
         value={value.top_k}
@@ -161,7 +161,7 @@ export function RetrievalSettingsRow({
         ariaLabel="Recall K"
         disabled={disabled}
         label="Recall K"
-        max={100}
+        max={200}
         min={10}
         step={5}
         value={value.internal_recall_k}

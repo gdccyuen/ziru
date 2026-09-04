@@ -41,10 +41,10 @@ CHAT_RECALL_K = 30
 
 RETRIEVAL_PARAM_KEYS = {"rerank", "top_k", "internal_recall_k", "use_agentic"}
 DEFAULT_RETRIEVAL_PARAMS: dict[str, Any] = {
-    "rerank": False,
+    "rerank": True,
     "top_k": CHAT_TOP_K,
     "internal_recall_k": CHAT_RECALL_K,
-    "use_agentic": False,
+    "use_agentic": True,
 }
 
 
