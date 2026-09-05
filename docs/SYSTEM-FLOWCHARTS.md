@@ -15,7 +15,7 @@ flowchart TD
     D --> E[Local MinerU parse: PDF to text/tables/OCR - runs on this machine only]
     E --> F[Chunking: split into small searchable pieces text, table, image, page]
     F --> G[Build section tree: document outline chapters to paragraphs]
-    G --> H[Local LLM writes short summaries per document/section - used later for routing]
+    G --> H[Write summaries: document-level top summary via local LLM; section summaries from titles/own text]
     H --> I[Store chunks + KV attributes; built-in tags creator, time, file hash are locked]
     I --> J{Success?}
     J -- yes --> K[Status active: searchable + chat-ready]
@@ -25,8 +25,10 @@ flowchart TD
 **Plain-English walk-through:** a librarian uploads a security-standard PDF, tags it
 with labels such as `division`, a background worker parses it locally into text and
 tables, splits it into paragraph-sized searchable units, records the document's
-outline, and asks the local AI to write short summaries. Only then does it become
-visible to search and chat. Nothing is sent to any cloud service.
+outline, and writes summaries: the local AI produces one short document-level
+summary, while each section summary is assembled from its own text and its child
+titles (AI-written section summaries are optional and currently off). Only then does
+it become visible to search and chat. Nothing is sent to any cloud service.
 
 ## Flow 2 — Retrieval (what happens when a query is entered)
 
@@ -148,6 +150,55 @@ Key facts a reviewer should know:
    (`kg_select` entry) with their names and the reason `LLM selected from KG overview`,
    so a reviewer can always see which documents the AI chose and why.
 
+
+## Deep dive — Summaries written during intake (criteria & where each kind is used)
+
+There are two summary tiers. Both are produced after parsing, bottom-up over the
+section tree (worker `connect_builder/summary_builder.py`), and both are length-capped.
+
+### Document-level "top summary" (default: written by the local LLM)
+
+- Mode: `top_summary_use_llm=True` (on by default). If the LLM call fails or the
+  text is unusable, a deterministic fallback is used instead.
+- What it contains: one concise overview of the whole document — its own content plus
+  what its top-level sections cover. Real example:
+  `This document includes: Website and Web Application Security, COPYRIGHT NOTICE,`
+  `Table of Contents, 1. Introduction...`
+- Exact criteria from the prompt template (`prompt_service.py`, task `file-summary`):
+  - Produce ONE concise top-level summary of this scope (own content + covered nodes);
+  - no more than ~200 characters/tokens for the document level;
+  - SAME LANGUAGE as the document (auto-detected — treated as a hard constraint);
+  - output the summary directly — no prefixes, no explanations;
+  - if the input lacks meaningful text, return exactly `null`.
+- Where it is stored: on the document knowledge-map node (`top_summary`), and it is
+  the ONLY summary text the routing step (Step J) reads when choosing documents.
+
+### Section summaries (default: deterministic, LLM off)
+
+- Mode: `use_llm=False` (section-level LLM is opt-in and currently off).
+- Built recursively from the leaves upward:
+  - leaf sections keep the content/summary the parser produced;
+  - every non-leaf section gets: `This section covers: ` + the section own text +
+    the list of its child section titles, truncated to ~100 characters at the head and
+    ~100 at the tail. So the stored section summary is a short list of what sits
+    under this heading, not an AI paragraph.
+- If LLM mode were enabled, the same criteria as the top summary apply per section
+  (one concise summary of that scope, ~100 length cap, same language, direct output,
+  `null` when empty) — and the LLM is only invoked when the combined child content
+  exceeds a small threshold (100 chars), so trivial sections stay deterministic.
+- Where stored: in the section records of the document tree.
+
+### Which summary is used where at retrieval time
+
+| Stage | Uses document top summary? | Uses section summaries? |
+|---|---|---|
+| Step J routing (document selection) | yes — the knowledge map lines | no — only section *paths* arrive as BM25 discovery hints |
+| Classic keyword search (agentic OFF) | part of searchable text | yes — section summary text is scored by BM25 |
+| Agentic navigation (after selection) | no | yes — the AI sees outline items as "title + summary" and decides what to expand/collect |
+| Chat answer synthesis | indirect — via collected evidence chunks | indirect — via collected evidence chunks |
+
+One-line takeaway: **document summary decides which documents to open; section titles
++ summaries decide what to read inside an opened document.**
 ## Glossary (plain English)
 
 | Term | What it means here |
