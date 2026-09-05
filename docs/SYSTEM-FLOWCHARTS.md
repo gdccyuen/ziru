@@ -74,6 +74,80 @@ read section by section until the answering parts are collected, and chat writes
 final readable answer with numbered sources. Token/time budgets cap how much AI work
 a single question can consume.
 
+
+
+## Deep dive — Step J: LLM document selection over the knowledge map
+
+This is the AI's "routing" decision: **which documents might contain the answer?**
+It is deliberately the *only* step where the AI chooses documents — everything after
+it (navigation) assumes the choice was right, which is why this step gets so much
+attention and has two safety nets (the broaden retry and the BM25 fallback).
+
+```mermaid
+flowchart TD
+    J0[Knowledge map is built: list of active documents with name, chunk/media counts and one-paragraph summary] --> J1[Discovery hints are added: keyword-hit section paths per document from the BM25 pass]
+    J1 --> J2[Budget block is attached: how much AI work remains]
+    J2 --> J3[The routing prompt is assembled: fixed instructions + map + hints + the user's question]
+    J3 --> J4[LLM call on the local Qwen model - one answer expected: a JSON list of document IDs]
+    J4 --> J5{Prompt contains a valid JSON list?}
+    J5 -- no / empty --> J5a[Answer treated as 'no documents found' - nothing selected]
+    J5 -- yes --> J6[Check each ID: exists in the knowledge map? not excluded by profile scope?]
+    J6 -- all rejected --> J6a[No valid documents - treated as empty]
+    J6 -- some valid --> J7[Resolve each document's name and storage reference]
+    J7 --> J8[Selected documents queued for navigation - Phase 2]
+    J5a --> J9[P1 ladder continues: broaden retry, then relevance gate + BM25 fallback]
+    J6a --> J9
+```
+
+### What the AI actually sees (real example, shortened)
+
+```text
+You are a document routing assistant.
+
+=== Resource Status ===
+Planning Budget: HEALTHY (0% used)
+When budget is TIGHT, prefer fewer high-confidence selections...
+
+=== Document Corpus Overview ===
+- [doc_16af985e2f68] PG for Website and Web Application Security_EN.pdf  chunks=129 media=4
+  top_summary:
+      This document includes: Website and Web Application Security, ...
+      🔍 Discovery hints: 3. Website and Web Application Security; Annex E: OWASP...
+- [doc_df69fa4dd2dd] PG for IGS_EN.pdf  chunks=...
+- [doc_aaa61c4e8178] PG for Security Log Management_EN.pdf  chunks=...
+... (up to 50 documents, most with summaries)
+=== End Overview ===
+
+User query: {the question}
+
+Return ONLY a JSON array of document IDs, e.g.: ["doc_abc123", "doc_def456"]
+Do not include any explanation.
+```
+
+Key facts a reviewer should know:
+
+1. **The AI never reads the documents at this step** — only file names, chunk/media
+   counts, one-paragraph summaries, and keyword-hit hints. That is by design (cheap),
+   and it is also why narrow wording can fail: if the question's words do not appear
+   in the summaries, the AI sometimes concludes "nothing matches" and returns an
+   empty list.
+2. **The answer must be a bare JSON list** of document IDs. Anything else (prose,
+   invalid formatting) is parsed as "no documents found".
+3. **Checks after the answer:** every returned ID must exist in the knowledge map and
+   must not be excluded by the user's profile scope. Rejected IDs are dropped.
+4. **Money/time guardrails:** this call is charged to the *bootstrap pool* (a reserved
+   token allowance). If the allowance is exhausted the call is treated as empty — it
+   never over-spends. On the local Qwen model one call takes roughly **5–40 seconds**
+   depending on overview size and server cache warmth.
+5. **It is intentionally non-deterministic** (low randomness, but not zero): the same
+   question can return documents on one attempt and an empty list on the next. That
+   measured behaviour is exactly why the P1 ladder exists — Step J's empty answer is
+   not the end of the turn; it triggers Step L (broaden retry) and, if needed, the
+   relevance-gated BM25 fallback.
+6. **What the user sees afterwards:** the chosen documents appear in the trace
+   (`kg_select` entry) with their names and the reason `LLM selected from KG overview`,
+   so a reviewer can always see which documents the AI chose and why.
+
 ## Glossary (plain English)
 
 | Term | What it means here |
@@ -89,6 +163,8 @@ a single question can consume.
 | **MinerU** | The local PDF→text/table/OCR parser (no cloud, no API key) |
 | **OCR** | Turning scanned images of text into real text |
 | **P1 ladder** | The 3-step document-selection fallback: original AI pick → broader re-ask → keyword fallback |
+| **Bootstrap pool** | A reserved token allowance for the AI's document-choosing calls, so one turn can never over-spend |
+| **Routing** | The AI's act of choosing which documents may contain the answer, based on the knowledge map |
 | **Profile scope** | Which documents a user may see, derived from their account profile labels |
 | **Redis** | Fast local cache/message store used for jobs, sessions and query caching |
 | **Rerank** | A switch that is currently stored but not yet active in the engine |
