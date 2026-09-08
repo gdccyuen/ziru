@@ -1,4 +1,5 @@
 # pyright: reportArgumentType=false, reportAssignmentType=false, reportAttributeAccessIssue=false, reportCallIssue=false, reportGeneralTypeIssues=false, reportOperatorIssue=false, reportOptionalMemberAccess=false, reportOptionalSubscript=false
+import json
 import os
 
 import gevent
@@ -10,6 +11,10 @@ from app.services.document_parser.structure.heading_candidates import (
 )
 from app.services.document_parser.structure.heading_llm_executor import (
     execute_llm_heading_hierarchy,
+)
+from app.services.document_parser.structure.outline_sanity import (
+    outline_sanity,
+    resolve_heading_levels,
 )
 from app.services.document_parser.structure.heading_tree import (
     build_tree_from_dataframe as build_heading_tree_from_dataframe,
@@ -638,15 +643,27 @@ def pred_titles(
         heading_preds = est_hierarchies_naive(
             raw_preds, smart_parse, output_dir=output_dir
         )
+        if settings.NUMBERING_FIRST_HIERARCHY and not heading_preds.empty:
+            heading_preds = resolve_heading_levels(heading_preds)
         if smart_parse:
-            heading_preds = est_hierarchies_llm(
-                heading_preds,
-                prompt_limt,
-                toc_hierarchies,
-                model_name=model_name,
-                output_dir=output_dir,
-            )
-            logger.info("✅ LLM hierarchy parsing completed")
+            run_llm = True
+            if settings.NUMBERING_FIRST_HIERARCHY and not heading_preds.empty:
+                score, _ = outline_sanity(heading_preds)
+                if score >= settings.OUTLINE_SANITY_THRESHOLD:
+                    run_llm = False
+                    logger.info(
+                        "numbering-first hierarchy OK (score=%.2f), skipping LLM",
+                        score,
+                    )
+            if run_llm:
+                heading_preds = est_hierarchies_llm(
+                    heading_preds,
+                    prompt_limt,
+                    toc_hierarchies,
+                    model_name=model_name,
+                    output_dir=output_dir,
+                )
+                logger.info("✅ LLM hierarchy parsing completed")
 
     # 3. final polishing for certain types
     if doc_type in ["docx"]:
@@ -679,6 +696,25 @@ def pred_titles(
         logger.info(
             f"✅ Heading parsing completed, final {len(heading_preds[heading_preds['level'] > 0])} valid headings"
         )
+
+    # ── Deterministic numbering-first post-pass + parse-quality sidecar ──
+    if settings.NUMBERING_FIRST_HIERARCHY and not heading_preds.empty:
+        # Re-apply so tree re-leveling / isolated-node removal cannot undo the
+        # numbering-derived levels (kept idempotent).
+        heading_preds = resolve_heading_levels(heading_preds)
+        score, sanity_result = outline_sanity(heading_preds)
+        logger.info(
+            f"outline sanity: score={score:.2f} anomalies={sanity_result['n_anomalies']}"
+        )
+        if settings.OUTLINE_SANITY_JSON and output_dir:
+            try:
+                sanity_result["backend_predicted"] = (
+                    "numbering_first" if score >= settings.OUTLINE_SANITY_THRESHOLD else "llm"
+                )
+                with open(os.path.join(output_dir, "parse_quality.json"), "w", encoding="utf-8") as f:
+                    json.dump({"outline_sanity": sanity_result}, f, ensure_ascii=False, indent=2)
+            except Exception as exc:
+                logger.warning(f"Failed to write parse_quality.json: {exc}")
 
     # ── Splice pre-TOC rows back ──
     if pre_toc_rows is not None and not heading_preds.empty:
