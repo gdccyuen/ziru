@@ -1,0 +1,4165 @@
+{
+  "experiment": "embedding_4th_channel_sec_docs",
+  "generated_at": "2026-09-06T22:13:21+0800",
+  "config": {
+    "rrf_k": 60,
+    "top_ks": [
+      8,
+      50
+    ],
+    "weights": {
+      "lexical_3ch": {
+        "path": 1.0,
+        "content": 2.0,
+        "term": 1.5
+      },
+      "hybrid_4ch": {
+        "path": 1.0,
+        "content": 2.0,
+        "term": 1.5,
+        "embedding": 1.5
+      },
+      "hybrid_4ch_emb1.0": {
+        "path": 1.0,
+        "content": 2.0,
+        "term": 1.5,
+        "embedding": 1.0
+      }
+    },
+    "embedding_model": "gpustack/bge-m3-GGUF",
+    "embedding_dim": 1024,
+    "n_queries": 55,
+    "n_chunks": 2070,
+    "n_chunk_embeddings_failed": 0
+  },
+  "aggregates": {
+    "lexical_3ch": {
+      "8": {
+        "total": 55,
+        "pass": 8,
+        "pass_rate": 0.1455,
+        "doc_fail": 1,
+        "section_fail": 43,
+        "chunk_fail": 22,
+        "must_not_fail": 0
+      },
+      "50": {
+        "total": 55,
+        "pass": 14,
+        "pass_rate": 0.2545,
+        "doc_fail": 0,
+        "section_fail": 39,
+        "chunk_fail": 8,
+        "must_not_fail": 0
+      }
+    },
+    "hybrid_4ch": {
+      "8": {
+        "total": 55,
+        "pass": 11,
+        "pass_rate": 0.2,
+        "doc_fail": 0,
+        "section_fail": 42,
+        "chunk_fail": 15,
+        "must_not_fail": 0
+      },
+      "50": {
+        "total": 55,
+        "pass": 14,
+        "pass_rate": 0.2545,
+        "doc_fail": 0,
+        "section_fail": 39,
+        "chunk_fail": 8,
+        "must_not_fail": 0
+      }
+    },
+    "hybrid_4ch_emb1.0": {
+      "8": {
+        "total": 55,
+        "pass": 10,
+        "pass_rate": 0.1818,
+        "doc_fail": 0,
+        "section_fail": 42,
+        "chunk_fail": 16,
+        "must_not_fail": 0
+      },
+      "50": {
+        "total": 55,
+        "pass": 14,
+        "pass_rate": 0.2545,
+        "doc_fail": 0,
+        "section_fail": 39,
+        "chunk_fail": 8,
+        "must_not_fail": 0
+      }
+    }
+  },
+  "results_by_query": {
+    "lexical_3ch": {
+      "8": {
+        "total": 55,
+        "pass": 8,
+        "doc_fail": 1,
+        "section_fail": 43,
+        "chunk_fail": 22,
+        "must_not_fail": 0,
+        "queries": {
+          "SD-001": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-002": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-003": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-004": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-005": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-006": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-007": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-008": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-009": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-010": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-011": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-012": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-013": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-014": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-015": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-016": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-017": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-018": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-019": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-020": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-021": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-022": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-023": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-024": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-025": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-026": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-027": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-028": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-029": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-030": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-031": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-032": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-033": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-034": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-035": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-036": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-037": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-038": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-039": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-040": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-041": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-042": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-043": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-044": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-045": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-046": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-047": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-048": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-049": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-050": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-051": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-052": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-053": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-054": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-055": {
+            "pass": false,
+            "doc_ok": false,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          }
+        }
+      },
+      "50": {
+        "total": 55,
+        "pass": 14,
+        "doc_fail": 0,
+        "section_fail": 39,
+        "chunk_fail": 8,
+        "must_not_fail": 0,
+        "queries": {
+          "SD-001": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-002": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-003": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-004": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-005": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-006": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-007": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-008": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-009": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-010": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-011": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-012": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-013": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-014": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-015": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-016": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-017": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-018": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-019": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-020": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-021": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-022": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-023": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-024": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-025": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-026": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-027": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-028": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-029": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-030": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-031": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-032": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-033": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-034": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-035": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-036": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-037": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-038": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-039": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-040": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-041": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-042": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-043": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-044": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-045": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-046": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-047": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-048": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-049": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-050": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-051": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-052": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-053": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-054": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-055": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          }
+        }
+      }
+    },
+    "hybrid_4ch": {
+      "8": {
+        "total": 55,
+        "pass": 11,
+        "doc_fail": 0,
+        "section_fail": 42,
+        "chunk_fail": 15,
+        "must_not_fail": 0,
+        "queries": {
+          "SD-001": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-002": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-003": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-004": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-005": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-006": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-007": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-008": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-009": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-010": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-011": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-012": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-013": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-014": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-015": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-016": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-017": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-018": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-019": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-020": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-021": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-022": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-023": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-024": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-025": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-026": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-027": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-028": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-029": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-030": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-031": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-032": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-033": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-034": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-035": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-036": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-037": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-038": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-039": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-040": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-041": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-042": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-043": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-044": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-045": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-046": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-047": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-048": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-049": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-050": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-051": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-052": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-053": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-054": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-055": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          }
+        }
+      },
+      "50": {
+        "total": 55,
+        "pass": 14,
+        "doc_fail": 0,
+        "section_fail": 39,
+        "chunk_fail": 8,
+        "must_not_fail": 0,
+        "queries": {
+          "SD-001": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-002": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-003": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-004": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-005": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-006": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-007": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-008": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-009": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-010": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-011": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-012": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-013": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-014": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-015": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-016": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-017": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-018": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-019": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-020": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-021": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-022": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-023": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-024": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-025": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-026": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-027": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-028": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-029": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-030": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-031": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-032": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-033": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-034": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-035": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-036": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-037": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-038": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-039": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-040": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-041": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-042": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-043": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-044": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-045": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-046": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-047": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-048": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-049": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-050": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-051": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-052": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-053": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-054": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-055": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          }
+        }
+      }
+    },
+    "hybrid_4ch_emb1.0": {
+      "8": {
+        "total": 55,
+        "pass": 10,
+        "doc_fail": 0,
+        "section_fail": 42,
+        "chunk_fail": 16,
+        "must_not_fail": 0,
+        "queries": {
+          "SD-001": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-002": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-003": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-004": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-005": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-006": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-007": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-008": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-009": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-010": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-011": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-012": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-013": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-014": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-015": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-016": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-017": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-018": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-019": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-020": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-021": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-022": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-023": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-024": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-025": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-026": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-027": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-028": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-029": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-030": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-031": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-032": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-033": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-034": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-035": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-036": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-037": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-038": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-039": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-040": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-041": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-042": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-043": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-044": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-045": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-046": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-047": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-048": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-049": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-050": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-051": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-052": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-053": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-054": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 8
+          },
+          "SD-055": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 8
+          }
+        }
+      },
+      "50": {
+        "total": 55,
+        "pass": 14,
+        "doc_fail": 0,
+        "section_fail": 39,
+        "chunk_fail": 8,
+        "must_not_fail": 0,
+        "queries": {
+          "SD-001": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-002": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-003": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-004": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-005": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-006": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-007": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-008": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-009": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-010": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-011": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-012": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-013": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-014": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-015": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-016": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-017": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-018": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-019": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-020": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-021": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-022": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-023": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-024": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-025": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-026": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-027": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-028": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-029": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-030": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-031": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-032": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-033": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-034": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-035": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-036": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-037": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-038": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-039": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-040": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-041": {
+            "pass": true,
+            "doc_ok": true,
+            "section_ok": true,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-042": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-043": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-044": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-045": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-046": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-047": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-048": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-049": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-050": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-051": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-052": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-053": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-054": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": false,
+            "must_not_ok": true,
+            "top_k": 50
+          },
+          "SD-055": {
+            "pass": false,
+            "doc_ok": true,
+            "section_ok": false,
+            "chunk_ok": true,
+            "must_not_ok": true,
+            "top_k": 50
+          }
+        }
+      }
+    }
+  },
+  "flips_lexical_vs_hybrid": {
+    "8": {
+      "fail_to_pass": [
+        "SD-002",
+        "SD-020",
+        "SD-025"
+      ],
+      "pass_to_fail": [],
+      "n_fail_to_pass": 3,
+      "n_pass_to_fail": 0
+    },
+    "50": {
+      "fail_to_pass": [],
+      "pass_to_fail": [],
+      "n_fail_to_pass": 0,
+      "n_pass_to_fail": 0
+    }
+  },
+  "embedding_placement": {
+    "8": {
+      "section_evidence_new": 1,
+      "chunk_evidence_new": 7,
+      "doc_evidence_new": 1,
+      "queries_section_emb_only": 1,
+      "queries_chunk_emb_only": 7,
+      "queries_doc_emb_only": 1,
+      "detail": [
+        {
+          "qid": "SD-001",
+          "lex_sec_rank": 4,
+          "hyb_sec_rank": 2,
+          "lex_chunk_rank": 4,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-002",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": 1,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 1,
+          "new_chunk_evidence": 1,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-003",
+          "lex_sec_rank": 1,
+          "hyb_sec_rank": 1,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-004",
+          "lex_sec_rank": 2,
+          "hyb_sec_rank": 2,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-005",
+          "lex_sec_rank": 2,
+          "hyb_sec_rank": 1,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-006",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-007",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 6,
+          "hyb_doc_rank": 5,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-008",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 5,
+          "hyb_chunk_rank": 4,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-009",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 6,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-010",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-011",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": 5,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 1,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-012",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 6,
+          "hyb_chunk_rank": 5,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-013",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 3,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-014",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-015",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 3,
+          "hyb_chunk_rank": 3,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-016",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-017",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": 5,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 1,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-018",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 3,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 3,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-019",
+          "lex_sec_rank": 2,
+          "hyb_sec_rank": 1,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-020",
+          "lex_sec_rank": 1,
+          "hyb_sec_rank": 1,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": 5,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 1,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-021",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-022",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-023",
+          "lex_sec_rank": 6,
+          "hyb_sec_rank": 5,
+          "lex_chunk_rank": 6,
+          "hyb_chunk_rank": 5,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-024",
+          "lex_sec_rank": 6,
+          "hyb_sec_rank": 3,
+          "lex_chunk_rank": 6,
+          "hyb_chunk_rank": 3,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-025",
+          "lex_sec_rank": 1,
+          "hyb_sec_rank": 1,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 6,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 1,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-026",
+          "lex_sec_rank": 1,
+          "hyb_sec_rank": 1,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-027",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 6,
+          "hyb_doc_rank": 3,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-028",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": 5,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 1,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-029",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-030",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": 4,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 1,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-031",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-032",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 5,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-033",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-034",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-035",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-036",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-037",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-038",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-039",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 5,
+          "hyb_chunk_rank": 5,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-040",
+          "lex_sec_rank": 1,
+          "hyb_sec_rank": 1,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-041",
+          "lex_sec_rank": 6,
+          "hyb_sec_rank": 4,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-042",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 3,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-043",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-044",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-045",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 6,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-046",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 4,
+          "hyb_chunk_rank": 3,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-047",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-048",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-049",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-050",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-051",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-052",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-053",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-054",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-055",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 3,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": null,
+          "hyb_doc_rank": 4,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 1
+        }
+      ]
+    },
+    "50": {
+      "section_evidence_new": 0,
+      "chunk_evidence_new": 1,
+      "doc_evidence_new": 0,
+      "queries_section_emb_only": 0,
+      "queries_chunk_emb_only": 1,
+      "queries_doc_emb_only": 0,
+      "detail": [
+        {
+          "qid": "SD-001",
+          "lex_sec_rank": 4,
+          "hyb_sec_rank": 2,
+          "lex_chunk_rank": 4,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-002",
+          "lex_sec_rank": 9,
+          "hyb_sec_rank": 4,
+          "lex_chunk_rank": 9,
+          "hyb_chunk_rank": 4,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-003",
+          "lex_sec_rank": 1,
+          "hyb_sec_rank": 1,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-004",
+          "lex_sec_rank": 2,
+          "hyb_sec_rank": 2,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-005",
+          "lex_sec_rank": 2,
+          "hyb_sec_rank": 1,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-006",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 36,
+          "hyb_chunk_rank": 13,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-007",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 13,
+          "hyb_chunk_rank": 12,
+          "lex_doc_rank": 6,
+          "hyb_doc_rank": 3,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-008",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 7,
+          "hyb_chunk_rank": 5,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-009",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 5,
+          "hyb_chunk_rank": 4,
+          "lex_doc_rank": 3,
+          "hyb_doc_rank": 3,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-010",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-011",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 14,
+          "hyb_chunk_rank": 8,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-012",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 7,
+          "hyb_chunk_rank": 6,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-013",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 3,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-014",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-015",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 3,
+          "hyb_chunk_rank": 3,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-016",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-017",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 10,
+          "hyb_chunk_rank": 4,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-018",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 3,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 3,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-019",
+          "lex_sec_rank": 4,
+          "hyb_sec_rank": 5,
+          "lex_chunk_rank": 4,
+          "hyb_chunk_rank": 5,
+          "lex_doc_rank": 4,
+          "hyb_doc_rank": 5,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-020",
+          "lex_sec_rank": 4,
+          "hyb_sec_rank": 3,
+          "lex_chunk_rank": 8,
+          "hyb_chunk_rank": 7,
+          "lex_doc_rank": 4,
+          "hyb_doc_rank": 3,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-021",
+          "lex_sec_rank": 14,
+          "hyb_sec_rank": 13,
+          "lex_chunk_rank": 14,
+          "hyb_chunk_rank": 13,
+          "lex_doc_rank": 6,
+          "hyb_doc_rank": 6,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-022",
+          "lex_sec_rank": 13,
+          "hyb_sec_rank": 7,
+          "lex_chunk_rank": 13,
+          "hyb_chunk_rank": 7,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-023",
+          "lex_sec_rank": 12,
+          "hyb_sec_rank": 4,
+          "lex_chunk_rank": 12,
+          "hyb_chunk_rank": 4,
+          "lex_doc_rank": 3,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-024",
+          "lex_sec_rank": 7,
+          "hyb_sec_rank": 6,
+          "lex_chunk_rank": 7,
+          "hyb_chunk_rank": 6,
+          "lex_doc_rank": 5,
+          "hyb_doc_rank": 5,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-025",
+          "lex_sec_rank": 1,
+          "hyb_sec_rank": 1,
+          "lex_chunk_rank": 8,
+          "hyb_chunk_rank": 3,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-026",
+          "lex_sec_rank": 6,
+          "hyb_sec_rank": 6,
+          "lex_chunk_rank": 6,
+          "hyb_chunk_rank": 6,
+          "lex_doc_rank": 6,
+          "hyb_doc_rank": 6,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-027",
+          "lex_sec_rank": 9,
+          "hyb_sec_rank": 3,
+          "lex_chunk_rank": 9,
+          "hyb_chunk_rank": 3,
+          "lex_doc_rank": 8,
+          "hyb_doc_rank": 3,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-028",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 11,
+          "hyb_chunk_rank": 7,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-029",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-030",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 13,
+          "hyb_chunk_rank": 6,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-031",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 3,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-032",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 39,
+          "hyb_chunk_rank": 22,
+          "lex_doc_rank": 5,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-033",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-034",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-035",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-036",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-037",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-038",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-039",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 5,
+          "hyb_chunk_rank": 5,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-040",
+          "lex_sec_rank": 2,
+          "hyb_sec_rank": 2,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-041",
+          "lex_sec_rank": 9,
+          "hyb_sec_rank": 6,
+          "lex_chunk_rank": 5,
+          "hyb_chunk_rank": 3,
+          "lex_doc_rank": 5,
+          "hyb_doc_rank": 3,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-042",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 3,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 6,
+          "hyb_doc_rank": 4,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-043",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 1,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-044",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 15,
+          "hyb_chunk_rank": 7,
+          "lex_doc_rank": 3,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-045",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": 26,
+          "lex_doc_rank": 7,
+          "hyb_doc_rank": 4,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 1,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-046",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-047",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-048",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 2,
+          "hyb_doc_rank": 2,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-049",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-050",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": null,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-051",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 2,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-052",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 7,
+          "hyb_chunk_rank": 5,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-053",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 2,
+          "hyb_chunk_rank": 1,
+          "lex_doc_rank": 1,
+          "hyb_doc_rank": 1,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-054",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 50,
+          "hyb_chunk_rank": null,
+          "lex_doc_rank": 8,
+          "hyb_doc_rank": 4,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        },
+        {
+          "qid": "SD-055",
+          "lex_sec_rank": null,
+          "hyb_sec_rank": null,
+          "lex_chunk_rank": 3,
+          "hyb_chunk_rank": 3,
+          "lex_doc_rank": 9,
+          "hyb_doc_rank": 12,
+          "new_section_evidence": 0,
+          "new_chunk_evidence": 0,
+          "new_doc_evidence": 0
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,890 @@
+# Ziru retrieval evaluation set — SecDocs corpus
+# Generated from MinerU output (localhost:8000, backend=pipeline).
+# Each query defines the returns a correct Ziru retrieval MUST produce.
+version: 1
+corpus:
+  base_dir: "../"
+  parsed_dir: "../parsed"
+  attribute_keys: ["topic", "branch", "division", "section"]
+
+grading:
+  # A query passes only if ALL of the following hold for the top-k results:
+  # 1. every document in expect.documents appears in the returned documents;
+  # 2. every section path in expect.sections is matched by some returned
+  #    section path, segment-wise: each expected heading segment appears in
+  #    the returned " / "-joined path (order-insensitive);
+  # 3. for every chunk in expect.chunks, at least one returned chunk has the
+  #    same type and its content contains text_substr (case-insensitive);
+  # 4. none of expect.must_not_documents appears in the returned documents.
+  top_k: 8
+  match_section_path: segment
+
+queries:
+  # ---------------------------------------------------------------- Cloud
+  - id: SD-001
+    query: "What are the four cloud deployment models?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Cloud Computing Security_EN.pdf"
+      sections:
+        - "Cloud Computing Security / 3. Introduction to Cloud Computing Security / 3.4 Cloud Deployment Models"
+      chunks:
+        - type: text
+          text_substr: "There are four typical types of cloud deployment models"
+      must_not_documents: []
+    note: "Public, Private, Community, Hybrid — section 3.4."
+
+  - id: SD-002
+    query: "What are the three cloud service models and who controls what in each?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Cloud Computing Security_EN.pdf"
+      sections:
+        - "Cloud Computing Security / 3. Introduction to Cloud Computing Security / 3.3 Cloud Service Models"
+      chunks:
+        - type: text
+          text_substr: "There are three typical types of cloud service models"
+      must_not_documents: []
+    note: "IaaS, PaaS, SaaS — section 3.3."
+
+  - id: SD-003
+    query: "Who is responsible for security in a cloud service model?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Cloud Computing Security_EN.pdf"
+      sections:
+        - "Cloud Computing Security / 4. Cloud Security Overview / 4.1 Cloud Service Model and Information Security"
+      chunks:
+        - type: text
+          text_substr: "Shared responsibility is an important concept"
+      must_not_documents: []
+    note: "No single party takes all responsibilities; shared responsibility — section 4.1."
+
+  - id: SD-004
+    query: "What security controls should be applied to virtualisation in the cloud?"
+    intent: control_list
+    filters: {}
+    expect:
+      documents:
+        - "PG for Cloud Computing Security_EN.pdf"
+      sections:
+        - "Cloud Computing Security / 5. Security Consideration and Controls for Cloud Services / 5.9.2 Virtualisation Security"
+      chunks:
+        - type: table
+          text_substr: "Keep the host OS thin and hardened"
+      must_not_documents: []
+    note: "Virtualisation controls are tabulated in section 5.9.2."
+
+  - id: SD-005
+    query: "How should a B/D manage identity and access for cloud services?"
+    intent: control_list
+    filters: {}
+    expect:
+      documents:
+        - "PG for Cloud Computing Security_EN.pdf"
+      sections:
+        - "Cloud Computing Security / 5. Security Consideration and Controls for Cloud Services / 5.5 Access Control"
+      chunks:
+        - type: table
+          text_substr: "Identity and Access Management (IAM) architecture"
+        - type: table
+          text_substr: "Ask for strong authentication options"
+      must_not_documents: []
+    note: "IAM architecture + strong authentication — section 5.5."
+
+  # ---------------------------------------------------------------- G3
+  - id: SD-006
+    query: "What rules should users follow when choosing a password?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "G3_EN.pdf"
+      sections:
+        - "IT Security Guidelines / 11. ACCESS CONTROL / 11.4 System and Application Access Control / (c) Password Selection"
+      chunks:
+        - type: text
+          text_substr: "Do not use your login name in any form"
+        - type: text
+          text_substr: "Do use passphrases"
+      must_not_documents: []
+    note: "Password selection DOs and DON'Ts — G3 section 11.4(c), pages 55-56."
+
+  - id: SD-007
+    query: "How should classified information be erased from storage media before disposal or reuse?"
+    intent: procedure
+    filters: {}
+    expect:
+      documents:
+        - "G3_EN.pdf"
+      sections:
+        - "IT Security Guidelines / 10. ASSET MANAGEMENT / 10.3 Storage Media Handling / (b) Information Erasure"
+      chunks:
+        - type: text
+          text_substr: "overwriting ALL addressable locations"
+        - type: text
+          text_substr: "Degaussing or demagnetising"
+      must_not_documents: []
+    note: "Sanitisation (overwrite/degauss) vs physical destruction — G3 section 10.3(b), pages 47-49."
+
+  - id: SD-008
+    query: "Who is the Departmental IT Security Officer and what are their responsibilities?"
+    intent: role
+    filters: {}
+    expect:
+      documents:
+        - "G3_EN.pdf"
+      sections:
+        - "IT Security Guidelines / 5. GOVERNMENT ORGANISATION STRUCTURE ON INFORMATION SECURITY / 5.2.1 Departmental IT Security Officer (DITSO)"
+      chunks:
+        - type: text
+          text_substr: "appoint an officer at D3 level or above"
+      must_not_documents: []
+    note: "DITSO appointment and duties — G3 section 5.2.1, page 24-25."
+
+  - id: SD-009
+    query: "Which offices coordinate government-wide information security incident response?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "G3_EN.pdf"
+      sections:
+        - "IT Security Guidelines / 5. GOVERNMENT ORGANISATION STRUCTURE ON INFORMATION SECURITY / 5.1.3 Government Information Security Incident Response Office (GIRO)"
+        - "IT Security Guidelines / 5. GOVERNMENT ORGANISATION STRUCTURE ON INFORMATION SECURITY / 5.1.4 Government Computer Emergency Response Team Hong Kong (GovCERT.HK)"
+      chunks:
+        - type: text
+          text_substr: "Maintain a central inventory and oversee the handling of all information security incidents"
+      must_not_documents: []
+    note: "GIRO functions and GovCERT.HK — G3 sections 5.1.3-5.1.4, page 23."
+
+  # Negative / scope check: a query that should NOT return cloud doc when
+  # filtering is applied, to exercise profile-scoped retrieval.
+  - id: SD-010
+    query: "What are the password selection rules?"
+    intent: scope_check
+    filters:
+      topic: "it-security-guidelines"
+    expect:
+      documents:
+        - "G3_EN.pdf"
+      sections:
+        - "IT Security Guidelines / 11. ACCESS CONTROL / 11.4 System and Application Access Control / (c) Password Selection"
+      chunks:
+        - type: text
+          text_substr: "Do not use your login name in any form"
+      must_not_documents:
+        - "PG for Cloud Computing Security_EN.pdf"
+    note: "With a topic filter pointing at the general guidelines, the cloud PG must be excluded."
+
+  # -------------------------------------------------- Destruction/Disposal
+  - id: SD-011
+    query: "What are the steps for securely disposing of storage media?"
+    intent: procedure
+    filters: {}
+    expect:
+      documents:
+        - "PG for Destruction and Disposal of Storage Media_EN.pdf"
+      sections:
+        - "Destruction and Disposal of Storage Media / 2. Common Best Practices / 2.1 Plan and Execute"
+      chunks:
+        - type: text
+          text_substr: "Step 1. Identify items need to be erased or destroyed"
+      must_not_documents: []
+    note: "Seven-step disposal procedure — section 2.1, pages 6-8."
+
+  - id: SD-012
+    query: "What methods can be used to destroy data on storage media?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Destruction and Disposal of Storage Media_EN.pdf"
+      sections:
+        - "Destruction and Disposal of Storage Media / 3. Data Destruction Methods"
+      chunks:
+        - type: text
+          text_substr: "Data destruction method must be overwriting, degaussing, or physical destruction"
+      must_not_documents: []
+    note: "Overwriting, degaussing, physical destruction — section 3, pages 9-12."
+
+  # ---------------------------------------------------------------- DLP
+  - id: SD-013
+    query: "What are the three states of data in data loss prevention?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for DLP_EN.pdf"
+      sections:
+        - "Data Loss Prevention / 2. Data Loss Prevention / 2.2 Three States of Data"
+      chunks:
+        - type: text
+          text_substr: "Data at Rest"
+        - type: text
+          text_substr: "Data in Motion"
+      must_not_documents: []
+    note: "Data at Rest / Data in Use / Data in Motion — section 2.2, page 6-7."
+
+  - id: SD-014
+    query: "What are the three elements of a comprehensive DLP solution?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for DLP_EN.pdf"
+      sections:
+        - "Data Loss Prevention / 2. Data Loss Prevention / 2.3 Three Elements of DLP"
+      chunks:
+        - type: text
+          text_substr: "A comprehensive DLP solution should"
+      must_not_documents: []
+    note: "People, Process, Technology — section 2.3, page 7."
+
+  - id: SD-015
+    query: "What is the difference between network DLP and endpoint DLP systems?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for DLP_EN.pdf"
+      sections:
+        - "Data Loss Prevention / 2. Data Loss Prevention / 2.3.3 Technology / 2.3.3.1 Network DLP Systems"
+        - "Data Loss Prevention / 2. Data Loss Prevention / 2.3.3 Technology / 2.3.3.2 Endpoint DLP Systems"
+      chunks:
+        - type: text
+          text_substr: "Network DLP systems provide broad protection"
+        - type: text
+          text_substr: "Endpoint DLP systems, also known as Host-based DLP"
+      must_not_documents: []
+    note: "Network vs endpoint DLP — sections 2.3.3.1-2.3.3.2, pages 22-23."
+
+  # ---------------------------------------------------------------- IGS
+  - id: SD-016
+    query: "What components make up a recommended internet gateway architecture?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for IGS_EN.pdf"
+      sections:
+        - "Internet Gateway Security / 2. Internet Gateway Overview / 2.3 Internet Gateway Architecture Sample"
+      chunks:
+        - type: text
+          text_substr: "A firewall system, intrusion detection mechanism and malware scanning tools"
+      must_not_documents: []
+    note: "Firewall, IDS/IPS, malware scanning, DNS, web, proxy, auth, RAS — section 2.3, pages 10-12."
+
+  - id: SD-017
+    query: "What should be considered when configuring a firewall?"
+    intent: control_list
+    filters: {}
+    expect:
+      documents:
+        - "PG for IGS_EN.pdf"
+      sections:
+        - "Internet Gateway Security / 3. Firewalls / 3.1 Firewall Configuration"
+      chunks:
+        - type: text
+          text_substr: "Deny all services except those explicitly permitted"
+      must_not_documents: []
+    note: "Firewall configuration checklist — section 3.1, pages 18-19."
+
+  - id: SD-018
+    query: "What security requirements apply to VPN remote access?"
+    intent: control_list
+    filters: {}
+    expect:
+      documents:
+        - "PG for IGS_EN.pdf"
+      sections:
+        - "Internet Gateway Security / 7. Remote Access / 7.2 Virtual Private Network (VPN)"
+      chunks:
+        - type: text
+          text_substr: "Disallow dual (split) tunnelling"
+      must_not_documents: []
+    note: "VPN controls (2FA, auto-disconnect, no split tunnelling) — section 7.2, pages 32-33."
+
+  # --------------------------------------------------------------- ISIH
+  - id: SD-019
+    query: "What are the five major steps in security incident handling?"
+    intent: procedure
+    filters: {}
+    expect:
+      documents:
+        - "PG for ISIH_EN.pdf"
+      sections:
+        - "Information Security Incident Handling / 5. Overview of Steps in Security Incident Handling"
+      chunks:
+        - type: text
+          text_substr: "There are five major steps in security incident handling"
+      must_not_documents: []
+    note: "Plan & prepare → detect & report → assess & decide → respond → post-incident — section 5, pages 22-23."
+
+  - id: SD-020
+    query: "What are the three stages of responding to a security incident?"
+    intent: procedure
+    filters: {}
+    expect:
+      documents:
+        - "PG for ISIH_EN.pdf"
+      sections:
+        - "Information Security Incident Handling / Response to Security Incident"
+      chunks:
+        - type: text
+          text_substr: "The first stage of response to incidents is containment"
+      must_not_documents: []
+    note: "Containment → Eradication → Recovery — sections 9.1-9.3, pages 47-50."
+
+  - id: SD-021
+    query: "What are the functions of the Departmental Information Security Incident Response Team (ISIRT)?"
+    intent: role
+    filters: {}
+    expect:
+      documents:
+        - "PG for ISIH_EN.pdf"
+      sections:
+        - "Information Security Incident Handling / 4. Organisation Framework / 4.3 Departmental Information Security Incident Response Team (ISIRT) / 4.3.1 Functions of the ISIRT"
+      chunks:
+        - type: text
+          text_substr: "Overall supervision and coordination of security incident handling"
+      must_not_documents: []
+    note: "ISIRT functions — section 4.3.1, page 18."
+
+  # ------------------------------------------------------ IT Outsourcing
+  - id: SD-022
+    query: "What security practices apply during the development stage of IT outsourcing?"
+    intent: control_list
+    filters: {}
+    expect:
+      documents:
+        - "PG for IT Outsourcing_EN.pdf"
+      sections:
+        - "Security Practices on IT Outsourcing / 3. Development Stage"
+      chunks:
+        - type: text
+          text_substr: "Before an outsourcing arrangement is established"
+      must_not_documents: []
+    note: "Development-stage planning — section 3, page 8."
+
+  - id: SD-023
+    query: "What security requirements should be included in an IT outsourcing contract?"
+    intent: control_list
+    filters: {}
+    expect:
+      documents:
+        - "PG for IT Outsourcing_EN.pdf"
+      sections:
+        - "Security Practices on IT Outsourcing / 4. Formalisation Stage"
+      chunks:
+        - type: text
+          text_substr: "Document in the contracts the security requirements"
+      must_not_documents: []
+    note: "Contract formalisation clauses (SLA, audit rights, NDA, incident reporting) — section 4, pages 9-10."
+
+  # ---------------------------------------------------- IT Risk Management
+  - id: SD-024
+    query: "What is the IT security risk management framework?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for IT Security Risk Management_EN.pdf"
+      sections:
+        - "IT Security Risk Management / 3. IT Security Risk Management / 3.2 IT Security Risk Management Framework"
+      chunks:
+        - type: text
+          text_substr: "Department Context Establishment"
+      must_not_documents: []
+    note: "Context → identify → analyse → treat — section 3.2, pages 10-11."
+
+  - id: SD-025
+    query: "What is the difference between risk appetite and risk tolerance?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for IT Security Risk Management_EN.pdf"
+      sections:
+        - "IT Security Risk Management / 4. Departmental Context Establishment / 4.3 Defining Risk Appetite Statement and Risk Tolerance Criteria"
+      chunks:
+        - type: text
+          text_substr: "Risk appetite reflects the B/D"
+        - type: text
+          text_substr: "Risk tolerance refers to the acceptable level"
+      must_not_documents: []
+    note: "Appetite = willingness to take risk; tolerance = acceptable variation — section 4.3, pages 15-16."
+
+  # -------------------------------------------------- IT Threat Management
+  - id: SD-026
+    query: "What are the stages of the IT security threat management framework?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for IT Security Threat Management_EN.pdf"
+      sections:
+        - "IT Security Threat Management / 3 IT security Threat Management / 3.2 IT Security Threat Management Framework"
+      chunks:
+        - type: text
+          text_substr: "A. Identification"
+      must_not_documents: []
+    note: "Identification → Monitoring → Detection → Triage → Investigation → Response — section 3.2, pages 12-14."
+
+  - id: SD-027
+    query: "How should security alerts be triaged?"
+    intent: procedure
+    filters: {}
+    expect:
+      documents:
+        - "PG for IT Security Threat Management_EN.pdf"
+      sections:
+        - "IT Security Threat Management / 7 Threat Triage and Investigation / 7.1 Prioritising Threats through a Triage Process"
+      chunks:
+        - type: text
+          text_substr: "Triage refers to the initial assessment and classification of security alerts"
+      must_not_documents: []
+    note: "Alert collection → validation → severity → iterative triage — section 7.1, pages 36-37."
+
+  # ----------------------------------------------------------------- IoT
+  - id: SD-028
+    query: "What are the security challenges of IoT devices?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for IoT Security_EN.pdf"
+      sections:
+        - "Internet of Things Security / 4. Introduction to IoT Security / 4.1 The Challenges of IoT Security"
+      chunks:
+        - type: text
+          text_substr: "Insecure default settings"
+      must_not_documents: []
+    note: "Device / data / network / application challenges — section 4.1, pages 10-12."
+
+  - id: SD-029
+    query: "What are the components of an IoT deployment?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for IoT Security_EN.pdf"
+      sections:
+        - "Internet of Things Security / 4. Introduction to IoT Security / 4.2 Components in IoT Deployments"
+      chunks:
+        - type: text
+          text_substr: "Backend server and storage"
+      must_not_documents: []
+    note: "Devices, communication, backend server/storage, applications — section 4.2, pages 13-14."
+
+  # ------------------------------------------------------------- DDoS
+  - id: SD-030
+    query: "What are the four types of measures to mitigate DDoS attacks?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Mitigation Strategy for Distributed Denial-of-Service Attacks_EN.pdf"
+      sections:
+        - "Mitigation Strategy for Distributed Denial-of-Service Attacks / 4. What are the mitigating measures?"
+      chunks:
+        - type: text
+          text_substr: "Proactive Planning"
+      must_not_documents: []
+    note: "Proactive, Preventive, Detective, Response/Recovery — section 4, pages 10-12."
+
+  - id: SD-031
+    query: "What anti-DDoS solutions are currently available?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Mitigation Strategy for Distributed Denial-of-Service Attacks_EN.pdf"
+      sections:
+        - "Mitigation Strategy for Distributed Denial-of-Service Attacks / 5. What anti-DDoS solutions are currently available?"
+      chunks:
+        - type: text
+          text_substr: "Bandwidth Throttling"
+      must_not_documents: []
+    note: "Bandwidth throttling, CDN, managed DNS, traffic scrubbing, WAF — section 5, pages 13-14."
+
+  # ------------------------------------------------------------- Mobile
+  - id: SD-032
+    query: "What are the threats to mobile devices, networks and applications?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Mobile Security_EN.pdf"
+      sections:
+        - "Mobile Security / 3. Introduction to Mobile Security / 3.1 Threats with Mobile Technology"
+      chunks:
+        - type: text
+          text_substr: "Lack of physical security controls"
+      must_not_documents: []
+    note: "Device / network / app / development threats — section 3.1, pages 8-12."
+
+  - id: SD-033
+    query: "What capabilities should a Mobile Device Management solution provide?"
+    intent: control_list
+    filters: {}
+    expect:
+      documents:
+        - "PG for Mobile Security_EN.pdf"
+      sections:
+        - "Mobile Security / 4. Mobile Device Security Management / 4.2 Mobile Device Management Solution / 4.2.1 Capabilities of Mobile Device Management Solution"
+      chunks:
+        - type: text
+          text_substr: "User and Device Authentication"
+      must_not_documents: []
+    note: "MDM capabilities (deploy, patch, audit, wipe, containerisation) — section 4.2.1, pages 20-22."
+
+  # ---------------------------------------------------- Penetration Testing
+  - id: SD-034
+    query: "What is the difference between white-box, grey-box and black-box penetration testing?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Penetration Testing_EN.pdf"
+      sections:
+        - "Penetration Testing / 2. Overview of Penetration Testing / 2.1.2 Penetration Testing Approach"
+      chunks:
+        - type: text
+          text_substr: "White-box testing"
+      must_not_documents: []
+    note: "White-box / grey-box / black-box approaches — section 2.1.2, page 8."
+
+  - id: SD-035
+    query: "What are the steps of a penetration testing process?"
+    intent: procedure
+    filters: {}
+    expect:
+      documents:
+        - "PG for Penetration Testing_EN.pdf"
+      sections:
+        - "Penetration Testing / 3. Penetration Testing Process / 3.1 Penetration Testing Steps"
+      chunks:
+        - type: text
+          text_substr: "common activities that should be performed before and after penetration testing"
+      must_not_documents: []
+    note: "Scope/objectives → plan → perform (pre-attack/attack/post-attack) → report → follow-up — section 3, pages 12-18."
+
+  # --------------------------------------------------------------- SRAA
+  - id: SD-036
+    query: "What is the difference between security risk assessment and security audit?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for SRAA_EN.pdf"
+      sections:
+        - "Security Risk Assessment & Audit / 3. Introduction to Security Risk Assessment and Audit / 3.2 Security Risk Assessment vs Security Audit"
+      chunks:
+        - type: text
+          text_substr: "Both the security risk assessment and the security audit are on-going processes"
+      must_not_documents: []
+    note: "Assessment identifies/analyses/evaluates risk; audit checks compliance — section 3.2, page 10."
+
+  - id: SD-037
+    query: "What are the steps in a security risk assessment exercise?"
+    intent: procedure
+    filters: {}
+    expect:
+      documents:
+        - "PG for SRAA_EN.pdf"
+      sections:
+        - "Security Risk Assessment & Audit / 4. Security Risk Assessment / 4.4 Steps in the Security Risk Assessment Exercise"
+      chunks:
+        - type: text
+          text_substr: "Risk Identification"
+      must_not_documents: []
+    note: "Identify → analyse → evaluate → treat → monitor — section 4.4, pages 17-45."
+
+  # ----------------------------------------------------------------- USB
+  - id: SD-038
+    query: "What are the security risks of USB storage devices?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Secure Use of USB Storage Devices_EN.pdf"
+      sections:
+        - "Secure Use of USB Storage Devices / 3. Security Risks and Risk Management / 3.1 Security Risks from USB Storage Devices"
+      chunks:
+        - type: text
+          text_substr: "USB storage devices, such as USB flash memory drives and external hard disks"
+      must_not_documents: []
+    note: "Data loss, theft, malware spread — section 3.1, page 8."
+
+  - id: SD-039
+    query: "How should USB storage devices containing classified information be secured?"
+    intent: control_list
+    filters: {}
+    expect:
+      documents:
+        - "PG for Secure Use of USB Storage Devices_EN.pdf"
+      sections:
+        - "Secure Use of USB Storage Devices / 4. Secure Use of USB Storage Devices / 4.2 Securing USB Storage Devices with Classified Information"
+      chunks:
+        - type: text
+          text_substr: "BitLocker"
+      must_not_documents: []
+    note: "OS built-in encryption (BitLocker / FileVault / dm-crypt) and enterprise tools — section 4.2, pages 11-12."
+
+  # -------------------------------------------------------------- Web 2.0
+  - id: SD-040
+    query: "What common security measures apply when designing Web 2.0 applications?"
+    intent: control_list
+    filters: {}
+    expect:
+      documents:
+        - "PG for Security Controls of Web 2.0 Application Development_EN.pdf"
+      sections:
+        - "Security Controls of Web 2.0 Application Development / 2. Common Security Measures"
+      chunks:
+        - type: text
+          text_substr: "common security measures when designing Web 2.0 applications"
+      must_not_documents: []
+    note: "Usage policy, system design, access/auth, data validation, vulnerability management — section 2, pages 8-10."
+
+  - id: SD-041
+    query: "What security measures apply to wikis and blogs?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Security Controls of Web 2.0 Application Development_EN.pdf"
+      sections:
+        - "Security Controls of Web 2.0 Application Development / 3. Wikis Related Security Measures"
+        - "Security Controls of Web 2.0 Application Development / 4. Blogs Related Security Measures"
+      chunks:
+        - type: text
+          text_substr: "Collaborative Editing"
+        - type: text
+          text_substr: "Privacy and Data Protection"
+      must_not_documents: []
+    note: "Wikis (editing/editorial controls) and blogs (privacy/configuration) — sections 3-4, pages 11-12."
+
+  # ------------------------------------------------------ Virtualisation
+  - id: SD-042
+    query: "What security controls apply when planning and configuring virtualisation?"
+    intent: control_list
+    filters: {}
+    expect:
+      documents:
+        - "PG for Security Controls on Virtualisation_EN.pdf"
+      sections:
+        - "Security Controls on Virtualisation / 2. Planning, Installation and Configuration"
+      chunks:
+        - type: text
+          text_substr: "Keep the host OS thin and hardened"
+      must_not_documents: []
+    note: "Planning/installation/config controls — section 2, pages 7-8."
+
+  - id: SD-043
+    query: "What identity and access management controls apply to virtualisation?"
+    intent: control_list
+    filters: {}
+    expect:
+      documents:
+        - "PG for Security Controls on Virtualisation_EN.pdf"
+      sections:
+        - "Security Controls on Virtualisation / 5. Identity and Access Management"
+      chunks:
+        - type: text
+          text_substr: "Enforce separation of duties"
+      must_not_documents: []
+    note: "SoD, admin accounts, critical VM start/stop, VM management tools — section 5, page 12."
+
+  # --------------------------------------------------------- Log Management
+  - id: SD-044
+    query: "What are the phases of the security log lifecycle?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Security Log Management_EN.pdf"
+      sections:
+        - "Security Log Management / 4. Security Log Management / 4.2 Security Log Lifecycle Management"
+      chunks:
+        - type: text
+          text_substr: "Security log lifecycle management consists of three processes"
+      must_not_documents: []
+    note: "Generation → Transmission → Storage and disposal — section 4.2, page 11."
+
+  - id: SD-045
+    query: "What does a SIEM do and what are its capabilities?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Security Log Management_EN.pdf"
+      sections:
+        - "Security Log Management / Security Information and Event Management"
+      chunks:
+        - type: text
+          text_substr: "SIM automates the collection of event log data"
+      must_not_documents: []
+    note: "SIM + SEM; core/advanced capabilities — section 4.4 and Annex B, pages 20, 33-37."
+
+  # ------------------------------------------------------ Security by Design
+  - id: SD-046
+    query: "What is the Security by Design life cycle?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Security by Design_EN.pdf"
+      sections:
+        - "Security by Design / 3 Security by Design / 3.3 Security by Design Life Cycle and Framework"
+      chunks:
+        - type: text
+          text_substr: "The SBD life cycle aligns with the phases of the SDLC"
+      must_not_documents: []
+    note: "SBD runs parallel to the SDLC, security integrated into each phase — section 3.3, page 17."
+
+  - id: SD-047
+    query: "What are the four phases of the Security by Design framework?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Security by Design_EN.pdf"
+      sections:
+        - "Security by Design / 4 Security by Design Framework / 4.2 Framework Implementation"
+      chunks:
+        - type: text
+          text_substr: "The SBD framework consists of four major phases"
+      must_not_documents: []
+    note: "Initiation/feasibility → analysis & design → implementation → post-implementation review — section 4.2, pages 22-23."
+
+  # -------------------------------------------------------- Social Media
+  - id: SD-048
+    query: "What are the security threats to social media participants and platforms?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Social Media Security_EN.pdf"
+      sections:
+        - "Social Media Security / 4. Social Media Security Risk and Threats"
+      chunks:
+        - type: text
+          text_substr: "Stolen or Lost Login Credentials"
+      must_not_documents: []
+    note: "Participant, platform, and B/D data threats — section 4, pages 10-15."
+
+  - id: SD-049
+    query: "How should social media accounts be provisioned and decommissioned?"
+    intent: procedure
+    filters: {}
+    expect:
+      documents:
+        - "PG for Social Media Security_EN.pdf"
+      sections:
+        - "Social Media Security / 5. Social Media Security Measures and Controls / 5.1 Social Media Usage Lifecycle"
+      chunks:
+        - type: text
+          text_substr: "Decommissioning of Social Media Account"
+      must_not_documents: []
+    note: "Provision → usage policies → analytics → decommissioning — section 5.1, pages 16-18."
+
+  # ------------------------------------------ Website / Web Application
+  - id: SD-050
+    query: "What are the common threats to websites and web applications?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Website and Web Application Security_EN.pdf"
+      sections:
+        - "Website and Web Application Security / 2. Website and Web Application Security / 2.1 Website and Web Application Threats"
+      chunks:
+        - type: text
+          text_substr: "Using components with known vulnerabilities"
+      must_not_documents: []
+    note: "Known-vulnerable components, misconfiguration, defacement, injection, XSS — section 2.1, pages 8-13."
+
+  - id: SD-051
+    query: "What are the phases of the website and web application life cycle?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Website and Web Application Security_EN.pdf"
+      sections:
+        - "Website and Web Application Security / 3. Website and Web Application Life Cycle"
+      chunks:
+        - type: text
+          text_substr: "Project Initiation"
+      must_not_documents: []
+    note: "Initiation → feasibility → analysis/design → implementation → post-implementation → decommission — section 3, pages 14-30."
+
+  # ---------------------------------------------------------------- Wi-Fi
+  - id: SD-052
+    query: "What are the threats and vulnerabilities of Wi-Fi networks?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "PG for Wi-Fi Security_EN.pdf"
+      sections:
+        - "Wi-Fi Security / 4. Threats and Vulnerabilities of Wi-Fi Networks / 4.1 Threats and Vulnerabilities"
+      chunks:
+        - type: text
+          text_substr: "Evil twin (spoofing)"
+      must_not_documents: []
+    note: "AP cracking, rogue AP, evil twin, piggybacking, eavesdropping — section 4.1, pages 9-10."
+
+  - id: SD-053
+    query: "What security considerations apply when setting up a Wi-Fi network?"
+    intent: control_list
+    filters: {}
+    expect:
+      documents:
+        - "PG for Wi-Fi Security_EN.pdf"
+      sections:
+        - "Wi-Fi Security / 5. Security Considerations for setting up and operations of Wi-Fi Networks / 5.1 Security Considerations for setting up a Wi-Fi Network"
+      chunks:
+        - type: text
+          text_substr: "Wi-Fi Security Policy"
+      must_not_documents: []
+    note: "Network owner / administrator / client considerations — section 5.1, pages 11-15."
+
+  # -------------------------------------------------------------- S17
+  - id: SD-054
+    query: "What are the core security principles in the baseline IT security policy?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "S17_EN.pdf"
+      sections:
+        - "Baseline IT Security Policy / 6. CORE SECURITY PRINCIPLES"
+      chunks:
+        - type: text
+          text_substr: "Risk Based Approach"
+      must_not_documents: []
+    note: "Risk-based, security-by-design, prevent/detect/respond/recover, resilience, auditability — section 6, pages 23-24."
+
+  - id: SD-055
+    query: "What is the government organisation structure on information security?"
+    intent: fact_retrieval
+    filters: {}
+    expect:
+      documents:
+        - "S17_EN.pdf"
+      sections:
+        - "Baseline IT Security Policy / 5. GOVERNMENT ORGANISATION STRUCTURE ON INFORMATION SECURITY"
+      chunks:
+        - type: text
+          text_substr: "Information Security Management Committee (ISMC)"
+      must_not_documents: []
+    note: "ISMC, ITSWG, GIRO, GovCERT.HK, departmental roles — section 5, pages 14-22."

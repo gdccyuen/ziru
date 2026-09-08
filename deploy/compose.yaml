@@ -32,6 +32,9 @@ services:
   api:
     restart: unless-stopped
     image: ziru:local
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
     environment: &ziru_env
       MODE: api
       DATABASE_URL: postgresql+asyncpg://root:${POSTGRES_PASSWORD:-root123}@postgres:5432/ziru
@@ -106,23 +109,10 @@ services:
       redis:
         condition: service_healthy
 
-  admin:
-    restart: unless-stopped
-    image: ziru:local
-    environment:
-      MODE: admin
-      API_INTERNAL_URL: http://api:5005
-    ports:
-      - "${ADMIN_HOST_BIND:-127.0.0.1}:${ADMIN_HOST_PORT:-81}:3001"
-    depends_on:
-      api:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-
+  # Ziru.1 Phase 1 consolidation: the unified app is served here. It exposes all
+  # five role-gated tabs (Query / Admin / Attributes / Jobs / Document Intake),
+  # and the Admin tab includes the former admin console's users, API-keys and
+  # webhooks screens.
   webui:
     restart: unless-stopped
     image: ziru:local

@@ -1,16 +1,59 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
-import { ApiError, api, originalFileUrl, type AttributeEntry, type DocumentItem } from "@/lib/api";
-import { getCorpusScope, setCorpusScope, subscribeCorpusScope, type CorpusScope } from "@/lib/corpus-scope";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  ApiError,
+  api,
+  originalFileUrl,
+  type AttributeEntry,
+  type DocumentItem,
+  type RetrievalResult,
+} from "@/lib/api";
+import {
+  getCorpusScope,
+  setCorpusScope,
+  subscribeCorpusScope,
+  type CorpusScope,
+} from "@/lib/corpus-scope";
 import { formatDateTime } from "@/lib/format";
+import { ChatChunkPane } from "@/components/chat-chunk-pane";
+
+/** Built-in/system attribute keys, hidden from the hover tooltip. */
+const SYSTEM_ATTR_KEYS = new Set([
+  "createBy",
+  "createTime",
+  "fileHash",
+  "originalFile",
+]);
 
 const PAGE_SIZE = 25;
+
+function statusBadge(status: string): string {
+  if (status === "done") return "text-bg-success";
+  if (status === "failed") return "text-bg-danger";
+  return "text-bg-secondary";
+}
+
+/** Build a synthetic citation so ChatChunkPane can render a doc's tree. */
+function treeCitation(document: DocumentItem): RetrievalResult {
+  return {
+    chunk_id: document.document_id,
+    chunk_type: "text",
+    content: "",
+    content_source: "content",
+    score: null,
+    asset_url: null,
+    source_chunk_path: null,
+    metadata: null,
+    source: {
+      document_id: document.document_id,
+      source_file_name: document.source_file_name ?? document.document_id,
+      section_path: null,
+    },
+  };
+}
 
 export default function DocumentsPage() {
   const searchParams = useSearchParams();
@@ -26,6 +69,26 @@ export default function DocumentsPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"filename" | "creator" | "created">(
+    "filename",
+  );
+  const [treeDoc, setTreeDoc] = useState<DocumentItem | null>(null);
+
+  const sortedDocuments = useMemo(() => {
+    const list = [...documents];
+    list.sort((a, b) => {
+      if (sortBy === "creator") {
+        return (a.creator_email ?? "").localeCompare(b.creator_email ?? "");
+      }
+      if (sortBy === "created") {
+        const ta = a.created_at ? Date.parse(a.created_at) : 0;
+        const tb = b.created_at ? Date.parse(b.created_at) : 0;
+        return ta - tb;
+      }
+      return (a.source_file_name ?? "").localeCompare(b.source_file_name ?? "");
+    });
+    return list;
+  }, [documents, sortBy]);
 
   useEffect(() => {
     void (async () => {
@@ -41,8 +104,6 @@ export default function DocumentsPage() {
   useEffect(() => subscribeCorpusScope((scope) => setCorpusScopeState(scope)), []);
 
   useEffect(() => {
-    // The list must show a spinner immediately when filters/page change; the
-    // request itself resolves in the promise chain below.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
@@ -89,76 +150,137 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-lg font-bold text-foreground">Documents</h1>
+    <div className="mb-4">
+      <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <div>
+          <h1 className="fs-4 fw-bold">Document</h1>
           {corpusScope.length > 0 ? (
-            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-              <span className="font-semibold uppercase tracking-wide">Scoped corpus</span>
+            <div className="d-flex flex-wrap align-items-center gap-1 mt-1 small text-secondary">
+              <span className="fw-semibold text-uppercase small">Scoped corpus</span>
               {corpusScope.map((filter) => (
-                <Badge key={filter.key} variant="secondary" className="text-[10px]">
+                <span key={filter.key} className="badge text-bg-secondary">
                   {filter.key}: {filter.values.join(", ")}
-                </Badge>
+                </span>
               ))}
+              {total > 0 ? (
+                <span className="ms-2">{total} document{total === 1 ? "" : "s"}</span>
+              ) : null}
             </div>
+          ) : total > 0 ? (
+            <span className="small text-secondary d-inline-block mt-1">
+              {total} document{total === 1 ? "" : "s"}
+            </span>
           ) : null}
         </div>
-        {total > 0 ? (
-          <p className="text-xs text-muted-foreground">{total} document{total === 1 ? "" : "s"}</p>
-        ) : null}
+        <div className="dropdown">
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary dropdown-toggle"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            Sort: {sortBy === "filename" ? "Filename" : sortBy === "creator" ? "Created by" : "Created date"}
+          </button>
+          <ul className="dropdown-menu dropdown-menu-end">
+            <li>
+              <button type="button" className="dropdown-item" onClick={() => setSortBy("filename")}>
+                Filename
+              </button>
+            </li>
+            <li>
+              <button type="button" className="dropdown-item" onClick={() => setSortBy("creator")}>
+                Created by (email)
+              </button>
+            </li>
+            <li>
+              <button type="button" className="dropdown-item" onClick={() => setSortBy("created")}>
+                Created date
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
+
       {attributes.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border/70 bg-background p-3">
+        <div className="d-flex flex-wrap align-items-center gap-1 border rounded-3 p-2 mb-3 bg-body-tertiary">
           {attributes.map((attribute) => (
-            <div key={attribute.key} className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs font-semibold text-foreground">{attribute.key}</span>
-              {(attribute.allowedValues ?? []).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => toggleValue(attribute.key, value)}
-                  className={"rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors" + ((selected[attribute.key] ?? []).includes(value) ? " border-primary bg-primary/10 text-primary" : " border-border text-muted-foreground hover:bg-muted")}
-                >
-                  {value}
-                </button>
-              ))}
+            <div key={attribute.key} className="d-flex flex-wrap align-items-center gap-1">
+              <span className="small fw-semibold me-1">{attribute.key}</span>
+              {(attribute.allowedValues ?? []).map((value) => {
+                const active = (selected[attribute.key] ?? []).includes(value);
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => toggleValue(attribute.key, value)}
+                    className={`btn btn-sm ${active ? "btn-primary" : "btn-outline-secondary"}`}
+                  >
+                    {value}
+                  </button>
+                );
+              })}
             </div>
           ))}
         </div>
       ) : null}
-      {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
+
+      {error ? <div className="alert alert-danger py-2">{error}</div> : null}
+
       {loading ? (
-        <div className="flex justify-center py-10"><Spinner className="size-5" /></div>
+        <div className="text-center py-5">
+          <div className="spinner-border spinner-border-sm" role="status" />
+        </div>
       ) : documents.length === 0 ? (
-        <p className="rounded-lg border border-border/70 bg-background p-6 text-center text-sm text-muted-foreground">
+        <div className="border rounded-3 p-5 text-center text-secondary">
           No documents match the current filters in your visible scope.
-        </p>
+        </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border/70 bg-background">
-          <ul className="divide-y divide-border/60">
-            {documents.map((document) => (
-              <DocumentRow
-                key={document.document_id}
-                document={document}
-                highlighted={document.document_id === highlightDocument}
-              />
-            ))}
-          </ul>
+        <div className="list-group rounded-3">
+          {sortedDocuments.map((document) => (
+            <DocumentRow
+              key={document.document_id}
+              document={document}
+              highlighted={document.document_id === highlightDocument}
+              onOpenTree={(doc) => setTreeDoc(doc)}
+            />
+          ))}
         </div>
       )}
+
       {totalPages > 1 ? (
-        <div className="flex items-center justify-between">
-          <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>
-            <ChevronLeft className="size-4" />
+        <nav className="d-flex align-items-center justify-content-between mt-3">
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            disabled={page <= 1}
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+          >
+            <ChevronLeft className="me-1" style={{ width: "1em", height: "1em" }} />
             Previous
-          </Button>
-          <span className="text-xs text-muted-foreground">Page {page} of {totalPages}</span>
-          <Button type="button" variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>
+          </button>
+          <span className="small text-secondary">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            disabled={page >= totalPages}
+            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+          >
             Next
-            <ChevronRight className="size-4" />
-          </Button>
-        </div>
+            <ChevronRight className="ms-1" style={{ width: "1em", height: "1em" }} />
+          </button>
+        </nav>
+      ) : null}
+
+      {treeDoc ? (
+        <ChatChunkPane
+          open
+          citations={[treeCitation(treeDoc)]}
+          selectedIndex={0}
+          initialMode="tree"
+          onClose={() => setTreeDoc(null)}
+        />
       ) : null}
     </div>
   );
@@ -167,50 +289,57 @@ export default function DocumentsPage() {
 function DocumentRow({
   document,
   highlighted,
+  onOpenTree,
 }: {
   document: DocumentItem;
   highlighted: boolean;
+  onOpenTree: (doc: DocumentItem) => void;
 }) {
   const attributes = document.attributes ?? {};
   const hasOriginal = Boolean(attributes["originalFile"]?.length);
-  const attributeEntries = Object.entries(attributes);
+  const manualAttrs = Object.entries(attributes).filter(
+    ([key]) => !SYSTEM_ATTR_KEYS.has(key),
+  );
+  const hoverText = manualAttrs.length
+    ? manualAttrs.map(([key, values]) => `${key}: ${values.join(", ")}`).join(" · ")
+    : undefined;
   return (
-    <li
-      className={"px-4 py-3 transition-colors" + (highlighted ? " bg-primary/5 ring-1 ring-inset ring-primary/30" : " hover:bg-muted/30")}
+    <div
+      className={`list-group-item d-flex flex-column gap-1 ${highlighted ? "bg-primary-subtle" : ""}`}
+      title={hoverText}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-2.5">
-          <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+      <div className="d-flex flex-wrap align-items-start justify-content-between gap-2">
+        <div className="d-flex align-items-start gap-2">
+          <FileText className="mt-1 text-secondary" style={{ width: "1em", height: "1em" }} />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-foreground">
+            <p className="mb-0 fw-semibold text-truncate">
               {document.source_file_name ?? document.document_id}
             </p>
-            <p className="mt-0.5 truncate font-mono text-[10px] text-muted-foreground">
-              {document.document_id} · updated {formatDateTime(document.updated_at)}
+            <p className="mb-0 small text-secondary text-truncate">
+              {document.creator_email ?? "—"} · created{" "}
+              {formatDateTime(document.created_at)}
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Badge variant="secondary" className="text-[10px]">{document.status}</Badge>
+        <div className="d-flex align-items-center gap-2">
+          <span className={`badge ${statusBadge(document.status)}`}>{document.status}</span>
+          <button
+            type="button"
+            className="btn btn-sm btn-link p-0 fw-medium link-primary"
+            onClick={() => onOpenTree(document)}
+          >
+            Tree
+          </button>
           {hasOriginal ? (
             <a
               href={originalFileUrl(document.document_id)}
-              className="text-xs font-medium text-primary hover:underline"
+              className="small fw-medium link-primary"
             >
-              View original
+              File
             </a>
           ) : null}
         </div>
       </div>
-      {attributeEntries.length > 0 ? (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {attributeEntries.map(([key, values]) => (
-            <Badge key={key} variant="outline" className="text-[10px] font-normal">
-              {key}: {values.join(", ")}
-            </Badge>
-          ))}
-        </div>
-      ) : null}
-    </li>
+    </div>
   );
 }

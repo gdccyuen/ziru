@@ -25,43 +25,42 @@ export function ChatArtifacts({
     <CollapsibleSection
       title="Artifacts"
       badge={
-        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
-          {artifacts.length}
-        </span>
+        <span className="badge text-bg-secondary">{artifacts.length}</span>
       }
-      icon={<ImageIcon className="size-3" />}
+      icon={<ImageIcon style={{ width: "1em", height: "1em" }} />}
     >
-      <div className="space-y-2">
+      <div className="d-flex flex-column gap-2">
         {artifacts.map(({ citation, index }) => {
           const isImage =
             citation.chunk_type === "image" && Boolean(citation.asset_url);
           return (
             <div
               key={citation.chunk_id ?? index}
-              className="rounded-md border border-border/50 bg-muted/30 px-2.5 py-2"
+              className="border rounded-2 px-2 py-2 bg-body-tertiary"
             >
               <button
                 type="button"
                 onClick={() => onOpenCitation(index)}
-                className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                className="d-flex align-items-center gap-1 small fw-medium mb-1 border-0 bg-transparent p-0 text-primary hover:underline"
               >
                 {citation.chunk_type === "table" ? (
-                  <Table2 className="size-3.5 shrink-0" />
+                  <Table2 style={{ width: "1em", height: "1em" }} className="flex-shrink-0" />
                 ) : (
-                  <ImageIcon className="size-3.5 shrink-0" />
+                  <ImageIcon style={{ width: "1em", height: "1em" }} className="flex-shrink-0" />
                 )}
-                <span className="truncate">{citationLabel(citation, index)}</span>
+                <span className="text-truncate">{citationLabel(citation, index)}</span>
               </button>
               {isImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={citation.asset_url ?? ""}
                   alt={citationLabel(citation, index)}
-                  className="max-h-64 w-auto rounded-md border border-border/60"
+                  className="img-fluid rounded-2 border"
+                  style={{ maxHeight: "16rem" }}
                 />
               ) : null}
               {citation.content ? (
-                <p className="mt-1.5 whitespace-pre-wrap text-[11px] leading-5 text-muted-foreground">
+                <p className="mt-2 mb-0 small text-secondary whitespace-pre-wrap">
                   {citation.content}
                 </p>
               ) : null}

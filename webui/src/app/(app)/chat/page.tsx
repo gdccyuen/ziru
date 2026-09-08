@@ -10,9 +10,6 @@ import {
   type RetrievalSettings,
 } from "@/components/retrieval-settings";
 import { ThreadSidebar } from "@/components/thread-sidebar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { clearCorpusScope, getCorpusScope, subscribeCorpusScope, type CorpusScope } from "@/lib/corpus-scope";
 
 function settingsFromThread(thread: ChatThread | null): RetrievalSettings {
@@ -312,8 +309,11 @@ export default function ChatPage() {
     DEFAULT_THREAD_TITLE;
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] min-h-[480px] overflow-hidden rounded-xl border border-border/70 bg-background">
-      <div className="hidden w-60 shrink-0 md:block">
+    <div
+      className="d-flex border rounded-3 overflow-hidden bg-body-tertiary"
+      style={{ height: "calc(100vh - 7rem)", minHeight: "480px" }}
+    >
+      <div className="d-none d-md-block border-end" style={{ width: "15rem", flexShrink: 0 }}>
         <ThreadSidebar
           threads={threads}
           threadTitles={threadDisplayTitles}
@@ -326,58 +326,61 @@ export default function ChatPage() {
           onDelete={(threadId) => handleDeleteThread(threadId)}
         />
       </div>
-      <section className="flex min-w-0 flex-1 flex-col">
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border/70 bg-background px-4 py-3">
+      <section className="d-flex flex-column flex-grow-1 min-w-0">
+        <header className="d-flex align-items-center justify-content-between gap-3 border-bottom bg-body-tertiary px-3 py-2">
           <div className="min-w-0">
-            <h2 className="truncate text-sm font-bold text-foreground">
+            <h2 className="fs-6 fw-bold text-truncate mb-0">
               {activeThreadDisplayTitle}
             </h2>
-            <p className="text-xs text-muted-foreground">
+            <p className="small text-secondary mb-0">
               {activeThread ? messageCountLabel : "Create a thread to begin"}
             </p>
           </div>
-          <Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => void handleCreateThread()} disabled={creating}>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary d-md-none"
+            onClick={() => void handleCreateThread()}
+            disabled={creating}
+          >
             New thread
-          </Button>
+          </button>
         </header>
         {error ? (
-          <p className="border-b border-destructive/20 bg-destructive/5 px-4 py-2 text-xs text-destructive">
+          <div className="alert alert-danger border-0 rounded-0 border-bottom py-2 mb-0">
             {error}
-          </p>
+          </div>
         ) : null}
         {loadingMessages ? (
-          <div className="flex flex-1 items-center justify-center">
-            <Spinner className="size-5" />
+          <div className="flex-grow-1 d-flex align-items-center justify-center">
+            <span className="spinner-border spinner-border-sm" role="status" />
           </div>
         ) : activeThread ? (
           <>
             <ChatMessageList messages={messages} pending={sending} />
             {corpusScope.length > 0 ? (
-              <div className="shrink-0 border-t border-border/70 bg-background px-4 py-2">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="border-top bg-body-tertiary px-3 py-2">
+                <div className="d-flex flex-wrap align-items-center gap-1">
+                  <span className="small fw-semibold text-uppercase text-secondary">
                     Corpus scope
                   </span>
                   {corpusScope.map((filter) => (
-                    <Badge key={filter.key} variant="secondary" className="text-[10px]">
+                    <span key={filter.key} className="badge text-bg-secondary">
                       {filter.key}: {filter.values.join(", ")}
-                    </Badge>
+                    </span>
                   ))}
-                  <Button
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="ml-auto h-6 gap-1 px-2 text-[10px]"
+                    className="btn btn-sm btn-link ms-auto py-0"
                     onClick={() => clearCorpusScope()}
                   >
-                    <X className="size-3" />
+                    <X style={{ width: "1em", height: "1em" }} className="me-1" />
                     Clear
-                  </Button>
+                  </button>
                 </div>
               </div>
             ) : null}
             {sendNotice ? (
-              <p className="shrink-0 border-t border-border/70 bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
+              <p className="small text-secondary border-top bg-body-tertiary px-3 py-2 mb-0">
                 {sendNotice}
               </p>
             ) : null}
@@ -392,13 +395,18 @@ export default function ChatPage() {
             />
           </>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-            <p className="max-w-sm text-sm text-muted-foreground">
+          <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center gap-2 px-4 text-center">
+            <p className="small text-secondary mb-0">
               Your chat threads live in the core API, scoped to your account.
             </p>
-            <Button type="button" onClick={() => void handleCreateThread()} disabled={creating}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => void handleCreateThread()}
+              disabled={creating}
+            >
               Start a new chat
-            </Button>
+            </button>
           </div>
         )}
       </section>

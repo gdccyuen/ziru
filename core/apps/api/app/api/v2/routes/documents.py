@@ -35,7 +35,7 @@ from shared.core.exceptions.domain_exceptions import (
     PermissionDeniedException,
 )
 from shared.models.database.job import Job
-from shared.models.database.user import GRADE_ADMINISTRATOR
+from shared.models.database.user import GRADE_ADMINISTRATOR, GRADE_LIBRARIAN
 from shared.models.schemas.job import JobCreateBase, JobResponse
 from shared.services.profile import (
     constraints_from_mapping,
@@ -325,7 +325,8 @@ async def list_documents_v2(
         page=page,
         page_size=page_size,
         constraints=constraints,
-        include_creator_email=is_admin,
+        include_creator_email=current_user.grade
+        in (GRADE_ADMINISTRATOR, GRADE_LIBRARIAN),
     )
 
 

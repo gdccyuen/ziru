@@ -4,10 +4,6 @@ import { useEffect, useState } from "react";
 import { ApiError, api, type ApiKey } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { ChangePasswordDialog } from "@/components/change-password-dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
 import { formatDateTime, gradeLabel, profileSummary } from "@/lib/format";
 
 export default function SettingsPage() {
@@ -32,93 +28,91 @@ export default function SettingsPage() {
     })();
   }, []);
 
+  const field = (label: string, value: React.ReactNode) => (
+    <div className="mb-2">
+      <span className="d-block small fw-semibold text-secondary">{label}</span>
+      <span className="d-block">{value}</span>
+    </div>
+  );
+
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
-      <h1 className="text-lg font-bold text-foreground">Account settings</h1>
+    <div className="mx-auto mb-4" style={{ maxWidth: "48rem" }}>
+      <h1 className="fs-4 fw-bold mb-3">Account settings</h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>Managed by your administrator.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <div className="grid gap-1">
-            <span className="text-xs font-semibold text-muted-foreground">Email</span>
-            <span>{user?.email ?? "—"}</span>
-          </div>
-          <div className="grid gap-1">
-            <span className="text-xs font-semibold text-muted-foreground">Grade</span>
-            <span className="flex items-center gap-2">
-              {user ? <Badge variant="secondary">{gradeLabel(user.grade)}</Badge> : "—"}
-            </span>
-          </div>
-          <div className="grid gap-1">
-            <span className="text-xs font-semibold text-muted-foreground">Profile scope</span>
-            <span className="text-muted-foreground">
-              {user ? profileSummary(user.profile) : "—"}
-            </span>
-          </div>
-          <div className="grid gap-1">
-            <span className="text-xs font-semibold text-muted-foreground">Member since</span>
-            <span>{user ? formatDateTime(user.created_at) : "—"}</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="card mb-3">
+        <div className="card-body">
+          <h2 className="card-title fs-5">Profile</h2>
+          <p className="card-subtitle text-secondary small">Managed by your administrator.</p>
+          {field("Email", user?.email ?? "—")}
+          {field(
+            "Grade",
+            user ? (
+              <span className="badge text-bg-secondary">{gradeLabel(user.grade)}</span>
+            ) : (
+              "—"
+            ),
+          )}
+          {field("Profile scope", user ? profileSummary(user.profile) : "—")}
+          {field("Member since", user ? formatDateTime(user.created_at) : "—")}
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Password</CardTitle>
-          <CardDescription>Self-service password change.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button type="button" variant="outline" onClick={() => setPasswordOpen(true)}>
+      <div className="card mb-3">
+        <div className="card-body">
+          <h2 className="card-title fs-5">Password</h2>
+          <p className="card-subtitle text-secondary small">Self-service password change.</p>
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={() => setPasswordOpen(true)}
+          >
             Change password
-          </Button>
-        </CardContent>
-      </Card>
+          </button>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>API keys</CardTitle>
-          <CardDescription>
-            Your keys are read-only here. Creation and revocation are handled
-            by your administrator in the console.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="card">
+        <div className="card-body">
+          <h2 className="card-title fs-5">API keys</h2>
+          <p className="card-subtitle text-secondary small">
+            Your keys are read-only here. Creation and revocation are handled by your
+            administrator in the console.
+          </p>
           {loadingKeys ? (
-            <div className="flex justify-center py-4"><Spinner className="size-4" /></div>
+            <div className="text-center py-3">
+              <span className="spinner-border spinner-border-sm" role="status" />
+            </div>
           ) : keysError ? (
-            <p className="text-sm text-destructive">{keysError}</p>
+            <p className="small text-danger">{keysError}</p>
           ) : apiKeys.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No API keys on this account.</p>
+            <p className="small text-secondary">No API keys on this account.</p>
           ) : (
-            <ul className="divide-y divide-border/60">
+            <ul className="list-group list-group-flush">
               {apiKeys.map((key) => (
-                <li key={key.id} className="flex items-center justify-between gap-3 py-2.5">
+                <li key={key.id} className="list-group-item d-flex align-items-center justify-content-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-foreground">{key.name}</p>
+                    <p className="mb-0 fw-semibold text-truncate">{key.name}</p>
                     {key.api_key ? (
-                      <p className="mt-0.5 truncate font-mono text-[10px] text-muted-foreground">{key.api_key}</p>
+                      <p className="mb-0 small text-secondary text-truncate font-monospace">
+                        {key.api_key}
+                      </p>
                     ) : null}
-                    <p className="mt-0.5 text-[10px] text-muted-foreground">
-                      Created {formatDateTime(key.created_at)} · Expires {formatDateTime(key.expires_at)}
+                    <p className="mb-0 small text-secondary">
+                      Created {formatDateTime(key.created_at)} · Expires{" "}
+                      {formatDateTime(key.expires_at)}
                     </p>
                   </div>
-                  <Badge variant={key.is_active ? "secondary" : "outline"} className="text-[10px]">
+                  <span className={`badge ${key.is_active ? "text-bg-secondary" : "text-bg-light border"}`}>
                     {key.is_active ? "Active" : "Inactive"}
-                  </Badge>
+                  </span>
                 </li>
               ))}
             </ul>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <ChangePasswordDialog
-        open={passwordOpen}
-        onOpenChange={setPasswordOpen}
-      />
+      <ChangePasswordDialog open={passwordOpen} onOpenChange={setPasswordOpen} />
     </div>
   );
 }

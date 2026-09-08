@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import { Send } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   RetrievalSettingsRow,
   type RetrievalSettings,
@@ -82,9 +80,9 @@ export function ChatComposer({
   }
 
   return (
-    <div data-testid="chat-composer" className="shrink-0 border-t border-border/70 bg-background p-3">
-      <div className="flex items-end gap-2">
-        <Textarea
+    <div data-testid="chat-composer" className="border-top bg-body-tertiary p-3">
+      <div className="d-flex align-items-end gap-2">
+        <textarea
           ref={textareaRef}
           value={value}
           onChange={(event) => setValue(event.target.value)}
@@ -92,32 +90,31 @@ export function ChatComposer({
           disabled={disabled || sending}
           placeholder={placeholder}
           aria-label="Chat message"
-          className="min-h-10 max-h-[130px] flex-1 resize-none border-border/70 bg-muted/40 px-3 py-2 text-sm leading-5 shadow-none focus-visible:ring-1"
           rows={1}
+          className="form-control flex-grow-1"
+          style={{ minHeight: "2.5rem", maxHeight: "130px", resize: "none" }}
         />
-        <Button
+        <button
           type="button"
-          variant="default"
-          size="sm"
-          className="h-10 shrink-0 gap-1.5 rounded-md px-4"
+          className="btn btn-primary"
           disabled={!canSend}
           onClick={() => void handleSend()}
           aria-label="Send message"
         >
-          <Send className="size-4" />
-          <span className="hidden sm:inline">{sending ? "Sending" : "Send"}</span>
-        </Button>
+          <Send style={{ width: "1em", height: "1em" }} className="me-1" />
+          <span className="d-none d-sm-inline">{sending ? "Sending" : "Send"}</span>
+        </button>
       </div>
       {retrievalSettings && onRetrievalSettingsChange ? (
         <RetrievalSettingsRow
-          className="mt-1.5 px-0.5 py-0.5"
+          className="mt-2"
           value={retrievalSettings}
           onChange={onRetrievalSettingsChange}
           onSelectPrompt={handleSelectPrompt}
           disabled={disabled || sending}
         />
       ) : null}
-      <p className="mt-1.5 text-[10px] text-muted-foreground">
+      <p className="small text-secondary mb-0 mt-2">
         Enter to send · Shift+Enter for a new line
       </p>
     </div>

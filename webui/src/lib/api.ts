@@ -66,6 +66,7 @@ export type DocumentItem = {
   created_at: string | null;
   updated_at: string | null;
   archived_at: string | null;
+  creator_email?: string | null;
   attributes?: Record<string, string[]>;
 };
 
@@ -250,6 +251,75 @@ export function originalFileUrl(documentId: string): string {
   return `/api/v2/documents/${encodeURIComponent(documentId)}/file/original`;
 }
 
+export type UsersResponse = {
+  users: User[];
+  total?: number;
+};
+
+export type JobItem = {
+  job_id: string;
+  document_id: string | null;
+  status: string;
+  source_type: string;
+  data_id: string | null;
+  created_at: string;
+  progress: Record<string, unknown> | null;
+  error: unknown;
+  result: Record<string, unknown> | null;
+  result_url: string | null;
+  result_url_expires_at: string | null;
+  file_name: string | null;
+  file_extension: string | null;
+  model: string | null;
+  ocr_enabled: boolean | null;
+  duration_seconds: number | null;
+  estimated_duration_s: number | null;
+};
+
+export type JobsResponse = {
+  jobs: JobItem[];
+  total: number;
+  page?: number;
+  page_size?: number;
+  total_pages?: number;
+};
+
+export type WebhookLog = {
+  id: string;
+  job_id: string | null;
+  webhook_url: string | null;
+  attempt_number: number | null;
+  request_payload: Record<string, unknown> | null;
+  signature: string | null;
+  idempotency_key: string | null;
+  response_status_code: number | null;
+  response_body: string | null;
+  error_message: string | null;
+  duration_ms: number | null;
+  created_at: string;
+};
+
+export type WebhookLogsResponse = {
+  logs: WebhookLog[];
+  total: number;
+  page: number;
+  page_size: number;
+};
+
+export type WebhookSecret = {
+  id: string;
+  endpoint: string | null;
+  secret_masked: string;
+  status: string;
+  created_at: string;
+  secret?: string;
+};
+
+export type WebhookSecretsResponse = {
+  secrets: WebhookSecret[];
+  total: number;
+};
+
 export const api = {
   me: () => apiRequest<User>("/v1/auth/me"),
   login: (email: string, password: string) =>
@@ -265,6 +335,56 @@ export const api = {
       body: JSON.stringify({ old_password, new_password }),
     }),
   attributes: () => apiRequest<AttributeEntry[]>("/v2/attributes"),
+  createAttribute: (key: string, allowedValues: string[]) =>
+    apiRequest<AttributeEntry>("/v2/attributes", {
+      method: "POST",
+      body: JSON.stringify({ key, allowedValues }),
+    }),
+  updateAttribute: (key: string, allowedValues: string[]) =>
+    apiRequest<AttributeEntry>(`/v2/attributes/${encodeURIComponent(key)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ allowedValues }),
+    }),
+  deleteAttribute: (key: string) =>
+    apiRequest<{ deleted: string }>(`/v2/attributes/${encodeURIComponent(key)}`, {
+      method: "DELETE",
+    }),
+  users: (params: { page?: number; page_size?: number } = {}) => {
+    const search = new URLSearchParams();
+    if (params.page !== undefined) search.set("page", String(params.page));
+    if (params.page_size !== undefined)
+      search.set("page_size", String(params.page_size));
+    const qs = search.toString();
+    return apiRequest<UsersResponse>("/v2/users" + (qs ? "?" + qs : ""));
+  },
+  jobs: (params: {
+    page?: number;
+    page_size?: number;
+    job_status?: string;
+  } = {}) => {
+    const search = new URLSearchParams();
+    if (params.page !== undefined) search.set("page", String(params.page));
+    if (params.page_size !== undefined)
+      search.set("page_size", String(params.page_size));
+    if (params.job_status !== undefined)
+      search.set("job_status", params.job_status);
+    const qs = search.toString();
+    return apiRequest<JobsResponse>("/v2/jobs" + (qs ? "?" + qs : ""));
+  },
+  uploadDocument: (formData: FormData) =>
+    apiRequest<{ job_id: string }>("/v2/documents", {
+      method: "POST",
+      body: formData,
+    }),
+  webhookLogs: (params: { page?: number; page_size?: number } = {}) => {
+    const search = new URLSearchParams();
+    if (params.page !== undefined) search.set("page", String(params.page));
+    if (params.page_size !== undefined) search.set("page_size", String(params.page_size));
+    const qs = search.toString();
+    return apiRequest<WebhookLogsResponse>("/v1/webhooks/logs" + (qs ? "?" + qs : ""));
+  },
+  webhookSecrets: () =>
+    apiRequest<WebhookSecretsResponse>("/v1/webhooks/secrets"),
   search: (input: {
     query: string;
     filters: AttributeFilter[];

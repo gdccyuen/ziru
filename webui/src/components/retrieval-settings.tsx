@@ -2,22 +2,6 @@
 
 import { useEffect, useState, type ReactElement } from "react";
 import { FileText, WandSparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Slider } from "@/components/ui/slider";
-import { Spinner } from "@/components/ui/spinner";
-import { Switch } from "@/components/ui/switch";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 export type RetrievalSettings = {
   rerank: boolean;
@@ -66,9 +50,7 @@ export function RetrievalSettingsRow({
       .then((data: unknown) => {
         if (cancelled) return;
         setTemplates(
-          Array.isArray(data)
-            ? data.filter(isPromptTemplate)
-            : [],
+          Array.isArray(data) ? data.filter(isPromptTemplate) : [],
         );
       })
       .catch(() => {
@@ -90,61 +72,64 @@ export function RetrievalSettingsRow({
   return (
     <div
       data-testid="retrieval-settings"
-      className={
-        "flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-medium text-muted-foreground" +
-        (className ? " " + className : "")
-      }
+      className={`d-flex flex-wrap align-items-center gap-3 small ${className ?? ""}`}
     >
-      <DropdownMenu>
-        <TooltipProvider delayDuration={300}>
-          <Tooltip>
-            <DropdownMenuTrigger asChild>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  disabled={disabled}
-                  aria-label="Prompt templates"
-                  className="h-7 w-7 rounded-md p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  <WandSparkles className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-            </DropdownMenuTrigger>
-            <TooltipContent side="top">Prompt templates</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <DropdownMenuContent align="start" side="top" className="w-72">
+      <div className="dropdown">
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          data-bs-toggle="dropdown"
+          disabled={disabled}
+          aria-label="Prompt templates"
+          title="Prompt templates"
+        >
+          <WandSparkles style={{ width: "1em", height: "1em" }} />
+        </button>
+        <ul className="dropdown-menu" style={{ minWidth: "16rem" }}>
           {loadingTemplates ? (
-            <div className="flex items-center gap-2 px-2.5 py-2 text-xs text-muted-foreground">
-              <Spinner className="size-3.5" />
-              Loading templates
-            </div>
+            <li>
+              <span className="dropdown-item-text">
+                <span className="spinner-border spinner-border-sm me-2" role="status" />
+                Loading templates
+              </span>
+            </li>
+          ) : templates.length === 0 ? (
+            <li>
+              <span className="dropdown-item-text text-secondary">
+                No templates
+              </span>
+            </li>
           ) : (
             templates.map((template) => (
-              <DropdownMenuItem
-                key={template.id}
-                onSelect={() => onSelectPrompt?.(template.prompt)}
-              >
-                <FileText className="size-4" />
-                {template.title}
-              </DropdownMenuItem>
+              <li key={template.id}>
+                <button
+                  type="button"
+                  className="dropdown-item"
+                  onClick={() => onSelectPrompt?.(template.prompt)}
+                >
+                  <FileText style={{ width: "1em", height: "1em" }} className="me-2" />
+                  {template.title}
+                </button>
+              </li>
             ))
           )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </ul>
+      </div>
 
-      <label className="flex cursor-pointer items-center gap-2">
-        Rerank
-        <Switch
-          size="sm"
+      <div className="form-check form-switch d-inline-flex align-items-center gap-2 mb-0">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          role="switch"
+          id="rrf-rerank"
           checked={value.rerank}
           disabled={disabled}
-          onCheckedChange={(checked) => update({ rerank: Boolean(checked) })}
-          aria-label="Rerank retrieval results"
+          onChange={(event) => update({ rerank: event.target.checked })}
         />
-      </label>
+        <label className="form-check-label small" htmlFor="rrf-rerank">
+          Rerank
+        </label>
+      </div>
 
       <SliderControl
         ariaLabel="Top K results"
@@ -168,25 +153,23 @@ export function RetrievalSettingsRow({
         onChange={(next) => update({ internal_recall_k: next })}
       />
 
-      <TooltipProvider delayDuration={300}>
-        <Tooltip>
-          <label className="flex cursor-pointer items-center gap-2">
-            Agentic
-            <TooltipTrigger asChild>
-              <Switch
-                size="sm"
-                checked={value.use_agentic}
-                disabled={disabled}
-                onCheckedChange={(checked) =>
-                  update({ use_agentic: Boolean(checked) })
-                }
-                aria-label="Use agentic retrieval"
-              />
-            </TooltipTrigger>
-          </label>
-          <TooltipContent side="top">3-5 LLM calls per turn</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <div
+        className="form-check form-switch d-inline-flex align-items-center gap-2 mb-0"
+        title="3-5 LLM calls per turn"
+      >
+        <input
+          className="form-check-input"
+          type="checkbox"
+          role="switch"
+          id="rrf-agentic"
+          checked={value.use_agentic}
+          disabled={disabled}
+          onChange={(event) => update({ use_agentic: event.target.checked })}
+        />
+        <label className="form-check-label small" htmlFor="rrf-agentic">
+          Agentic
+        </label>
+      </div>
     </div>
   );
 }
@@ -211,21 +194,21 @@ function SliderControl({
   value: number;
 }): ReactElement {
   return (
-    <div className="flex items-center gap-2">
-      <span>{label}</span>
-      <Slider
+    <div className="d-flex align-items-center gap-2">
+      <span className="small">{label}</span>
+      <input
+        type="range"
+        className="form-range"
+        style={{ width: "6rem" }}
         aria-label={ariaLabel}
-        className="w-24"
-        disabled={disabled}
-        max={max}
         min={min}
+        max={max}
         step={step}
         value={value}
-        onValueChange={(next) =>
-          onChange(typeof next === "number" ? next : (next[0] ?? value))
-        }
+        disabled={disabled}
+        onChange={(event) => onChange(Number(event.target.value))}
       />
-      <span className="w-7 text-right font-mono text-[11px] font-semibold text-foreground">
+      <span className="small fw-semibold" style={{ minWidth: "2rem", textAlign: "right" }}>
         {value}
       </span>
     </div>

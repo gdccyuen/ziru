@@ -12,10 +12,12 @@ const PUBLIC_PATHS: readonly string[] = [
   "/login",
   "/force-change-password",
   "/favicon.ico",
+  // Bootstrap-5 unified-UI design preview (no auth needed).
+  "/ui-preview.html",
 ];
 
 const STATIC_EXTENSIONS =
-  /\.(?:svg|png|jpe?g|gif|webp|ico|woff2?|ttf|eot|css|js|map|txt|xml|webmanifest|json|pdf)$/i;
+  /\.(?:svg|png|jpe?g|gif|webp|ico|woff2?|ttf|eot|css|js|map|txt|xml|webmanifest|json|pdf|html)$/i;
 
 function isPublicPath(req: NextRequest): boolean {
   const pathname = req.nextUrl.pathname;

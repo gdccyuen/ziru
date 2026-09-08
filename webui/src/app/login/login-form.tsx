@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { ApiError, api } from "@/lib/api";
 
 export function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +18,11 @@ export function LoginForm() {
     setSubmitting(true);
     try {
       const user = await api.login(email.trim(), password);
-      router.replace(user.must_change_password ? "/force-change-password" : "/");
+      // Full-page navigation (not an SPA router.replace) so the freshly issued
+      // `ziru_session` cookie is definitely sent on the next request. This stops
+      // the "stays on the login page" bounce caused by a client-side me() race
+      // with a still-valid-but-replaced session cookie.
+      window.location.assign(user.must_change_password ? "/force-change-password" : "/");
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);

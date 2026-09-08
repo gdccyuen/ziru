@@ -8,3 +8,11 @@
 deploy/.build/
 
 .demo/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Experiment / parse-run artifacts (transient, not source)
+*.log
+docs/research/modulised/docs/samples/SecDocs/parsed/_tasks.json

@@ -22,8 +22,8 @@ export function ChatMessageList({
 }) {
   if (messages.length === 0 && !pending) {
     return (
-      <div className="flex flex-1 items-center justify-center px-6 py-12 text-center">
-        <p className="max-w-sm text-sm text-muted-foreground">
+      <div className="flex-grow-1 d-flex align-items-center justify-center px-4 py-5 text-center">
+        <p className="small text-secondary mb-0" style={{ maxWidth: "24rem" }}>
           Start a conversation to search your knowledge. Answers cite the
           passages they come from.
         </p>
@@ -41,13 +41,16 @@ export function ChatMessageList({
   });
 
   return (
-    <div className="flex-1 space-y-4 overflow-y-auto px-3 py-4 sm:px-5">
+    <div className="flex-grow-1 d-flex flex-column gap-3 overflow-auto px-3 py-3">
       {orderedMessages.map((message) => (
         <ChatBubble key={message.id} message={message} />
       ))}
       {pending ? (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="size-2 animate-pulse rounded-full bg-primary" />
+        <div className="d-flex align-items-center gap-2 small text-secondary">
+          <span
+            className="spinner-border spinner-border-sm"
+            role="status"
+          />
           Searching your knowledge…
         </div>
       ) : null}
@@ -95,11 +98,17 @@ function ChatBubble({ message }: { message: ChatMessage }) {
     <>
       <div
         className={cn(
-          "flex max-w-[85%] flex-col",
-          isUser ? "items-end" : "items-start",
+          "d-flex flex-column",
+          isUser ? "align-items-end" : "align-items-start",
         )}
+        style={{ maxWidth: "85%" }}
       >
-        <div className={cn("w-full rounded-lg border border-border/70 bg-background px-3.5 py-2.5", isUser ? "bg-primary/5" : "")}>
+        <div
+          className={cn(
+            "w-100 border rounded-3 px-3 py-2",
+            isUser ? "bg-primary-subtle" : "bg-body-tertiary",
+          )}
+        >
           {isUser ? (
             <p className="whitespace-pre-wrap text-base leading-7 text-foreground">{message.content}</p>
           ) : (
@@ -124,7 +133,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
             </div>
           )}
         </div>
-        <time className="mt-1 text-[10px] text-muted-foreground">
+        <time className="small text-secondary mt-1">
           {formatDateTime(message.created_at)}
         </time>
       </div>
@@ -154,12 +163,8 @@ function Sources({
   return (
     <CollapsibleSection
       title="Sources"
-      badge={
-        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
-          {numbered.length}
-        </span>
-      }
-      icon={<Link2 className="size-3" />}
+      badge={<span className="badge text-bg-secondary">{numbered.length}</span>}
+      icon={<Link2 style={{ width: "1em", height: "1em" }} />}
     >
       <div className="space-y-1.5">
         {numbered.map(({ citation, index }) => {
@@ -172,34 +177,34 @@ function Sources({
               key={citation.source?.document_id + "-" + index}
               id={"source-" + (index + 1)}
               className={cn(
-                "rounded-md border border-border/50 bg-muted/30 px-2.5 py-1.5",
-                selectedCitation === index && "border-primary/60 bg-primary/5",
+                "border rounded-2 px-2 py-1 bg-body-tertiary",
+                selectedCitation === index && "border-primary bg-primary-subtle",
               )}
             >
-              <div className="flex items-center gap-1.5">
-                <span className="shrink-0 text-[10px] font-semibold text-muted-foreground">
+              <div className="d-flex align-items-center gap-1">
+                <span className="small fw-semibold text-secondary flex-shrink-0">
                   {index + 1}.
                 </span>
                 <button
                   type="button"
                   onClick={() => onOpenCitation(index)}
-                  className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                  className="d-flex min-w-0 align-items-center gap-1 small fw-medium border-0 bg-transparent p-0 text-primary hover:underline"
                 >
-                  <FileText className="size-3.5 shrink-0" />
-                  <span className="truncate">{title}</span>
+                  <FileText style={{ width: "1em", height: "1em" }} className="flex-shrink-0" />
+                  <span className="text-truncate">{title}</span>
                 </button>
                 {href ? (
                   <a
                     href={href}
                     aria-label={"Open document for " + title}
-                    className="ml-auto shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    className="ms-auto flex-shrink-0 p-1 text-secondary hover:text-body"
                   >
-                    <ExternalLink className="size-3" />
+                    <ExternalLink style={{ width: "1em", height: "1em" }} />
                   </a>
                 ) : null}
               </div>
               {citation.source?.section_path ? (
-                <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                <p className="small text-secondary text-truncate mb-0">
                   {citation.source.section_path}
                 </p>
               ) : null}
@@ -207,9 +212,9 @@ function Sources({
                 <button
                   type="button"
                   onClick={() => onOpenCitation(index)}
-                  className="mt-1 block w-full text-left line-clamp-2 text-[11px] text-muted-foreground hover:text-foreground"
+                  className="mt-1 d-block w-100 text-start border-0 bg-transparent p-0 small text-secondary hover:text-body"
                 >
-                  {citation.content}
+                  <span className="line-clamp-2">{citation.content}</span>
                 </button>
               ) : null}
             </div>

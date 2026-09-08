@@ -178,7 +178,7 @@ async def test_empty_profile_returns_empty_list(
 
 
 @pytest.mark.asyncio
-async def test_creator_email_admin_only_and_admin_sees_other_creators(
+async def test_creator_email_admin_and_librarian_see_other_creators(
     api_client_factory: Callable[
         [], AbstractAsyncContextManager[AsyncClient]
     ],
@@ -252,8 +252,16 @@ async def test_creator_email_admin_only_and_admin_sees_other_creators(
         "doc_creator_lib",
         "doc_creator_other",
     }
-    for document in librarian_documents:
-        assert "creator_email" not in document
+    librarian_by_id = {
+        cast(str, document["document_id"]): document
+        for document in librarian_documents
+    }
+    assert librarian_by_id["doc_creator_lib"]["creator_email"] == (
+        "creator-librarian@contract.ziru.local"
+    )
+    assert librarian_by_id["doc_creator_other"]["creator_email"] == (
+        "creator-other@contract.ziru.local"
+    )
 
 
 @pytest.mark.asyncio

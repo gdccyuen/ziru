@@ -2,11 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search as SearchIcon } from "lucide-react";
-import { ApiError, api, originalFileUrl, type AttributeEntry, type RetrievalResult, type SearchResponse } from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  ApiError,
+  api,
+  originalFileUrl,
+  type AttributeEntry,
+  type RetrievalResult,
+  type SearchResponse,
+} from "@/lib/api";
 import {
   RETRIEVAL_DEFAULTS,
   RetrievalSettingsRow,
@@ -159,41 +162,49 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="mx-auto mb-4" style={{ maxWidth: "56rem" }}>
       {user && user.profile.length > 0 ? (
-        <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-          <Badge variant="secondary">Profile scope</Badge>
-          <span className="truncate">{profileSummary(user.profile)}</span>
+        <div className="d-flex align-items-center gap-2 border rounded-3 bg-body-tertiary px-3 py-2 small text-secondary mb-3">
+          <span className="badge text-bg-secondary">Profile scope</span>
+          <span className="text-truncate">{profileSummary(user.profile)}</span>
         </div>
       ) : null}
-      <form onSubmit={handleSearch} className="space-y-4">
-        <div className="flex gap-2">
-          <Input
+
+      <form onSubmit={handleSearch} className="d-flex flex-column gap-3">
+        <div className="d-flex gap-2">
+          <input
             ref={queryRef}
             aria-label="Search query"
+            className="form-control form-control-lg"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search your knowledge corpus…"
-            className="h-11 flex-1"
           />
-          <Button type="submit" className="h-11 gap-1.5" disabled={searching}>
-            {searching ? <Spinner className="size-4" /> : <SearchIcon className="size-4" />}
+          <button type="submit" className="btn btn-primary btn-lg" disabled={searching}>
+            {searching ? (
+              <span className="spinner-border spinner-border-sm me-1" role="status" />
+            ) : (
+              <SearchIcon className="me-1" style={{ width: "1em", height: "1em" }} />
+            )}
             Search
-          </Button>
+          </button>
         </div>
-        <RetrievalSettingsRow
-          className="rounded-lg border border-border/70 bg-background px-3 py-2"
-          value={retrievalSettings}
-          onChange={setRetrievalSettings}
-          onSelectPrompt={handleSelectPrompt}
-          disabled={searching}
-        />
+
+        <div className="border rounded-3 p-2 bg-body-tertiary">
+          <RetrievalSettingsRow
+            value={retrievalSettings}
+            onChange={setRetrievalSettings}
+            onSelectPrompt={handleSelectPrompt}
+            disabled={searching}
+          />
+        </div>
+
         {loadingAttributes ? (
-          <p className="text-xs text-muted-foreground">Loading attribute filters…</p>
+          <p className="small text-secondary">Loading attribute filters…</p>
         ) : attributes.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No attribute filters configured yet.</p>
+          <p className="small text-secondary">No attribute filters configured yet.</p>
         ) : (
-          <div className="grid gap-3 rounded-lg border border-border/70 bg-background p-3">
+          <div className="border rounded-3 p-3 d-flex flex-column gap-3">
             {attributes.map((attribute) => (
               <AttributeFilterRow
                 key={attribute.key}
@@ -208,13 +219,12 @@ export default function SearchPage() {
             ))}
           </div>
         )}
-        {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
+
+        {error ? <div className="alert alert-danger py-2">{error}</div> : null}
       </form>
+
       {result ? (
-        <SearchResults
-          result={result}
-          documentAttributes={documentAttributes}
-        />
+        <SearchResults result={result} documentAttributes={documentAttributes} />
       ) : null}
     </div>
   );
@@ -234,25 +244,31 @@ function AttributeFilterRow({
   onFreeText: (value: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className="w-28 shrink-0 text-xs font-semibold text-foreground">{attribute.key}</span>
+    <div className="d-flex flex-wrap align-items-center gap-2">
+      <span className="small fw-semibold" style={{ minWidth: "8rem" }}>
+        {attribute.key}
+      </span>
       {attribute.allowedValues ? (
-        attribute.allowedValues.map((value) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => onToggle(value)}
-            className={"rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors" + (selected.includes(value) ? " border-primary bg-primary/10 text-primary" : " border-border text-muted-foreground hover:bg-muted")}
-          >
-            {value}
-          </button>
-        ))
+        attribute.allowedValues.map((value) => {
+          const active = selected.includes(value);
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onToggle(value)}
+              className={`btn btn-sm ${active ? "btn-primary" : "btn-outline-secondary"}`}
+            >
+              {value}
+            </button>
+          );
+        })
       ) : (
-        <Input
+        <input
+          className="form-control form-control-sm"
+          style={{ maxWidth: "15rem" }}
           value={freeText}
           onChange={(event) => onFreeText(event.target.value)}
           placeholder="Values (comma-separated)"
-          className="h-7 w-56 text-xs"
         />
       )}
     </div>
@@ -267,23 +283,20 @@ function SearchResults({
   documentAttributes: Record<string, Record<string, string[]>>;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="d-flex flex-column gap-3 mt-4">
       {result.evidence_text ? (
-        <div className="rounded-lg border border-border/70 bg-background p-4">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Evidence
-          </p>
-          <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">
-            {result.evidence_text}
-          </p>
+        <div className="border rounded-3 p-3">
+          <p className="mb-1 small text-uppercase fw-semibold text-secondary">Evidence</p>
+          <p className="mb-0 whitespace-pre-wrap small lh-base">{result.evidence_text}</p>
         </div>
       ) : null}
-      <div className="space-y-2">
-        <p className="text-xs text-muted-foreground">
-          {result.results.length} result{result.results.length === 1 ? "" : "s"} · router: {result.router_used}
+      <div className="d-flex flex-column gap-2">
+        <p className="small text-secondary mb-0">
+          {result.results.length} result{result.results.length === 1 ? "" : "s"} · router:{" "}
+          {result.router_used}
         </p>
         {result.results.length === 0 ? (
-          <p className="rounded-lg border border-border/70 bg-background p-4 text-sm text-muted-foreground">
+          <p className="border rounded-3 p-3 small text-secondary">
             No matching knowledge found in your visible corpus.
           </p>
         ) : (
@@ -291,7 +304,11 @@ function SearchResults({
             <ResultCard
               key={item.chunk_id ?? index}
               item={item}
-              attributes={item.source?.document_id ? documentAttributes[item.source.document_id] : undefined}
+              attributes={
+                item.source?.document_id
+                  ? documentAttributes[item.source.document_id]
+                  : undefined
+              }
             />
           ))
         )}
@@ -311,37 +328,34 @@ function ResultCard({
   const documentId = source?.document_id ?? null;
   const hasOriginal = Boolean(attributes?.["originalFile"]?.length);
   return (
-    <div className="rounded-lg border border-border/70 bg-background p-3.5">
-      <div className="flex items-start justify-between gap-3">
+    <div className="border rounded-3 p-3">
+      <div className="d-flex flex-wrap align-items-start justify-content-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">
+          <p className="mb-0 fw-semibold text-truncate">
             {source?.source_file_name ?? documentId ?? "Unknown source"}
           </p>
           {source?.section_path ? (
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">{source.section_path}</p>
+            <p className="mb-0 small text-secondary text-truncate">{source.section_path}</p>
           ) : null}
         </div>
         {item.score !== null && item.score !== undefined ? (
-          <Badge variant="secondary" className="shrink-0 text-[10px]">{item.score.toFixed(3)}</Badge>
+          <span className="badge text-bg-secondary">{item.score.toFixed(3)}</span>
         ) : null}
       </div>
       {item.content ? (
-        <p className="mt-2 line-clamp-4 text-sm leading-6 text-muted-foreground">{item.content}</p>
+        <p className="mt-2 mb-0 small text-secondary line-clamp-4">{item.content}</p>
       ) : null}
-      <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
+      <div className="mt-2 d-flex flex-wrap align-items-center gap-2 small">
         {documentId ? (
           <a
             href={"/documents?document=" + encodeURIComponent(documentId)}
-            className="font-medium text-primary hover:underline"
+            className="link-primary fw-medium"
           >
             View document
           </a>
         ) : null}
         {hasOriginal && documentId ? (
-          <a
-            href={originalFileUrl(documentId)}
-            className="font-medium text-primary hover:underline"
-          >
+          <a href={originalFileUrl(documentId)} className="link-primary fw-medium">
             View original
           </a>
         ) : null}

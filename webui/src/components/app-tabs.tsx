@@ -2,55 +2,51 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, FileText, MessageSquare, Search } from "lucide-react";
+import {
+  FilePlus,
+  ListChecks,
+  MessageSquare,
+  Tags,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { visibleTabs } from "@/lib/access";
+import { useAuth } from "@/lib/auth-context";
 
-const ITEMS = [
-  {
-    href: "/search",
-    label: "Search",
-    icon: Search,
-  },
-  {
-    href: "/documents",
-    label: "Documents",
-    icon: FileText,
-  },
-  {
-    href: "/chat",
-    label: "Chat",
-    icon: MessageSquare,
-  },
-  {
-    href: "/settings",
-    label: "Settings",
-    icon: BookOpen,
-  },
-] as const;
+const ICONS: Record<string, LucideIcon> = {
+  MessageSquare,
+  Users,
+  Tags,
+  ListChecks,
+  FilePlus,
+};
 
 export function AppTabs() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const tabs = visibleTabs(user);
+
   return (
-    <nav aria-label="Primary" className="flex items-center gap-1">
-      {ITEMS.map((item) => {
-        const active = pathname.startsWith(item.href);
-        const Icon = item.icon;
+    <ul className="nav nav-pills gap-1" aria-label="Primary">
+      {tabs.map((tab) => {
+        const active = pathname.startsWith(tab.href);
+        const Icon = ICONS[tab.icon];
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors",
-              active
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-          >
-            <Icon className="size-4" />
-            <span className="hidden sm:inline">{item.label}</span>
-          </Link>
+          <li className="nav-item" key={tab.id}>
+            <Link
+              href={tab.href}
+              className={cn(
+                "nav-link d-inline-flex align-items-center gap-1 text-nowrap px-2 py-1",
+                active && "active",
+              )}
+            >
+              <Icon style={{ width: "1em", height: "1em" }} />
+              <span className="d-none d-md-inline">{tab.label}</span>
+            </Link>
+          </li>
         );
       })}
-    </nav>
+    </ul>
   );
 }

@@ -20,16 +20,14 @@ export function CollapsibleSection({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <section className="border-t border-border/60">
+    <section className="border-top mt-2 pt-1">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex w-full items-center gap-1.5 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+        className="d-flex w-100 align-items-center gap-1 py-2 border-0 bg-transparent text-start small text-uppercase fw-semibold text-secondary hover:text-body"
       >
-        <ChevronDown
-          className={cn("size-3 transition-transform", open && "rotate-180")}
-        />
+        <ChevronDown className={cn("transition-transform", open && "rotate-180")} style={{ width: "1em", height: "1em" }} />
         {icon}
         <span>{title}</span>
         {badge}

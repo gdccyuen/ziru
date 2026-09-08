@@ -676,110 +676,92 @@ function ChatChunkPaneContent({
     activeChunk?.sourceFile ??
     citation?.source?.source_file_name ??
     "Unknown source";
-  const linkDocumentId = activeChunk?.documentId ?? documentId;
+
+  const toggleButton = (active: boolean, onClick: () => void, label: string) => (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`btn btn-sm ${active ? "btn-primary" : "btn-outline-secondary"}`}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <div
+      className="modal fade show d-block"
       role="dialog"
       aria-modal="true"
       aria-label="Source chunk"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-3 backdrop-blur-sm sm:p-6"
+      tabIndex={-1}
     >
-      <div className="flex h-full max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-background shadow-xl">
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border/70 px-4 py-3">
-          <div className="min-w-0">
-            <h3 className="truncate text-sm font-bold text-foreground">{title}</h3>
-            {linkDocumentId ? (
-              <a
-                href={"/documents?document=" + encodeURIComponent(linkDocumentId)}
-                className="text-[10px] text-muted-foreground hover:text-foreground"
-              >
-                {linkDocumentId}
-              </a>
-            ) : null}
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <div
-              role="group"
-              aria-label="Chunk view"
-              className="flex rounded-lg border border-border bg-muted/40 p-0.5"
-            >
-              <button
-                type="button"
-                aria-pressed={mode === "text"}
-                onClick={() => setMode("text")}
-                className={viewToggleClassName(mode === "text")}
-              >
-                Text
-              </button>
-              <button
-                type="button"
-                aria-pressed={mode === "tree"}
-                onClick={() => setMode("tree")}
-                className={viewToggleClassName(mode === "tree")}
-              >
-                Tree
-              </button>
+      <div className="modal-dialog modal-dialog-centered modal-lg">
+        <div className="modal-content" style={{ maxHeight: "85vh" }}>
+          <div className="modal-header py-2 d-flex justify-content-between align-items-center">
+            <div className="min-w-0 flex-grow-1 me-2">
+              <h5 className="modal-title fs-6 text-truncate">{title}</h5>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close source chunk"
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              <X className="size-4" />
-            </button>
+            <div className="d-flex align-items-center gap-2 flex-shrink-0">
+              <div role="group" aria-label="Chunk view" className="btn-group btn-group-sm">
+                {toggleButton(mode === "text", () => setMode("text"), "Text")}
+                {toggleButton(mode === "tree", () => setMode("tree"), "Tree")}
+              </div>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={onClose}
+                aria-label="Close source chunk"
+              />
+            </div>
           </div>
-        </header>
 
-        {citation || activeChunk ? (
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-            {mode === "tree" ? (
-              renderTree()
-            ) : (
-              <>
-                {sectionBreadcrumb(breadcrumbPath).length > 0 ? (
-                  <div className="mb-3 flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
-                    {sectionBreadcrumb(breadcrumbPath).map((part, index) => (
-                      <span key={index} className="flex items-center gap-1">
-                        {index > 0 ? <span>/</span> : null}
-                        <span>{part}</span>
+          <div className="modal-body overflow-auto">
+            {citation || activeChunk ? (
+              mode === "tree" ? (
+                renderTree()
+              ) : (
+                <>
+                  {sectionBreadcrumb(breadcrumbPath).length > 0 ? (
+                    <nav aria-label="breadcrumb" className="mb-2">
+                      <ol className="breadcrumb mb-0 small">
+                        {sectionBreadcrumb(breadcrumbPath).map((part, index) => (
+                          <li key={index} className="breadcrumb-item">
+                            {part}
+                          </li>
+                        ))}
+                      </ol>
+                    </nav>
+                  ) : null}
+
+                  <div className="d-flex flex-wrap align-items-center gap-2 mb-2 small text-secondary">
+                    {chunkType ? (
+                      <span className="badge text-bg-secondary">{chunkType}</span>
+                    ) : null}
+                    {!activeChunk && typeof citation?.score === "number" ? (
+                      <span className="font-monospace">
+                        score {citation.score.toFixed(4)}
                       </span>
-                    ))}
+                    ) : null}
                   </div>
-                ) : null}
 
-                <div className="mb-3 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
-                  {chunkType ? (
-                    <span className="rounded-full bg-muted px-2 py-0.5">
-                      {chunkType}
-                    </span>
-                  ) : null}
-                  {!activeChunk && typeof citation?.score === "number" ? (
-                    <span className="font-mono">
-                      score {citation.score.toFixed(4)}
-                    </span>
-                  ) : null}
-                </div>
+                  <div className="border rounded-3 bg-body-tertiary p-3">
+                    <p className="mb-0 small lh-base whitespace-pre-wrap">{content}</p>
+                  </div>
 
-                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
-                  <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">
-                    {content}
-                  </p>
-                </div>
-
-                <div className="mt-3 flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                  <FileText className="size-3" />
-                  <span>{sourceFile}</span>
-                </div>
-              </>
+                  <div className="mt-2 d-flex align-items-center gap-1 small text-secondary">
+                    <FileText style={{ width: "1em", height: "1em" }} />
+                    <span>{sourceFile}</span>
+                  </div>
+                </>
+              )
+            ) : (
+              <div className="d-flex align-items-center justify-center small text-secondary" style={{ minHeight: "10rem" }}>
+                No source selected.
+              </div>
             )}
           </div>
-        ) : (
-          <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-            No source selected.
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

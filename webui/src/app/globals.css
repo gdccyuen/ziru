@@ -689,3 +689,54 @@
     }
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Bootstrap-5 token skin system (Ziru.1 plan §3.2)                    */
+/* data-skin is set on <html> by <SkinSwitcher />; each skin overrides  */
+/* the Bootstrap-5 token names AND maps onto the app's primary/ring     */
+/* tokens so the whole shell restyles together.                          */
+/* ------------------------------------------------------------------ */
+:root {
+  --bs-primary: #0d6efd;
+  --bs-body-bg: #ffffff;
+  --bs-body-color: #212529;
+  --bs-border-color: #dee2e6;
+}
+
+/* html.dark wins over Bootstrap's :root, which is injected into <head> AFTER
+   globals.css by the CDN fallback. Without the extra element selector the
+   modal/body surfaces stay white while Tailwind switches its --foreground to
+   white → white-on-white in the chunk pane. */
+html.dark {
+  --bs-body-bg: #0b0f14;
+  --bs-body-color: #e9ecef;
+  --bs-border-color: #343a40;
+}
+
+html[data-skin="blue"] {
+  --primary: #0d6efd;
+  --primary-foreground: #ffffff;
+  --ring: #0d6efd;
+  --bs-primary: #0d6efd;
+}
+
+html[data-skin="green"] {
+  --primary: #198754;
+  --primary-foreground: #ffffff;
+  --ring: #198754;
+  --bs-primary: #198754;
+}
+
+html[data-skin="purple"] {
+  --primary: #6f42c1;
+  --primary-foreground: #ffffff;
+  --ring: #6f42c1;
+  --bs-primary: #6f42c1;
+}
+
+html[data-skin="warm"] {
+  --primary: #b85c38;
+  --primary-foreground: #ffffff;
+  --ring: #b85c38;
+  --bs-primary: #b85c38;
+}

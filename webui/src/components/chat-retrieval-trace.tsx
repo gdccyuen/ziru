@@ -25,35 +25,33 @@ export function ChatRetrievalTrace({ trace }: { trace: RetrievalTrace | null }) 
     <CollapsibleSection
       title="Retrieval"
       badge={
-        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
-          {queryCount}
-        </span>
+        <span className="badge text-bg-secondary">{queryCount}</span>
       }
-      icon={<Activity className="size-3" />}
+      icon={<Activity style={{ width: "1em", height: "1em" }} />}
     >
-      <p className="text-[11px] text-muted-foreground">{stats}</p>
-      <div className="mt-2 space-y-1.5">
+      <p className="small text-secondary mb-1">{stats}</p>
+      <div className="d-flex flex-column gap-2">
         {trace.queries.map((entry, index) => (
           <div
             key={entry.query + "-" + index}
-            className="rounded-md border border-border/50 bg-muted/30 px-2.5 py-1.5"
+            className="border rounded-2 px-2 py-1 bg-body-tertiary"
           >
-            <div className="flex items-center justify-between gap-2">
-              <p className="truncate text-xs font-medium text-foreground">
+            <div className="d-flex align-items-center justify-content-between gap-2">
+              <p className="small fw-medium text-truncate mb-0">
                 {entry.query}
               </p>
-              <span className="shrink-0 text-[10px] text-muted-foreground">
+              <span className="small text-secondary flex-shrink-0">
                 {entry.result_count} hit{entry.result_count === 1 ? "" : "s"}
               </span>
             </div>
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+            <div className="d-flex flex-wrap align-items-center gap-2 small text-secondary mt-1">
               <span>{entry.namespace}</span>
               <span>
                 {entry.referenced_chunk_count} cited chunk
                 {entry.referenced_chunk_count === 1 ? "" : "s"}
               </span>
               {entry.top_scores.length > 0 ? (
-                <span className="font-mono">
+                <span className="font-monospace">
                   top {entry.top_scores.map((score) => score.toFixed(2)).join(", ")}
                 </span>
               ) : null}

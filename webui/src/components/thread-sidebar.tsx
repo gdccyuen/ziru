@@ -2,10 +2,6 @@
 
 import { useState, type ReactElement } from "react";
 import { Check, MessageSquare, Pencil, Plus, Trash2, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { cn } from "@/lib/utils";
 import { DEFAULT_THREAD_TITLE, type ChatThread } from "@/lib/api";
 
 export type ThreadSidebarProps = {
@@ -66,114 +62,104 @@ export function ThreadSidebar({
   }
 
   return (
-    <aside className="flex h-full w-full flex-col border-r border-border/70 bg-background">
-      <div className="flex items-center justify-between gap-2 border-b border-border/70 px-3 py-2.5">
-        <h2 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          Threads
-        </h2>
-        <Button
+    <aside className="d-flex flex-column border-end bg-body-tertiary" style={{ height: "100%" }}>
+      <div className="d-flex align-items-center justify-content-between gap-2 border-bottom px-3 py-2">
+        <h2 className="small text-uppercase fw-bold text-secondary mb-0">Threads</h2>
+        <button
           type="button"
-          size="sm"
-          variant="outline"
+          className="btn btn-sm btn-outline-secondary"
           disabled={creating}
           onClick={onCreate}
           aria-label="New chat thread"
-          className="h-7 gap-1 rounded-md px-2 text-xs"
         >
-          {creating ? <Spinner className="size-3.5" /> : <Plus className="size-3.5" />}
+          {creating ? (
+            <span className="spinner-border spinner-border-sm me-1" role="status" />
+          ) : (
+            <Plus style={{ width: "1em", height: "1em" }} className="me-1" />
+          )}
           New
-        </Button>
+        </button>
       </div>
-      <div className="flex-1 space-y-1 overflow-y-auto p-2">
+      <div className="flex-grow-1 overflow-auto p-2">
         {loading ? (
-          <div className="flex justify-center py-6">
-            <Spinner className="size-4" />
+          <div className="text-center py-4">
+            <span className="spinner-border spinner-border-sm" role="status" />
           </div>
         ) : threads.length === 0 ? (
-          <p className="px-2 py-6 text-center text-xs text-muted-foreground">
+          <p className="small text-secondary text-center px-2 py-4 mb-0">
             No threads yet. Start a new chat.
           </p>
         ) : (
-          threads.map((thread) => (
-            <div
-              key={thread.id}
-              className={cn(
-                "group flex items-center gap-1 rounded-md px-2 py-1.5 transition-colors",
-                thread.id === activeThreadId
-                  ? "bg-primary/10 text-primary"
-                  : "hover:bg-muted",
-              )}
-            >
-              {editingId === thread.id ? (
-                <div className="flex flex-1 items-center gap-1">
-                  <Input
-                    value={draftTitle}
-                    onChange={(event) => setDraftTitle(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") void commitRename(thread.id);
-                      if (event.key === "Escape") cancelRename();
-                    }}
-                    aria-label="Thread title"
-                    className="h-7 text-xs"
-                    autoFocus
-                  />
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="size-6"
-                    aria-label="Save title"
-                    onClick={() => void commitRename(thread.id)}
-                  >
-                    <Check className="size-3.5" />
-                  </Button>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="size-6"
-                    aria-label="Cancel rename"
-                    onClick={cancelRename}
-                  >
-                    <X className="size-3.5" />
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => onSelect(thread.id)}
-                    className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
-                  >
-                    <MessageSquare className="size-3.5 shrink-0" />
-                    <span className="truncate text-xs font-medium">{displayTitle(thread)}</span>
-                  </button>
-                  <div className="hidden shrink-0 items-center gap-0.5 group-hover:flex">
-                    <Button
+          threads.map((thread) => {
+            const active = thread.id === activeThreadId;
+            return (
+              <div
+                key={thread.id}
+                className={`d-flex align-items-center gap-1 rounded-2 px-2 py-1 my-1 ${active ? "bg-primary-subtle text-primary" : ""}`}
+              >
+                {editingId === thread.id ? (
+                  <div className="d-flex flex-grow-1 align-items-center gap-1">
+                    <input
+                      className="form-control form-control-sm"
+                      value={draftTitle}
+                      onChange={(event) => setDraftTitle(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") void commitRename(thread.id);
+                        if (event.key === "Escape") cancelRename();
+                      }}
+                      aria-label="Thread title"
+                      autoFocus
+                    />
+                    <button
                       type="button"
-                      size="icon"
-                      variant="ghost"
-                      className="size-6"
-                      aria-label="Rename thread"
-                      onClick={() => startRename(thread)}
+                      className="btn btn-sm btn-link text-secondary p-0"
+                      aria-label="Save title"
+                      onClick={() => void commitRename(thread.id)}
                     >
-                      <Pencil className="size-3" />
-                    </Button>
-                    <Button
+                      <Check style={{ width: "1em", height: "1em" }} />
+                    </button>
+                    <button
                       type="button"
-                      size="icon"
-                      variant="ghost"
-                      className="size-6"
-                      aria-label="Delete thread"
-                      onClick={() => handleDelete(thread)}
+                      className="btn btn-sm btn-link text-secondary p-0"
+                      aria-label="Cancel rename"
+                      onClick={cancelRename}
                     >
-                      <Trash2 className="size-3" />
-                    </Button>
+                      <X style={{ width: "1em", height: "1em" }} />
+                    </button>
                   </div>
-                </>
-              )}
-            </div>
-          ))
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => onSelect(thread.id)}
+                      className="d-flex flex-grow-1 align-items-center gap-1 text-start border-0 bg-transparent p-0"
+                    >
+                      <MessageSquare style={{ width: "1em", height: "1em" }} className="flex-shrink-0" />
+                      <span className="small text-truncate">{displayTitle(thread)}</span>
+                    </button>
+                    <span className="d-none d-md-inline-flex align-items-center gap-1">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-link text-secondary p-0"
+                        aria-label="Rename thread"
+                        onClick={() => startRename(thread)}
+                      >
+                        <Pencil style={{ width: "1em", height: "1em" }} />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-link text-secondary p-0"
+                        aria-label="Delete thread"
+                        onClick={() => handleDelete(thread)}
+                      >
+                        <Trash2 style={{ width: "1em", height: "1em" }} />
+                      </button>
+                    </span>
+                  </>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
     </aside>
