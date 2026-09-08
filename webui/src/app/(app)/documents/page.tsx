@@ -316,8 +316,11 @@ function parseQuality(metadata: Record<string, unknown> | null) {
       n_anomalies?: number;
       parse_hint?: string;
     };
+    score?: number;
   };
-  const score = pq.outline_sanity?.score;
+  // Support both the engine sidecar shape ({outline_sanity:{score}}) and a flat
+  // {score} fallback.
+  const score = pq.outline_sanity?.score ?? pq.score;
   if (typeof score !== "number") return null;
   return {
     score,

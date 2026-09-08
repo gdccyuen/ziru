@@ -664,7 +664,9 @@ class DocumentService:
         score, result = outline_sanity_from_rows(rows)
         result["source"] = "backfill"
         result["score"] = score
-        return result
+        # Match the shape the worker writes (parse_quality.json -> {outline_sanity: {...}})
+        # so the webUI badge reads the same field regardless of origin.
+        return {"outline_sanity": result, "source": "backfill"}
 
     async def backfill_parse_quality(self, db: AsyncSession) -> dict[str, Any]:
         """Backfill ``document_metadata.parse_quality`` for all active documents
