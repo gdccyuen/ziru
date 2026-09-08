@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import io
 import json
 import os
 from typing import Any
@@ -290,6 +291,141 @@ async def _create_document_from_multipart(
         extra=extra,
     )
     return job_response
+
+
+@router.post(
+    "/{document_id}/reparse",
+    response_model=JobResponse,
+    summary="Re-parse a document with the MinerU VLM backend (B2)",
+)
+async def reparse_document(
+    document_id: str,
+    current_user: CurrentUser = Depends(require_librarian_or_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Re-run parsing on a document's retained original file using MinerU VLM.
+
+    Creates a new ingestion job for the same ``document_id`` (so it republishes a
+    new revision) with ``parsing_params.mineru_backend="vlm-engine"``. Used as the
+    B2 "Re-parse" action for documents flagged as low outline quality.
+    """
+    await _document_service.get_document_or_raise(db, document_id=document_id)
+    attributes = await _document_service.get_document_attributes(
+        db, document_id=document_id
+    )
+    original_keys = attributes.get("originalFile") or []
+    if not original_keys:
+        raise NotFoundException(
+            resource="Original file",
+            resource_id=document_id,
+            internal_message=f"No original file attribute for document {document_id}",
+        )
+    storage_key = original_keys[0]
+    filename = os.path.basename(storage_key.replace("\\", "/")).strip() or "original"
+
+    job_file_storage = JobFileStorage()
+    try:
+        raw_bytes = await asyncio.to_thread(
+            job_file_storage.storage_adapter.download_fileobj,
+            storage_key,
+            job_file_storage.results_bucket,
+        )
+    except Exception as exc:
+        logger.warning(
+            f"Failed to download original file for re-parse: document_id={document_id}, "
+            f"storage_key={storage_key}, error={exc}"
+        )
+        raise NotFoundException(
+            resource="Original file",
+            resource_id=document_id,
+            internal_message=f"Original file object missing from storage: {storage_key}",
+        ) from exc
+
+    payload = JobCreateBase(
+        source_type="file",
+        file_name=filename,
+        document_id=document_id,
+    )
+    job_response = await _document_ingestion_service.create_v1_job(
+        db,
+        payload=payload,
+        current_user=current_user,
+    )
+    job_id = job_response.job_id
+
+    file_extension = os.path.splitext(filename)[1].lower()
+    upload_info = await _file_upload_service.generate_upload_url(job_id, file_extension)
+    s3_key = str(upload_info["s3_key"])
+    storage_adapter = get_cached_storage_adapter()
+    content_type = JobFileStorage.get_content_type(file_extension)
+    await asyncio.to_thread(
+        storage_adapter.upload_fileobj,
+        io.BytesIO(raw_bytes),
+        s3_key,
+        settings.S3_BUCKET_NAME,
+        content_type,
+    )
+    await _document_ingestion_service.confirm_upload(
+        db,
+        job_id=job_id,
+        request_payload=None,
+        user_id=current_user.user_id,
+    )
+
+    # Request VLM for just this job and keep provenance/attributes for the revision.
+    file_hash = hashlib.sha256(raw_bytes).hexdigest()
+    await _set_reparse_job_metadata(
+        db,
+        job_id=job_id,
+        document_id=document_id,
+        attributes=attributes,
+        file_hash=file_hash,
+        original_file_key=storage_key,
+    )
+    return job_response
+
+
+async def _set_reparse_job_metadata(
+    db: AsyncSession,
+    *,
+    job_id: str,
+    document_id: str,
+    attributes: dict[str, list[str]],
+    file_hash: str,
+    original_file_key: str,
+) -> None:
+    """Record re-parse intent + provenance on the job so the worker republishes
+    the same document revision under the VLM backend."""
+    job = await db.get(Job, job_id)
+    if job is None:
+        return
+    metadata = dict(job.job_metadata or {})
+    parsing_params = dict(metadata.get("parsing_params") or {})
+    parsing_params["mineru_backend"] = "vlm-engine"
+    metadata["parsing_params"] = parsing_params
+    metadata["document_id"] = document_id
+    metadata["attributes"] = attributes
+    metadata["file_hash"] = file_hash
+    metadata["original_file_key"] = original_file_key
+    doc_meta = dict(metadata.get("document_metadata") or {})
+    doc_meta.setdefault("parse_quality", {})["reparse"] = {
+        "triggered": True,
+        "backend": "vlm-engine",
+    }
+    metadata["document_metadata"] = doc_meta
+    job.job_metadata = metadata
+    await db.commit()
+    try:
+        redis_service = RedisServiceFactory.get_service()
+        metadata_service = JobMetadataService(redis_service)
+        await metadata_service.update_metadata(
+            job_id,
+            {"parsing_params": parsing_params, "document_id": document_id},
+        )
+    except Exception as exc:
+        logger.warning(
+            f"Failed to cache re-parse metadata (ignored): job_id={job_id}, error={exc}"
+        )
 
 
 @router.get(
