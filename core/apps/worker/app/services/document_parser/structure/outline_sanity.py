@@ -60,7 +60,12 @@ def resolve_heading_levels(df: Any) -> Any:
 
     level_by_index: dict[int, int] = {}
     for idx, (lvl, key, txt) in enumerate(resolved):
-        if lvl >= 1 or is_banner_heading(txt) or keys[idx] is not None:
+        incoming = rows[idx]["level"]
+        was_candidate = isinstance(incoming, int) and incoming > 0
+        # Only re-derive rows that were already heading candidates, or that carry
+        # a numbering/annex/banner marker. Do NOT promote plain body paragraphs
+        # (build_outline assigns them a look-ahead level that must be ignored).
+        if was_candidate or is_banner_heading(txt) or keys[idx] is not None:
             level_by_index[idx] = lvl
     for idx in level_by_index:
         rows[idx]["level"] = level_by_index[idx]
