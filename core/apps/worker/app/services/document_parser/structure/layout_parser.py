@@ -639,31 +639,22 @@ def pred_titles(
             heading_preds = pd.DataFrame(columns=["id", "heading", "level", "reason"])
         logger.info("✅ Zone-based LLM hierarchy parsing completed")
     else:
-        # Single-zone: current behavior
+        # Single-zone: current behavior. Run the LLM for header DETECTION (it
+        # cleans the candidate set, demoting body text); the deterministic
+        # numbering-first resolver is applied as a LEVEL post-fix afterwards so
+        # numbered headings get correct nesting regardless of the LLM's guess.
         heading_preds = est_hierarchies_naive(
             raw_preds, smart_parse, output_dir=output_dir
         )
-        if settings.NUMBERING_FIRST_HIERARCHY and not heading_preds.empty:
-            heading_preds = resolve_heading_levels(heading_preds)
         if smart_parse:
-            run_llm = True
-            if settings.NUMBERING_FIRST_HIERARCHY and not heading_preds.empty:
-                score, _ = outline_sanity(heading_preds)
-                if score >= settings.OUTLINE_SANITY_THRESHOLD:
-                    run_llm = False
-                    logger.info(
-                        "numbering-first hierarchy OK (score=%.2f), skipping LLM",
-                        score,
-                    )
-            if run_llm:
-                heading_preds = est_hierarchies_llm(
-                    heading_preds,
-                    prompt_limt,
-                    toc_hierarchies,
-                    model_name=model_name,
-                    output_dir=output_dir,
-                )
-                logger.info("✅ LLM hierarchy parsing completed")
+            heading_preds = est_hierarchies_llm(
+                heading_preds,
+                prompt_limt,
+                toc_hierarchies,
+                model_name=model_name,
+                output_dir=output_dir,
+            )
+            logger.info("✅ LLM hierarchy parsing completed")
 
     # 3. final polishing for certain types
     if doc_type in ["docx"]:

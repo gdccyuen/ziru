@@ -26,6 +26,8 @@ _LETTER_RE = re.compile(r"^[\(\（]\s*([a-zA-Z])\s*[\)\）]")
 _ROMAN_RE = re.compile(
     r"^[\(\（]\s*(iv|ix|vi|v|x{0,3}|i{1,3}|xi|xiv)\s*[\)\）]", re.I
 )
+# Annex / Appendix / Attachment / Schedule <label> — top-level lettered sections.
+_ANNEX_RE = re.compile(r"^(annex|appendix|attachment|schedule)\s+([A-Za-z0-9]+)", re.I)
 
 _BANNER_RE = re.compile(
     r"^(\(?(restricted|confidential|unclassified|internal|private)\)?"
@@ -63,6 +65,9 @@ def num_key(text: str) -> tuple[str, str] | None:
     t = strip_md(text)
     if not t:
         return None
+    m = _ANNEX_RE.match(t)
+    if m:
+        return ("a", m.group(2).lower())
     m = _ROMAN_RE.match(t)
     if m:
         return ("r", m.group(1).lower())
@@ -116,7 +121,12 @@ def build_outline(texts: list[str]) -> list[tuple[int, Any, str]]:
             continue
 
         kind, key = k
-        if kind == "n":
+        if kind == "a":
+            # Annex/Appendix/Schedule: a top-level section (sibling of chapters).
+            while stack:
+                stack.pop()
+            stack.append({"kind": "a", "seg": key})
+        elif kind == "n":
             segs = tuple(int(s) for s in str(key).split("."))
             depth = len(segs)
             while stack and (
