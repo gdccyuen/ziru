@@ -432,6 +432,13 @@ export const api = {
       `/v2/documents/${encodeURIComponent(documentId)}/reparse`,
       { method: "POST" },
     ),
+  backfillParseQuality: () =>
+    apiRequest<{
+      status: string;
+      scanned: number;
+      updated: number;
+      skipped: number;
+    }>("/v2/documents/parse-quality/backfill", { method: "POST" }),
   apiKeys: () =>
     apiRequest<{ api_keys: ApiKey[]; total: number }>("/v2/api-keys"),
   chatThreads: {

@@ -11,13 +11,14 @@ from loguru import logger
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from shared.models.database.document import DocumentChunk, DocumentSection
+from shared.models.database.document import Document, DocumentChunk, DocumentSection
 from shared.core.exceptions.domain_exceptions import NotFoundException
 from shared.models.database.document_attribute import DocumentAttribute
 from shared.services.profile import BUILTIN_ATTRIBUTE_KEYS, ProfileConstraint
 from shared.services.retrieval.cache_service import invalidate_retrieval_cache
 from shared.services.retrieval.graph.service import DocumentGraphService
 from shared.services.storage.result_storage import ResultStorage, get_result_storage
+from shared.utils.outline_sanity import outline_sanity_from_rows
 
 _DOCUMENT_CHUNK_ASSET_URL_EXPIRES_SECONDS = 7 * 24 * 60 * 60
 _MEDIA_CHUNK_TYPES = frozenset({"image", "table"})
@@ -635,6 +636,75 @@ class DocumentService:
             "job_result_id": job_result_id,
             "sections": section_payloads,
         }
+
+    async def _outline_quality_for_document(
+        self,
+        db: AsyncSession,
+        document: Document,
+    ) -> dict[str, Any] | None:
+        """Compute an honest parse-quality score from the published section tree."""
+        job_result_id = document.current_job_result_id
+        if not job_result_id:
+            return None
+        sections = await self._repository.list_document_sections(
+            db,
+            document_id=document.document_id,
+            job_result_id=job_result_id,
+        )
+        if not sections:
+            return None
+        rows = [
+            {
+                "level": section.section_level,
+                "heading": section.section_title
+                or _section_title_from_path(section.section_path),
+            }
+            for section in sections
+        ]
+        score, result = outline_sanity_from_rows(rows)
+        result["source"] = "backfill"
+        result["score"] = score
+        return result
+
+    async def backfill_parse_quality(self, db: AsyncSession) -> dict[str, Any]:
+        """Backfill ``document_metadata.parse_quality`` for all active documents
+        from their existing published section trees.
+
+        Only writes when the document has no fresh (non-backfill) parse_quality
+        already recorded, so an engine-computed score is never overwritten.
+        Returns a summary dict.
+        """
+        total = updated = skipped = 0
+        limit = 100
+        offset = 0
+        while True:
+            documents = await self._repository.list_documents(
+                db, limit=limit, offset=offset
+            )
+            if not documents:
+                break
+            for document in documents:
+                total += 1
+                meta = dict(document.document_metadata or {})
+                existing = meta.get("parse_quality")
+                if isinstance(existing, dict) and existing.get("source") != "backfill":
+                    skipped += 1
+                    continue
+                quality = await self._outline_quality_for_document(db, document)
+                if quality is None:
+                    skipped += 1
+                    continue
+                meta["parse_quality"] = quality
+                document.document_metadata = meta
+                updated += 1
+            await db.commit()
+            offset += limit
+            if len(documents) < limit:
+                break
+        logger.info(
+            f"backfill_parse_quality: scanned={total} updated={updated} skipped={skipped}"
+        )
+        return {"scanned": total, "updated": updated, "skipped": skipped}
 
     async def get_document_page_citation_source(
         self,

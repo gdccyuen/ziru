@@ -28,6 +28,25 @@ export default function AdminPage() {
   const [secrets, setSecrets] = useState<WebhookSecret[] | null>(null);
   const [logs, setLogs] = useState<WebhookLog[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillMessage, setBackfillMessage] = useState<string | null>(null);
+
+  async function handleBackfill() {
+    setBackfilling(true);
+    setBackfillMessage(null);
+    try {
+      const res = await api.backfillParseQuality();
+      setBackfillMessage(
+        `Backfilled ${res.updated} document(s) (scanned ${res.scanned}, skipped ${res.skipped}).`,
+      );
+    } catch (e) {
+      setBackfillMessage(
+        e instanceof Error ? e.message : "Failed to backfill parse quality.",
+      );
+    } finally {
+      setBackfilling(false);
+    }
+  }
 
   useEffect(() => {
     if (user && user.grade !== "administrator") {
@@ -61,6 +80,28 @@ export default function AdminPage() {
       <p className="text-secondary">User admin, API keys, and webhooks (administrator only).</p>
 
       {error ? <div className="alert alert-danger py-2">{error}</div> : null}
+
+      {/* Parse quality maintenance */}
+      <Section title="Parse quality">
+        <p className="text-secondary small mb-2">
+          Compute an honest outline-sanity badge for <em>already-ingested</em>{" "}
+          documents from their published section trees (no re-parsing). Re-parsing a
+          document later refreshes its badge automatically.
+        </p>
+        <div className="d-flex align-items-center gap-2">
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            disabled={backfilling}
+            onClick={handleBackfill}
+          >
+            {backfilling ? "Backfilling…" : "Backfill parse quality"}
+          </button>
+        </div>
+        {backfillMessage ? (
+          <p className="mb-0 mt-2 small text-secondary">{backfillMessage}</p>
+        ) : null}
+      </Section>
 
       {/* User admin */}
       <Section title="User admin">
