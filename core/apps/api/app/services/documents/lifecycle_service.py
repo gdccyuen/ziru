@@ -668,9 +668,9 @@ class DocumentService:
         # so the webUI badge reads the same field regardless of origin.
         return {"outline_sanity": result, "source": "backfill"}
 
-    async def backfill_parse_quality(self, db: AsyncSession) -> dict[str, Any]:
-        """Backfill ``document_metadata.parse_quality`` for all active documents
-        from their existing published section trees.
+    async def re_evaluate_parse_quality(self, db: AsyncSession) -> dict[str, Any]:
+        """Re-evaluate ``document_metadata.parse_quality`` for all active
+        documents from their existing published section trees.
 
         Only writes when the document has no fresh (non-backfill) parse_quality
         already recorded, so an engine-computed score is never overwritten.
@@ -704,7 +704,7 @@ class DocumentService:
             if len(documents) < limit:
                 break
         logger.info(
-            f"backfill_parse_quality: scanned={total} updated={updated} skipped={skipped}"
+            f"re_evaluate_parse_quality: scanned={total} updated={updated} skipped={skipped}"
         )
         return {"scanned": total, "updated": updated, "skipped": skipped}
 

@@ -389,17 +389,17 @@ async def reparse_document(
 
 
 @router.post(
-    "/parse-quality/backfill",
-    summary="Backfill parse-quality badges from existing section trees (admin)",
+    "/parse-quality/re-evaluate",
+    summary="Re-evaluate parse-quality badges from existing section trees (admin)",
 )
-async def backfill_document_parse_quality(
+async def re_evaluate_document_parse_quality(
     current_user: CurrentUser = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Compute and store ``document_metadata.parse_quality`` for all active
+    """Re-evaluate and store ``document_metadata.parse_quality`` for all active
     documents from their published section trees, so already-ingested documents
     get an honest quality badge without re-parsing. Admin only."""
-    result = await _document_service.backfill_parse_quality(db)
+    result = await _document_service.re_evaluate_parse_quality(db)
     return {"status": "ok", **result}
 
 
