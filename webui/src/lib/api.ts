@@ -427,6 +427,11 @@ export const api = {
     apiRequest<DocumentChunkDetail>(
       `/v2/documents/${encodeURIComponent(documentId)}/chunks/${encodeURIComponent(chunkId)}`,
     ),
+  reparseDocument: (documentId: string) =>
+    apiRequest<{ job_id: string }>(
+      `/v2/documents/${encodeURIComponent(documentId)}/reparse`,
+      { method: "POST" },
+    ),
   apiKeys: () =>
     apiRequest<{ api_keys: ApiKey[]; total: number }>("/v2/api-keys"),
   chatThreads: {

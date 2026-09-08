@@ -73,6 +73,8 @@ export default function DocumentsPage() {
     "filename",
   );
   const [treeDoc, setTreeDoc] = useState<DocumentItem | null>(null);
+  const [reparsingId, setReparsingId] = useState<string | null>(null);
+  const [reparseError, setReparseError] = useState<string | null>(null);
 
   const sortedDocuments = useMemo(() => {
     const list = [...documents];
@@ -147,6 +149,21 @@ export default function DocumentsPage() {
     return Object.entries(filters)
       .filter(([, values]) => values.length > 0)
       .map(([key, values]) => ({ key, values }));
+  }
+
+  async function handleReparse(document: DocumentItem) {
+    setReparsingId(document.document_id);
+    setReparseError(null);
+    try {
+      await api.reparseDocument(document.document_id);
+      setReparseError("Re-parse queued under MinerU VLM. Track progress on the Jobs page.");
+    } catch (err) {
+      setReparseError(
+        err instanceof ApiError ? err.message : "Failed to queue re-parse.",
+      );
+    } finally {
+      setReparsingId(null);
+    }
   }
 
   return (
@@ -226,6 +243,10 @@ export default function DocumentsPage() {
 
       {error ? <div className="alert alert-danger py-2">{error}</div> : null}
 
+      {reparseError ? (
+        <div className="alert alert-info py-2">{reparseError}</div>
+      ) : null}
+
       {loading ? (
         <div className="text-center py-5">
           <div className="spinner-border spinner-border-sm" role="status" />
@@ -242,6 +263,8 @@ export default function DocumentsPage() {
               document={document}
               highlighted={document.document_id === highlightDocument}
               onOpenTree={(doc) => setTreeDoc(doc)}
+              reparsing={reparsingId === document.document_id}
+              onReparse={() => handleReparse(document)}
             />
           ))}
         </div>
@@ -286,14 +309,36 @@ export default function DocumentsPage() {
   );
 }
 
+function parseQuality(metadata: Record<string, unknown> | null) {
+  const pq = (metadata?.parse_quality ?? {}) as {
+    outline_sanity?: {
+      score?: number;
+      n_anomalies?: number;
+      parse_hint?: string;
+    };
+  };
+  const score = pq.outline_sanity?.score;
+  if (typeof score !== "number") return null;
+  return {
+    score,
+    ok: score >= 0.85,
+    anomalies: pq.outline_sanity?.n_anomalies ?? 0,
+    hint: pq.outline_sanity?.parse_hint ?? "",
+  };
+}
+
 function DocumentRow({
   document,
   highlighted,
   onOpenTree,
+  reparsing,
+  onReparse,
 }: {
   document: DocumentItem;
   highlighted: boolean;
   onOpenTree: (doc: DocumentItem) => void;
+  reparsing: boolean;
+  onReparse: () => void;
 }) {
   const attributes = document.attributes ?? {};
   const hasOriginal = Boolean(attributes["originalFile"]?.length);
@@ -303,6 +348,7 @@ function DocumentRow({
   const hoverText = manualAttrs.length
     ? manualAttrs.map(([key, values]) => `${key}: ${values.join(", ")}`).join(" · ")
     : undefined;
+  const quality = parseQuality(document.document_metadata);
   return (
     <div
       className={`list-group-item d-flex flex-column gap-1 ${highlighted ? "bg-primary-subtle" : ""}`}
@@ -322,6 +368,14 @@ function DocumentRow({
           </div>
         </div>
         <div className="d-flex align-items-center gap-2">
+          {quality ? (
+            <span
+              className={`badge ${quality.ok ? "text-bg-success" : "text-bg-warning"}`}
+              title={`Outline sanity ${(quality.score * 100).toFixed(0)}% · ${quality.anomalies} anomalies`}
+            >
+              outline {Math.round(quality.score * 100)}%
+            </span>
+          ) : null}
           <span className={`badge ${statusBadge(document.status)}`}>{document.status}</span>
           <button
             type="button"
@@ -329,6 +383,14 @@ function DocumentRow({
             onClick={() => onOpenTree(document)}
           >
             Tree
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary py-0 px-2"
+            disabled={reparsing}
+            onClick={onReparse}
+          >
+            {reparsing ? "Queuing…" : "Re-parse"}
           </button>
           {hasOriginal ? (
             <a
