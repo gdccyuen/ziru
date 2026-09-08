@@ -672,8 +672,9 @@ class DocumentService:
         """Re-evaluate ``document_metadata.parse_quality`` for all active
         documents from their existing published section trees.
 
-        Only writes when the document has no fresh (non-backfill) parse_quality
-        already recorded, so an engine-computed score is never overwritten.
+        Skips documents that already carry a computed outline-sanity score, so
+        an engine-computed score is never overwritten. A ``parse_quality`` dict
+        that only holds a ``reparse`` marker (no score) is still re-evaluated.
         Returns a summary dict.
         """
         total = updated = skipped = 0
@@ -689,14 +690,25 @@ class DocumentService:
                 total += 1
                 meta = dict(document.document_metadata or {})
                 existing = meta.get("parse_quality")
-                if isinstance(existing, dict) and existing.get("source") != "backfill":
+                existing_has_outline_score = (
+                    isinstance(existing, dict)
+                    and isinstance(existing.get("outline_sanity"), dict)
+                    and isinstance(
+                        existing["outline_sanity"].get("score"), (int, float)
+                    )
+                )
+                if existing_has_outline_score:
                     skipped += 1
                     continue
                 quality = await self._outline_quality_for_document(db, document)
                 if quality is None:
                     skipped += 1
                     continue
-                meta["parse_quality"] = quality
+                # Merge so a pre-existing reparse marker is not lost.
+                next_quality = dict(existing) if isinstance(existing, dict) else {}
+                next_quality["outline_sanity"] = quality["outline_sanity"]
+                next_quality["source"] = quality["source"]
+                meta["parse_quality"] = next_quality
                 document.document_metadata = meta
                 updated += 1
             await db.commit()
