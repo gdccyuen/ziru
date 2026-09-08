@@ -102,6 +102,11 @@ def execute_document_parse(
                         "add_frag_desc",
                         "",
                     ),
+                    mineru_backend=JobMetadataHelper.get_parsing_param(
+                        job_context.job_metadata,
+                        "mineru_backend",
+                        "",
+                    ),
                     s3_key=job_context.s3_key,
                 )
 
