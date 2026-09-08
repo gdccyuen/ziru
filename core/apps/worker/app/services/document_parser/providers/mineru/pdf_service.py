@@ -56,28 +56,41 @@ def _flatten_extracted_zip(output_dir: str) -> None:
     keep_exts = (".md", ".jpg", ".jpeg", ".png", ".gif", ".json", ".html")
     exclude_patterns = ("content_list", "middle.json", "model.json")
 
-    auto_dirs = [p for p in destination.glob("*/auto") if p.is_dir()]
-    if not auto_dirs:
+    # Locate the parse directory backend-agnostically: MinerU writes the main
+    # markdown under ``{stem}/{backend_dir}/{stem}.md`` (pipeline -> ``auto``,
+    # vlm-engine -> ``vlm``, hybrid -> ``hybrid_<method>``). Find that single
+    # markdown, use its parent as the parse dir, and flatten it to the root.
+    md_files = sorted(destination.rglob("*.md"))
+    if len(md_files) == 0:
         raise MinerUServiceException(
             internal_message=(
-                "Local MinerU ZIP did not contain a {stem}/auto/ directory; "
+                "Local MinerU ZIP contained no markdown file; "
                 "layout has changed or the response was not a parse result."
             ),
         )
-    if len(auto_dirs) > 1:
-        relative_paths = ", ".join(str(p.relative_to(destination)) for p in auto_dirs)
+    if len(md_files) > 1:
+        relative_paths = ", ".join(str(p.relative_to(destination)) for p in md_files)
         raise MinerUServiceException(
             internal_message=(
-                f"Local MinerU ZIP contained {len(auto_dirs)} */auto directories; "
+                f"Local MinerU ZIP contained {len(md_files)} markdown files; "
                 f"expected exactly one: {relative_paths}"
             ),
         )
+    parse_dir = md_files[0].parent
+    if parse_dir == destination:
+        # Markdown already at the root; nothing to flatten below except rename.
+        markdown_files = sorted(destination.glob("*.md"))
+        if len(markdown_files) != 1:
+            raise MinerUServiceException(
+                internal_message="Expected exactly one markdown file at output root."
+            )
+        markdown_files[0].rename(destination / "full.md")
+        return
 
-    auto_dir = auto_dirs[0]
-    for source_path in auto_dir.rglob("*"):
+    for source_path in parse_dir.rglob("*"):
         if source_path.is_dir():
             continue
-        relative = source_path.relative_to(auto_dir)
+        relative = source_path.relative_to(parse_dir)
         if any(pattern in source_path.name for pattern in exclude_patterns):
             continue
         if source_path.suffix.lower() not in keep_exts:
@@ -88,21 +101,17 @@ def _flatten_extracted_zip(output_dir: str) -> None:
             continue
         shutil.move(str(source_path), str(target))
 
-    shutil.rmtree(auto_dir.parent, ignore_errors=True)
+    # Remove the ``{stem}`` wrapper directory (parse_dir.parent) if it is not the destination.
+    if parse_dir.parent != destination:
+        shutil.rmtree(parse_dir.parent, ignore_errors=True)
 
     markdown_files = sorted(destination.glob("*.md"))
-    if len(markdown_files) == 0:
-        raise MinerUServiceException(
-            internal_message=(
-                "Local MinerU ZIP contained no markdown file under {stem}/auto/."
-            ),
-        )
-    if len(markdown_files) > 1:
+    if len(markdown_files) != 1:
         relative_paths = ", ".join(str(p.relative_to(destination)) for p in markdown_files)
         raise MinerUServiceException(
             internal_message=(
-                f"Local MinerU ZIP contained {len(markdown_files)} markdown files; "
-                f"expected exactly one: {relative_paths}"
+                f"Local MinerU ZIP contained {len(markdown_files)} markdown files at "
+                f"root after flattening; expected exactly one: {relative_paths}"
             ),
         )
 
