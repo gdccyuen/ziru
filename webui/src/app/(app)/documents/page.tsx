@@ -391,9 +391,10 @@ function DocumentRow({
             type="button"
             className="btn btn-sm btn-outline-secondary py-0 px-2"
             disabled={reparsing}
+            title="Re-parse this document with MinerU VLM (vlm-engine)"
             onClick={onReparse}
           >
-            {reparsing ? "Queuing…" : "Re-parse"}
+            {reparsing ? "Queuing…" : "Re-parse (VLM)"}
           </button>
           {hasOriginal ? (
             <a
