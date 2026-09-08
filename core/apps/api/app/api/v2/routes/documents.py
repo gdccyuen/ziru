@@ -37,7 +37,7 @@ from shared.core.exceptions.domain_exceptions import (
 )
 from shared.models.database.job import Job
 from shared.models.database.user import GRADE_ADMINISTRATOR, GRADE_LIBRARIAN
-from shared.models.schemas.job import JobCreateBase, JobResponse
+from shared.models.schemas.job import JobCreateBase, JobResponse, ParsingParams
 from shared.services.profile import (
     constraints_from_mapping,
     normalize_profile,
@@ -345,6 +345,9 @@ async def reparse_document(
         source_type="file",
         file_name=filename,
         document_id=document_id,
+        # Request the VLM backend at creation time (before the worker can start),
+        # so the re-parse is reliably a VLM re-run rather than a pipeline re-run.
+        parsing_params=ParsingParams(mineru_backend="vlm-engine"),
     )
     job_response = await _document_ingestion_service.create_v1_job(
         db,

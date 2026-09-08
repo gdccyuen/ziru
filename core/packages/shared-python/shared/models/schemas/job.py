@@ -46,6 +46,11 @@ class ParsingParams(BaseModel):
             "field. Section-level summaries remain controlled by summary_use_llm."
         ),
     )
+    # Optional per-job MinerU backend override ('' = use the global setting).
+    # A re-parse job sets this to 'vlm-engine' to re-run under MinerU VLM.
+    mineru_backend: Optional[str] = Field(
+        "", description="Per-job MinerU backend override (pipeline | vlm-engine | hybrid-engine)"
+    )
 
 
 class JobCreateBase(BaseModel):
