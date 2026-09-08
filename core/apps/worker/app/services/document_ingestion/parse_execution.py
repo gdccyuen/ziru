@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import os
+
 from app.services.document_ingestion.processing_context import ParseJobContext
 from app.services.document_ingestion.source_preparation import PreparedSourceFile
 from app.services.document_parser import parse_service
@@ -112,6 +115,7 @@ def execute_document_parse(
             "timing_ms": dict(stage_timing_dict),
             "token_usage": dict(token_usage_dict),
         }
+        _merge_parse_quality(job_id=job_id, job_context=job_context, output_dir=parse_output.output_dir)
     finally:
         if owns_token_tracker:
             cleanup_token_tracker()
@@ -119,6 +123,33 @@ def execute_document_parse(
             cleanup_stage_tracker()
 
     return parse_output
+
+
+def _merge_parse_quality(*, job_id: str, job_context: ParseJobContext, output_dir: str) -> None:
+    """Merge the parse_quality.json sidecar (written during heading prediction)
+    into the job metadata so it flows to ``documents.document_metadata``.
+
+    The sidecar may be absent (flag off, or a non-markdown parser) — then this is
+    a no-op and nothing is recorded.
+    """
+    if not output_dir:
+        return
+    sidecar = os.path.join(output_dir, "parse_quality.json")
+    try:
+        if not os.path.exists(sidecar):
+            return
+        with open(sidecar, encoding="utf-8") as f:
+            payload = json.load(f)
+        if not isinstance(payload, dict):
+            return
+        doc_meta = job_context.job_metadata.setdefault("document_metadata", {})
+        if not isinstance(doc_meta, dict):
+            doc_meta = {"parse_quality": {}}
+            job_context.job_metadata["document_metadata"] = doc_meta
+        doc_meta.setdefault("parse_quality", {}).update(payload)
+        logger.info(f"📊 parse_quality recorded for job_id={job_id}: {payload}")
+    except Exception as exc:  # never fail the parse because of a recording issue
+        logger.warning(f"Failed to record parse_quality.json: {exc}")
 
 
 def _execute_page_memory_parse(

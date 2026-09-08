@@ -13,6 +13,9 @@ class ParseOptions:
     stopwords: list[str] | None = None
     doc_type: str = "auto"
     add_frag_desc: str = ""
+    # Optional per-job MinerU backend override ('' = use settings.MINERU_LOCAL_BACKEND).
+    # Used by the B2 re-parse flow to request 'vlm-engine' for a single job.
+    mineru_backend: str = ""
 
 
 @dataclass(frozen=True)

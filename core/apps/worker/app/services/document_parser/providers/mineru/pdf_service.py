@@ -184,6 +184,7 @@ def parse_via_local(
     output_dir: str,
     job_id: Optional[str] = None,
     mineru_raw_suffix: str = "",
+    backend: Optional[str] = None,
 ) -> None:
     """Parse a PDF via a local MinerU instance's synchronous /file_parse.
 
@@ -202,19 +203,20 @@ def parse_via_local(
     """
     base_url = settings.MINERU_URL.rstrip("/")
     endpoint = f"{base_url}/file_parse"
+    resolved_backend = backend or settings.MINERU_LOCAL_BACKEND
     local_logger = mineru_logger(
         "local_file_parse",
         operation="local_file_parse",
         filename=filename,
         endpoint=endpoint,
         lang_list=settings.MINERU_LOCAL_LANG_LIST,
-        backend=settings.MINERU_LOCAL_BACKEND,
+        backend=resolved_backend,
         raw_zip_archival=bool(job_id),
     )
 
     form_fields = {
         "lang_list": settings.MINERU_LOCAL_LANG_LIST,
-        "backend": settings.MINERU_LOCAL_BACKEND,
+        "backend": resolved_backend,
         "return_images": "true",
         "response_format_zip": "true",
         "return_original_file": "true",
@@ -427,6 +429,7 @@ def parse_via_full(
     s3_key: Optional[str] = None,
     job_id: Optional[str] = None,
     mineru_raw_suffix: str = "",
+    backend: Optional[str] = None,
 ) -> None:
     """Parse a PDF through the local MinerU /file_parse endpoint.
 
@@ -440,4 +443,5 @@ def parse_via_full(
         output_dir=output_dir,
         job_id=job_id,
         mineru_raw_suffix=mineru_raw_suffix,
+        backend=backend,
     )

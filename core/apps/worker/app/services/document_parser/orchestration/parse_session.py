@@ -70,6 +70,7 @@ def build_parse_session(parse_input: ParseInput) -> ParseSession:
         "frag_desc": parse_options.add_frag_desc,
         "model_name": settings.NORMAL_MODEL,
         "hierarchy_model_name": settings.HIERARCHY_LLM_MODEL or settings.NORMAL_MODEL,
+        "mineru_backend": parse_options.mineru_backend,
     }
 
     logger.debug(f"baseurl: {parse_input.base_url}")
