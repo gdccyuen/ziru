@@ -14,7 +14,10 @@ from app.services.document_parser.support.stage_profiler import (
     get_current_stage_tracker,
 )
 from loguru import logger
+from sqlalchemy import select
 
+from shared.core.database_sync import get_sync_db_context
+from shared.models.database.job import Job
 from shared.models.schemas.job_metadata import JobMetadataHelper
 from shared.services.ai.token_tracking import (
     init_token_tracker,
@@ -136,6 +139,11 @@ def _merge_parse_quality(*, job_id: str, job_context: ParseJobContext, output_di
 
     The sidecar may be absent (flag off, or a non-markdown parser) — then this is
     a no-op and nothing is recorded.
+
+    ``job_context.job_metadata`` is an in-memory copy, whereas publication reads
+    the DB ``jobs.job_metadata`` row, so the merged ``document_metadata`` is also
+    persisted back to that row — otherwise the quality badge would only appear
+    after a separate parse-quality re-evaluation (backfill).
     """
     if not output_dir:
         return
@@ -153,8 +161,30 @@ def _merge_parse_quality(*, job_id: str, job_context: ParseJobContext, output_di
             job_context.job_metadata["document_metadata"] = doc_meta
         doc_meta.setdefault("parse_quality", {}).update(payload)
         logger.info(f"📊 parse_quality recorded for job_id={job_id}: {payload}")
+        _persist_document_metadata(job_id, doc_meta)
     except Exception as exc:  # never fail the parse because of a recording issue
         logger.warning(f"Failed to record parse_quality.json: {exc}")
+
+
+def _persist_document_metadata(job_id: str, document_metadata: dict) -> None:
+    """Write the merged ``document_metadata`` back to the DB job row.
+
+    Publication reads ``job.job_metadata`` from the database, so this is what
+    actually propagates the parse-quality badge onto the published document.
+    Best-effort — failures must not fail the parse.
+    """
+    try:
+        with get_sync_db_context() as db:
+            job = db.execute(
+                select(Job).where(Job.job_id == job_id).with_for_update()
+            ).scalar_one_or_none()
+            if job is None:
+                return
+            meta = dict(job.job_metadata or {})
+            meta["document_metadata"] = document_metadata
+            job.job_metadata = meta
+    except Exception as exc:
+        logger.warning(f"Failed to persist document_metadata for job_id={job_id}: {exc}")
 
 
 def _execute_page_memory_parse(

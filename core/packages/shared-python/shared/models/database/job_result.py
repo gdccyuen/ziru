@@ -84,7 +84,7 @@ class JobChunk(Base):
     chunk_id: Mapped[str] = mapped_column(String(64), nullable=False)
     chunk_type: Mapped[str] = mapped_column(String(2000), nullable=False)
     text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    path: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
+    path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     chunk_metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column(
         JSON, nullable=True
     )
