@@ -75,6 +75,15 @@ export default function JobsPage() {
     })();
   }, [user, router, loadJobs]);
 
+  // Auto-refresh the jobs table every minute so job progress / failures show up
+  // without a manual reload.
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      void loadJobs();
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, [loadJobs]);
+
   if (user && user.grade !== "administrator" && user.grade !== "librarian") return null;
 
   function openUpload() {

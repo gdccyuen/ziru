@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import {
@@ -105,34 +105,51 @@ export default function DocumentsPage() {
 
   useEffect(() => subscribeCorpusScope((scope) => setCorpusScopeState(scope)), []);
 
+  const requestIdRef = useRef(0);
+  const loadDocuments = useCallback(
+    (silent: boolean) => {
+      const requestId = ++requestIdRef.current;
+      if (!silent) setLoading(true);
+      setError(null);
+      const filters: string[] = [];
+      for (const [key, values] of Object.entries(selected)) {
+        for (const value of values) filters.push(key + "=" + value);
+      }
+      api
+        .documents({ page, page_size: PAGE_SIZE, filters })
+        .then((response) => {
+          if (requestId !== requestIdRef.current) return;
+          setDocuments(response.documents);
+          setTotalPages(response.pagination.total_pages);
+          setTotal(response.pagination.total);
+        })
+        .catch((err) => {
+          if (requestId !== requestIdRef.current) return;
+          if (!silent) {
+            setError(err instanceof ApiError ? err.message : "Failed to load documents.");
+          }
+        })
+        .finally(() => {
+          if (!silent && requestId === requestIdRef.current) setLoading(false);
+        });
+    },
+    [page, selected],
+  );
+
+  const loadDocumentsRef = useRef(loadDocuments);
+  loadDocumentsRef.current = loadDocuments;
+
+  // Re-query on filter/page change (show the loading spinner).
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
-    setError(null);
-    let cancelled = false;
-    const filters: string[] = [];
-    for (const [key, values] of Object.entries(selected)) {
-      for (const value of values) filters.push(key + "=" + value);
-    }
-    api
-      .documents({ page, page_size: PAGE_SIZE, filters })
-      .then((response) => {
-        if (cancelled) return;
-        setDocuments(response.documents);
-        setTotalPages(response.pagination.total_pages);
-        setTotal(response.pagination.total);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(err instanceof ApiError ? err.message : "Failed to load documents.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [page, selected]);
+    loadDocuments(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadDocuments]);
+
+  // Auto-refresh the table every minute, silently (no loading flash).
+  useEffect(() => {
+    const id = window.setInterval(() => loadDocumentsRef.current(true), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   function toggleValue(key: string, value: string) {
     const values = selected[key] ?? [];
