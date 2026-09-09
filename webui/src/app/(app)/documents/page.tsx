@@ -421,7 +421,7 @@ function DocumentRow({
             >
               needs VLM
             </span>
-          ) : quality?.detection === "resolver_recoverable" ? (
+          ) : quality?.detection === "resolver_recoverable" && !quality.ok ? (
             <span
               className="badge text-bg-info"
               title="Levels were misassigned but the numbering-first resolver restores a healthy tree — no VLM re-parse needed."
