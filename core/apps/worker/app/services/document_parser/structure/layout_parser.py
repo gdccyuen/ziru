@@ -13,6 +13,7 @@ from app.services.document_parser.structure.heading_llm_executor import (
     execute_llm_heading_hierarchy,
 )
 from app.services.document_parser.structure.outline_sanity import (
+    detection_quality_from_rows,
     outline_sanity,
     resolve_heading_levels,
 )
@@ -690,6 +691,13 @@ def pred_titles(
 
     # ── Deterministic numbering-first post-pass + parse-quality sidecar ──
     if settings.NUMBERING_FIRST_HIERARCHY and not heading_preds.empty:
+        # Snapshot the detected (pre-resolve) levels so the detection-quality hint
+        # can distinguish "levels were wrong" (resolver fixes it) from "the heading
+        # set itself is suspect" (needs VLM re-detection).
+        detected_rows = [
+            {"level": row.get("level"), "heading": str(row.get("heading", ""))}
+            for _, row in heading_preds.iterrows()
+        ]
         # Re-apply so tree re-leveling / isolated-node removal cannot undo the
         # numbering-derived levels (kept idempotent).
         heading_preds = resolve_heading_levels(heading_preds)
@@ -697,13 +705,21 @@ def pred_titles(
         logger.info(
             f"outline sanity: score={score:.2f} anomalies={sanity_result['n_anomalies']}"
         )
+        detection_result = detection_quality_from_rows(
+            detected_rows, settings.OUTLINE_SANITY_THRESHOLD
+        )
         if settings.OUTLINE_SANITY_JSON and output_dir:
             try:
                 sanity_result["backend_predicted"] = (
                     "numbering_first" if score >= settings.OUTLINE_SANITY_THRESHOLD else "llm"
                 )
                 with open(os.path.join(output_dir, "parse_quality.json"), "w", encoding="utf-8") as f:
-                    json.dump({"outline_sanity": sanity_result}, f, ensure_ascii=False, indent=2)
+                    json.dump(
+                        {"outline_sanity": sanity_result, "detection_quality": detection_result},
+                        f,
+                        ensure_ascii=False,
+                        indent=2,
+                    )
             except Exception as exc:
                 logger.warning(f"Failed to write parse_quality.json: {exc}")
 

@@ -18,7 +18,8 @@ from shared.services.profile import BUILTIN_ATTRIBUTE_KEYS, ProfileConstraint
 from shared.services.retrieval.cache_service import invalidate_retrieval_cache
 from shared.services.retrieval.graph.service import DocumentGraphService
 from shared.services.storage.result_storage import ResultStorage, get_result_storage
-from shared.utils.outline_sanity import outline_sanity_from_rows
+from shared.core.config import settings
+from shared.utils.outline_sanity import detection_quality_from_rows, outline_sanity_from_rows
 
 _DOCUMENT_CHUNK_ASSET_URL_EXPIRES_SECONDS = 7 * 24 * 60 * 60
 _MEDIA_CHUNK_TYPES = frozenset({"image", "table"})
@@ -661,12 +662,21 @@ class DocumentService:
             }
             for section in sections
         ]
+        # Detection quality: distinguishes "levels were wrong" (resolver fixes it,
+        # no re-parse) from "the heading set is suspect" (needs VLM re-detection).
+        detection = detection_quality_from_rows(
+            rows, settings.OUTLINE_SANITY_THRESHOLD
+        )
         score, result = outline_sanity_from_rows(rows)
         result["source"] = "backfill"
         result["score"] = score
         # Match the shape the worker writes (parse_quality.json -> {outline_sanity: {...}})
         # so the webUI badge reads the same field regardless of origin.
-        return {"outline_sanity": result, "source": "backfill"}
+        return {
+            "outline_sanity": result,
+            "detection_quality": detection,
+            "source": "backfill",
+        }
 
     async def re_evaluate_parse_quality(self, db: AsyncSession) -> dict[str, Any]:
         """Re-evaluate ``document_metadata.parse_quality`` for all active
@@ -690,14 +700,17 @@ class DocumentService:
                 total += 1
                 meta = dict(document.document_metadata or {})
                 existing = meta.get("parse_quality")
-                existing_has_outline_score = (
+                # Only skip docs that already carry a computed detection-quality
+                # hint; docs with a legacy outline_sanity-only or reparse-marker
+                # payload are re-evaluated so the new flag is populated.
+                existing_has_detection = (
                     isinstance(existing, dict)
-                    and isinstance(existing.get("outline_sanity"), dict)
+                    and isinstance(existing.get("detection_quality"), dict)
                     and isinstance(
-                        existing["outline_sanity"].get("score"), (int, float)
+                        existing["detection_quality"].get("detection"), str
                     )
                 )
-                if existing_has_outline_score:
+                if existing_has_detection:
                     skipped += 1
                     continue
                 quality = await self._outline_quality_for_document(db, document)
@@ -707,6 +720,7 @@ class DocumentService:
                 # Merge so a pre-existing reparse marker is not lost.
                 next_quality = dict(existing) if isinstance(existing, dict) else {}
                 next_quality["outline_sanity"] = quality["outline_sanity"]
+                next_quality["detection_quality"] = quality.get("detection_quality")
                 next_quality["source"] = quality["source"]
                 meta["parse_quality"] = next_quality
                 document.document_metadata = meta

@@ -193,3 +193,89 @@ def outline_sanity_from_rows(rows: list[dict[str, Any]]) -> tuple[float, dict[st
         "parse_hint": "low_quality" if score < 0.85 else "ok",
     }
     return score, result
+
+
+def _top_level_number_gaps(
+    resolved: list[tuple[int, Any, str]],
+) -> tuple[int, list[str]]:
+    """Count missing values in an otherwise-consecutive run of top-level numbers.
+
+    Looks only at single-segment numeric headings that ``build_outline`` placed at
+    absolute level 1 (e.g. ``1``, ``2``, ``3`` … chapter/section numbers). A gap
+    (e.g. ``1,2,4``) is a cheap, deterministic hint that a whole heading may have
+    been dropped by the extractor and thus needs re-detection. Values with letter
+    / roman / annex numbering are ignored and duplicates are collapsed.
+    """
+    nums: list[int] = []
+    for lvl, key, _txt in resolved:
+        if lvl == 1 and key and key[0] == "n":
+            s = str(key[1])
+            if s.isdigit():
+                nums.append(int(s))
+    if len(nums) < 3:
+        return 0, []
+    nums = sorted(set(nums))
+    missing: list[int] = []
+    for a, b in zip(nums, nums[1:]):
+        if b - a > 1:
+            missing.extend(range(a + 1, b))
+    return len(missing), [str(m) for m in missing][:10]
+
+
+def detection_quality_from_rows(
+    rows: list[dict[str, Any]], threshold: float = 0.85
+) -> dict[str, Any]:
+    """Detection-quality / "does this actually need VLM" hint from an ordered list.
+
+    ``rows`` = ordered ``[{"level": <detected>, "heading": "…"}, ...]``. On top of
+    the plain outline-sanity score this reports whether the numbering-first
+    resolver alone can recover a healthy tree, and whether a top-level heading
+    number looks missing. ``detection`` is one of:
+
+    - ``ok`` — raw score already at/above threshold; no action.
+    - ``resolver_recoverable`` — raw score is low, but re-deriving levels from the
+      numbering pulls it back to threshold. The problem was level assignment only,
+      so there is no need to re-run MinerU/VLM (a resolver re-pass suffices).
+    - ``needs_vlm`` — even re-derived levels cannot produce a clean tree and/or a
+      top-level chapter number appears missing, i.e. the heading *set* is suspect
+      and re-detection (VLM) is worth trying.
+
+    The result is a heuristic hint, not a verdict: it measures the *numbered*
+    heading sequence, so a body paragraph that only *looks* like a lettered item
+    (e.g. ``(c) the materials must be reproduced…``) is not flagged — that needs
+    semantic judgment and stays on the manual gate.
+    """
+    score, result = outline_sanity_from_rows(rows)
+    texts = [str(r.get("heading", "")) for r in rows]
+    resolved = build_outline(texts)
+    resolver_rows = [{"level": lvl, "heading": txt} for (lvl, _key, txt) in resolved]
+    resolver_score, _res = outline_sanity_from_rows(resolver_rows)
+    gaps, gap_samples = _top_level_number_gaps(resolved)
+
+    # A single skipped top-level number is usually legitimate (the document may
+    # simply not contain that section). Two or more gaps in an otherwise-dense
+    # top-level run is a much stronger hint that the extractor dropped headings —
+    # but only treat it as "needs re-detection" when the tree is already low
+    # quality, so a clean-scoring doc with a legitimately sparse numbering is
+    # not dragged into a VLM run.
+    needs_vlm = (resolver_score < threshold) or (score < threshold and gaps >= 2)
+
+    if needs_vlm:
+        detection = "needs_vlm"
+    elif score >= threshold:
+        detection = "ok"
+    else:
+        detection = "resolver_recoverable"
+
+    result.update(
+        {
+            "score": score,
+            "resolver_score": round(resolver_score, 4),
+            "recoverable": detection in ("ok", "resolver_recoverable"),
+            "detection": detection,
+            "needs_vlm": detection == "needs_vlm",
+            "missing_chapters": gaps,
+            "missing_chapter_samples": gap_samples,
+        }
+    )
+    return result

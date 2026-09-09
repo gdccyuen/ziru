@@ -15,6 +15,7 @@ from typing import Any
 
 from shared.utils.outline_sanity import (
     build_outline,
+    detection_quality_from_rows,
     is_banner_heading,
     num_key,
     numeric_depth,
@@ -23,6 +24,7 @@ from shared.utils.outline_sanity import (
 
 __all__ = [
     "build_outline",
+    "detection_quality_from_rows",
     "is_banner_heading",
     "num_key",
     "numeric_depth",
