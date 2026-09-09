@@ -1,13 +1,9 @@
-"""Engine-facing numbering-first heading hierarchy + outline sanity helpers.
+"""Engine-facing numbering-first heading resolver.
 
-The pure numbering/outline logic lives in ``shared.utils.outline_sanity`` so the
-API can reuse it for the parse-quality backfill. This module adds the pandas-
-aware adapters used by the parser:
-
-- ``resolve_heading_levels(df)`` — override the ``level`` column so numbered
-  headings get a level derived from their numbering prefix, while banner /
-  classification headings are demoted to body text.
-- ``outline_sanity(df)`` — ``(score, result)`` for the detected heading levels.
+The pure numbering/outline logic lives in ``shared.utils.outline_sanity``. This
+module adds the pandas-aware adapter used by the parser. Outline Quality itself
+is derived on read from the published Document Sections (ADR-0004); it is not
+computed at parse time.
 """
 from __future__ import annotations
 
@@ -15,21 +11,11 @@ from typing import Any
 
 from shared.utils.outline_sanity import (
     build_outline,
-    detection_quality_from_rows,
     is_banner_heading,
     num_key,
-    numeric_depth,
-    outline_sanity_from_rows,
 )
 
 __all__ = [
-    "build_outline",
-    "detection_quality_from_rows",
-    "is_banner_heading",
-    "num_key",
-    "numeric_depth",
-    "outline_sanity",
-    "outline_sanity_from_rows",
     "resolve_heading_levels",
 ]
 
@@ -61,7 +47,7 @@ def resolve_heading_levels(df: Any) -> Any:
     resolved = build_outline(texts)  # [(level, key, text)]
 
     level_by_index: dict[int, int] = {}
-    for idx, (lvl, key, txt) in enumerate(resolved):
+    for idx, (lvl, _key, txt) in enumerate(resolved):
         incoming = rows[idx]["level"]
         was_candidate = isinstance(incoming, int) and incoming > 0
         # Only re-derive rows that were already heading candidates, or that carry
@@ -77,8 +63,3 @@ def resolve_heading_levels(df: Any) -> Any:
             df.at[df.index[idx], "level"] = level_by_index[idx]
         return df
     return rows
-
-
-def outline_sanity(df: Any) -> tuple[float, dict[str, Any]]:
-    """Score the detected hierarchy against the numbering. Returns (score, result)."""
-    return outline_sanity_from_rows(_rows_of(df))

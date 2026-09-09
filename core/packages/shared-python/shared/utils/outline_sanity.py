@@ -1,17 +1,18 @@
-"""Pure numbering-first outline helpers (shared by worker + API).
+"""Pure numbering-first Outline Quality module (ADR-0004).
 
 Single source of truth for:
 - numbering-prefix extraction / depth (``num_key``, ``numeric_depth``)
 - deterministic heading level assignment (``build_outline``)
-- the post-parse outline-sanity score (``outline_sanity_from_rows``)
+- the Outline Verdict for a Document's published Document Sections
+  (``assess_outline``)
 
-These are pure (regex + collections only) so both the worker's parser and the
-API's backfill can compute an honest quality score from a document's published
-section tree without an LLM / MinerU.
+Pure (regex + dataclasses only), so the API derives a Document's Outline Quality
+on read from its published sections — no LLM, no MinerU, no stored copy.
 """
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import Any
 
 # ── numbering-prefix extraction ──────────────────────────────────────────────
@@ -148,13 +149,40 @@ def build_outline(texts: list[str]) -> list[tuple[int, Any, str]]:
     return out
 
 
-def outline_sanity_from_rows(rows: list[dict[str, Any]]) -> tuple[float, dict[str, Any]]:
-    """Score an ordered heading list against its numbering.
+@dataclass(frozen=True)
+class OutlineVerdict:
+    """The assessed Outline Quality of one Document revision (ADR-0004)."""
 
-    ``rows`` = ordered ``[{"level": <detected>, "heading": "…"}, ...]``.
-    Returns ``(score, result)`` where score is the fraction of numbered headings
-    whose detected level matches the numbering depth, and result carries counts /
-    samples / a parse_hint.
+    verdict: str  # "ok" | "resolver_recoverable" | "needs_vlm"
+    score: float
+    resolver_score: float
+    n_headings: int
+    n_anomalies: int
+    missing_chapters: int
+    anomaly_samples: list[dict[str, Any]]
+    missing_chapter_samples: list[str]
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "verdict": self.verdict,
+            "score": self.score,
+            "resolver_score": self.resolver_score,
+            "n_headings": self.n_headings,
+            "n_anomalies": self.n_anomalies,
+            "missing_chapters": self.missing_chapters,
+            "anomaly_samples": self.anomaly_samples,
+            "missing_chapter_samples": self.missing_chapter_samples,
+        }
+
+
+def _score_rows(
+    rows: list[dict[str, Any]],
+) -> tuple[float, int, int, list[dict[str, Any]]]:
+    """Score ordered headings against their numbering.
+
+    Returns ``(score, n_headings, n_anomalies, anomaly_samples)`` where score is
+    the fraction of numbered headings whose detected level matches the numbering
+    depth.
     """
     texts = [str(r.get("heading", "")) for r in rows]
     expected = build_outline(texts)
@@ -163,7 +191,6 @@ def outline_sanity_from_rows(rows: list[dict[str, Any]]) -> tuple[float, dict[st
     n = 0
     ok = 0
     anomalies: list[dict[str, Any]] = []
-    banner_count = 0
     for i, row in enumerate(rows):
         got = row.get("level")
         exp, key = expected_by_idx.get(i, (-1, None))
@@ -180,19 +207,8 @@ def outline_sanity_from_rows(rows: list[dict[str, Any]]) -> tuple[float, dict[st
                         "expected": exp,
                     }
                 )
-        elif exp == -1 and is_banner_heading(str(row.get("heading", ""))):
-            banner_count += 1
-
     score = (ok / n) if n else 1.0
-    result: dict[str, Any] = {
-        "score": round(score, 4),
-        "n_headings": n,
-        "n_anomalies": len(anomalies),
-        "n_banners": banner_count,
-        "anomaly_samples": anomalies[:10],
-        "parse_hint": "low_quality" if score < 0.85 else "ok",
-    }
-    return score, result
+    return score, n, len(anomalies), anomalies[:10]
 
 
 def _top_level_number_gaps(
@@ -222,60 +238,46 @@ def _top_level_number_gaps(
     return len(missing), [str(m) for m in missing][:10]
 
 
-def detection_quality_from_rows(
+def assess_outline(
     rows: list[dict[str, Any]], threshold: float = 0.85
-) -> dict[str, Any]:
-    """Detection-quality / "does this actually need VLM" hint from an ordered list.
+) -> OutlineVerdict:
+    """Assess a Document's Outline Quality from its ordered Document Sections.
 
-    ``rows`` = ordered ``[{"level": <detected>, "heading": "…"}, ...]``. On top of
-    the plain outline-sanity score this reports whether the numbering-first
-    resolver alone can recover a healthy tree, and whether a top-level heading
-    number looks missing. ``detection`` is one of:
+    ``rows`` = ordered ``[{"level": <detected>, "heading": "…"}, ...]``. Owns both
+    the assessment and the verdict policy: callers render the verdict and never
+    re-derive the threshold (ADR-0004). ``verdict`` is one of:
 
-    - ``ok`` — raw score already at/above threshold; no action.
-    - ``resolver_recoverable`` — raw score is low, but re-deriving levels from the
-      numbering pulls it back to threshold. The problem was level assignment only,
-      so there is no need to re-run MinerU/VLM (a resolver re-pass suffices).
-    - ``needs_vlm`` — even re-derived levels cannot produce a clean tree and/or a
-      top-level chapter number appears missing, i.e. the heading *set* is suspect
-      and re-detection (VLM) is worth trying.
+    - ``ok`` — the heading levels already match the numbering.
+    - ``resolver_recoverable`` — the levels are mis-assigned but re-deriving them
+      from the numbering restores a healthy hierarchy; no re-detection needed.
+    - ``needs_vlm`` — even re-derived levels cannot produce a clean tree, so the
+      heading set is suspect and re-detection is worth trying.
 
-    The result is a heuristic hint, not a verdict: it measures the *numbered*
-    heading sequence, so a body paragraph that only *looks* like a lettered item
-    (e.g. ``(c) the materials must be reproduced…``) is not flagged — that needs
-    semantic judgment and stays on the manual gate.
+    Top-level number gaps are reported informationally and never flip the verdict
+    on their own: a document may legitimately lack a numbered section (OG.pdf has
+    no chapters 4/8/12/16 even though 8 and 12 are cross-referenced in prose).
     """
-    score, result = outline_sanity_from_rows(rows)
+    score, n_headings, n_anomalies, anomaly_samples = _score_rows(rows)
     texts = [str(r.get("heading", "")) for r in rows]
     resolved = build_outline(texts)
     resolver_rows = [{"level": lvl, "heading": txt} for (lvl, _key, txt) in resolved]
-    resolver_score, _res = outline_sanity_from_rows(resolver_rows)
+    resolver_score, _n, _a, _s = _score_rows(resolver_rows)
     gaps, gap_samples = _top_level_number_gaps(resolved)
 
-    # A top-level number gap is *often* legitimate (e.g. a document simply has no
-    # such section) — OG.pdf genuinely has no chapters 4/8/12/16 even though 8
-    # and 12 are cross-referenced in prose. So gaps are reported as information
-    # and never flip the verdict on their own. ``needs_vlm`` fires only when even
-    # the numbering-first resolver cannot produce a clean tree (the heading *set*
-    # itself is unusable).
-    needs_vlm = resolver_score < threshold
-
-    if needs_vlm:
-        detection = "needs_vlm"
+    if resolver_score < threshold:
+        verdict = "needs_vlm"
     elif score >= threshold:
-        detection = "ok"
+        verdict = "ok"
     else:
-        detection = "resolver_recoverable"
+        verdict = "resolver_recoverable"
 
-    result.update(
-        {
-            "score": score,
-            "resolver_score": round(resolver_score, 4),
-            "recoverable": detection in ("ok", "resolver_recoverable"),
-            "detection": detection,
-            "needs_vlm": detection == "needs_vlm",
-            "missing_chapters": gaps,
-            "missing_chapter_samples": gap_samples,
-        }
+    return OutlineVerdict(
+        verdict=verdict,
+        score=round(score, 4),
+        resolver_score=round(resolver_score, 4),
+        n_headings=n_headings,
+        n_anomalies=n_anomalies,
+        missing_chapters=gaps,
+        anomaly_samples=anomaly_samples,
+        missing_chapter_samples=gap_samples,
     )
-    return result

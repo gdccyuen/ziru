@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Sequence, cast
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.models.database.document import Document, DocumentChunk, DocumentSection
@@ -166,6 +166,44 @@ class DocumentRepository:
             )
         )
         return result.scalars().all()
+
+    async def list_current_sections_by_document(
+        self,
+        db: AsyncSession,
+        *,
+        documents: Sequence[Document],
+    ) -> dict[str, Sequence[DocumentSection]]:
+        """Batch-load the current revision's sections for many documents.
+
+        One query for the whole page (no N+1), keyed by ``document_id``.
+        """
+        pairs = [
+            (document.document_id, document.current_job_result_id)
+            for document in documents
+            if document.current_job_result_id
+        ]
+        if not pairs:
+            return {}
+        result = await db.execute(
+            select(DocumentSection)
+            .where(
+                tuple_(
+                    DocumentSection.document_id,
+                    DocumentSection.job_result_id,
+                ).in_(pairs)
+            )
+            .order_by(
+                DocumentSection.document_id.asc(),
+                DocumentSection.sort_order.asc(),
+                DocumentSection.section_level.asc(),
+                DocumentSection.section_path.asc(),
+                DocumentSection.section_id.asc(),
+            )
+        )
+        grouped: dict[str, list[DocumentSection]] = {}
+        for section in result.scalars().all():
+            grouped.setdefault(section.document_id, []).append(section)
+        return grouped
 
     async def count_document_chunks_by_section(
         self,

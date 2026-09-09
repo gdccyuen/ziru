@@ -57,12 +57,24 @@ export type Pagination = {
   total_pages: number;
 };
 
+export type OutlineVerdict = {
+  verdict: "ok" | "resolver_recoverable" | "needs_vlm";
+  score: number;
+  resolver_score: number;
+  n_headings: number;
+  n_anomalies: number;
+  missing_chapters: number;
+  anomaly_samples: { idx: number; heading: string; got: number; expected: number }[];
+  missing_chapter_samples: string[];
+};
+
 export type DocumentItem = {
   document_id: string;
   status: string;
   current_job_result_id: string | null;
   source_file_name: string | null;
   document_metadata: Record<string, unknown> | null;
+  outline_quality?: OutlineVerdict | null;
   created_at: string | null;
   updated_at: string | null;
   archived_at: string | null;
@@ -432,13 +444,6 @@ export const api = {
       `/v2/documents/${encodeURIComponent(documentId)}/reparse?backend=${encodeURIComponent(backend)}`,
       { method: "POST" },
     ),
-  reEvaluateParseQuality: () =>
-    apiRequest<{
-      status: string;
-      scanned: number;
-      updated: number;
-      skipped: number;
-    }>("/v2/documents/parse-quality/re-evaluate", { method: "POST" }),
   apiKeys: () =>
     apiRequest<{ api_keys: ApiKey[]; total: number }>("/v2/api-keys"),
   chatThreads: {

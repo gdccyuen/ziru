@@ -1,5 +1,4 @@
 # pyright: reportArgumentType=false, reportAssignmentType=false, reportAttributeAccessIssue=false, reportCallIssue=false, reportGeneralTypeIssues=false, reportOperatorIssue=false, reportOptionalMemberAccess=false, reportOptionalSubscript=false
-import json
 import os
 
 import gevent
@@ -13,8 +12,6 @@ from app.services.document_parser.structure.heading_llm_executor import (
     execute_llm_heading_hierarchy,
 )
 from app.services.document_parser.structure.outline_sanity import (
-    detection_quality_from_rows,
-    outline_sanity,
     resolve_heading_levels,
 )
 from app.services.document_parser.structure.heading_tree import (
@@ -689,41 +686,12 @@ def pred_titles(
             f"✅ Heading parsing completed, final {len(heading_preds[heading_preds['level'] > 0])} valid headings"
         )
 
-    # ── Deterministic numbering-first post-pass + parse-quality sidecar ──
+    # ── Deterministic numbering-first post-pass ──
+    # The resolver changes what the parser *does* (heading levels), not the badge:
+    # Outline Quality is derived on read from the published Document Sections
+    # (ADR-0004), so no parse-quality sidecar is written here.
     if settings.NUMBERING_FIRST_HIERARCHY and not heading_preds.empty:
-        # Re-apply so tree re-leveling / isolated-node removal cannot undo the
-        # numbering-derived levels (kept idempotent).
         heading_preds = resolve_heading_levels(heading_preds)
-        score, sanity_result = outline_sanity(heading_preds)
-        logger.info(
-            f"outline sanity: score={score:.2f} anomalies={sanity_result['n_anomalies']}"
-        )
-        # Detection quality is scored against the *published* (post-resolve)
-        # levels, not the pre-resolve ones. Once the resolver has fixed the tree
-        # the flag reads "ok", so the "resolver fixes" suggestion goes away — the
-        # document no longer needs fixing. (gaps/missing chapters are unaffected:
-        # build_outline derives those from heading text, not stored levels.)
-        resolved_rows = [
-            {"level": row.get("level"), "heading": str(row.get("heading", ""))}
-            for _, row in heading_preds.iterrows()
-        ]
-        detection_result = detection_quality_from_rows(
-            resolved_rows, settings.OUTLINE_SANITY_THRESHOLD
-        )
-        if settings.OUTLINE_SANITY_JSON and output_dir:
-            try:
-                sanity_result["backend_predicted"] = (
-                    "numbering_first" if score >= settings.OUTLINE_SANITY_THRESHOLD else "llm"
-                )
-                with open(os.path.join(output_dir, "parse_quality.json"), "w", encoding="utf-8") as f:
-                    json.dump(
-                        {"outline_sanity": sanity_result, "detection_quality": detection_result},
-                        f,
-                        ensure_ascii=False,
-                        indent=2,
-                    )
-            except Exception as exc:
-                logger.warning(f"Failed to write parse_quality.json: {exc}")
 
     # ── Splice pre-TOC rows back ──
     if pre_toc_rows is not None and not heading_preds.empty:

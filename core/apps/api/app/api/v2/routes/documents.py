@@ -404,21 +404,6 @@ async def reparse_document(
     return job_response
 
 
-@router.post(
-    "/parse-quality/re-evaluate",
-    summary="Re-evaluate parse-quality badges from existing section trees (admin)",
-)
-async def re_evaluate_document_parse_quality(
-    current_user: CurrentUser = Depends(require_admin),
-    db: AsyncSession = Depends(get_db),
-):
-    """Re-evaluate and store ``document_metadata.parse_quality`` for all active
-    documents from their published section trees, so already-ingested documents
-    get an honest quality badge without re-parsing. Admin only."""
-    result = await _document_service.re_evaluate_parse_quality(db)
-    return {"status": "ok", **result}
-
-
 async def _set_reparse_job_metadata(
     db: AsyncSession,
     *,
@@ -442,12 +427,6 @@ async def _set_reparse_job_metadata(
     metadata["attributes"] = attributes
     metadata["file_hash"] = file_hash
     metadata["original_file_key"] = original_file_key
-    doc_meta = dict(metadata.get("document_metadata") or {})
-    doc_meta.setdefault("parse_quality", {})["reparse"] = {
-        "triggered": True,
-        "backend": backend,
-    }
-    metadata["document_metadata"] = doc_meta
     job.job_metadata = metadata
     await db.commit()
     try:

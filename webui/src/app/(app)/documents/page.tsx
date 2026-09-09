@@ -333,38 +333,6 @@ export default function DocumentsPage() {
   );
 }
 
-function parseQuality(metadata: Record<string, unknown> | null) {
-  const pq = (metadata?.parse_quality ?? {}) as {
-    outline_sanity?: {
-      score?: number;
-      n_anomalies?: number;
-      parse_hint?: string;
-    };
-    detection_quality?: {
-      detection?: string;
-      needs_vlm?: boolean;
-      resolver_score?: number;
-      missing_chapters?: number;
-    };
-    score?: number;
-  };
-  // Support both the engine sidecar shape ({outline_sanity:{score}}) and a flat
-  // {score} fallback.
-  const score = pq.outline_sanity?.score ?? pq.score;
-  if (typeof score !== "number") return null;
-  const dq = pq.detection_quality;
-  return {
-    score,
-    ok: score >= 0.85,
-    anomalies: pq.outline_sanity?.n_anomalies ?? 0,
-    hint: pq.outline_sanity?.parse_hint ?? "",
-    detection: dq?.detection ?? "",
-    needs_vlm: dq?.needs_vlm ?? false,
-    resolver_score: dq?.resolver_score,
-    missing_chapters: dq?.missing_chapters ?? 0,
-  };
-}
-
 function DocumentRow({
   document,
   highlighted,
@@ -386,7 +354,7 @@ function DocumentRow({
   const hoverText = manualAttrs.length
     ? manualAttrs.map(([key, values]) => `${key}: ${values.join(", ")}`).join(" · ")
     : undefined;
-  const quality = parseQuality(document.document_metadata);
+  const quality = document.outline_quality ?? null;
   return (
     <div
       className={`list-group-item d-flex flex-column gap-1 ${highlighted ? "bg-primary-subtle" : ""}`}
@@ -408,20 +376,20 @@ function DocumentRow({
         <div className="d-flex align-items-center gap-2">
           {quality ? (
             <span
-              className={`badge ${quality.ok ? "text-bg-success" : "text-bg-warning"}`}
-              title={`Outline sanity ${(quality.score * 100).toFixed(0)}% · ${quality.anomalies} anomalies`}
+              className={`badge ${quality.verdict === "ok" ? "text-bg-success" : "text-bg-warning"}`}
+              title={`Outline Quality ${(quality.score * 100).toFixed(0)}% · ${quality.n_anomalies} anomalies`}
             >
               outline {Math.round(quality.score * 100)}%
             </span>
           ) : null}
-          {quality?.needs_vlm ? (
+          {quality?.verdict === "needs_vlm" ? (
             <span
               className="badge text-bg-danger"
-              title="Deterministic outline repair can't restore a clean tree / a top-level heading looks missing. This one genuinely warrants a VLM re-parse."
+              title="Deterministic outline repair can't restore a clean tree. This one genuinely warrants a VLM re-parse."
             >
               needs VLM
             </span>
-          ) : quality?.detection === "resolver_recoverable" && !quality.ok ? (
+          ) : quality?.verdict === "resolver_recoverable" ? (
             <span
               className="badge text-bg-info"
               title="Levels were misassigned but the numbering-first resolver restores a healthy tree — no VLM re-parse needed."

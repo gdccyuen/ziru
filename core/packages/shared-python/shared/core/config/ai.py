@@ -42,18 +42,9 @@ class AIConfig(BaseModel):
     OUTLINE_SANITY_THRESHOLD: float = Field(
         default=0.85,
         description=(
-            "Normalized outline-sanity score below which the deterministic "
-            "numbering hierarchy is considered weak. With NUMBERING_FIRST_HIERARCHY "
-            "true, a score below this triggers the hierarchy LLM (A3) and flags the "
-            "document for a possible VLM re-parse."
-        ),
-    )
-    OUTLINE_SANITY_JSON: bool = Field(
-        default=True,
-        description=(
-            "Write a parse_quality.json sidecar alongside heading prediction "
-            "containing the outline-sanity score and anomalies, so downstream "
-            "(workflow/job) can record it into job metadata / the document manifest."
+            "Normalized Outline Quality score at or above which a Document's "
+            "Heading Hierarchy is considered sound. The Outline Quality verdict "
+            "derived on read applies this threshold (ADR-0004)."
         ),
     )
     IMAGE_MODEL: str = Field(

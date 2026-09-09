@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, Sequence
 
 from app.repositories.document_repository import DocumentRepository
 from loguru import logger
@@ -19,7 +19,7 @@ from shared.services.retrieval.cache_service import invalidate_retrieval_cache
 from shared.services.retrieval.graph.service import DocumentGraphService
 from shared.services.storage.result_storage import ResultStorage, get_result_storage
 from shared.core.config import settings
-from shared.utils.outline_sanity import detection_quality_from_rows, outline_sanity_from_rows
+from shared.utils.outline_sanity import assess_outline
 
 _DOCUMENT_CHUNK_ASSET_URL_EXPIRES_SECONDS = 7 * 24 * 60 * 60
 _MEDIA_CHUNK_TYPES = frozenset({"image", "table"})
@@ -175,6 +175,27 @@ def _section_title_from_path(section_path: str) -> str:
     return parts[-1] if parts else section_path.strip() or "Untitled section"
 
 
+def outline_verdict_payload(
+    sections: Sequence[DocumentSection],
+) -> dict[str, Any] | None:
+    """Derive a Document's Outline Quality from its published sections.
+
+    The verdict is computed on read, never stored (ADR-0004). Returns ``None``
+    when the document has no published sections yet.
+    """
+    if not sections:
+        return None
+    rows = [
+        {
+            "level": section.section_level,
+            "heading": section.section_title
+            or _section_title_from_path(section.section_path),
+        }
+        for section in sections
+    ]
+    return assess_outline(rows, settings.OUTLINE_SANITY_THRESHOLD).as_dict()
+
+
 def _truncate_snippet(
     value: str | None,
     *,
@@ -286,6 +307,10 @@ class DocumentService:
             db,
             document_ids=[document.document_id for document in documents],
         )
+        sections_by_document = await self._repository.list_current_sections_by_document(
+            db,
+            documents=documents,
+        )
         creator_emails: dict[str, str] = {}
         if include_creator_email:
             creator_user_ids = {
@@ -308,6 +333,9 @@ class DocumentService:
                     creator_email = creator_emails.get(create_by[0])
             payload = document_payload(document, creator_email=creator_email)
             payload["attributes"] = attributes_map.get(document.document_id, {})
+            payload["outline_quality"] = outline_verdict_payload(
+                sections_by_document.get(document.document_id, [])
+            )
             payloads.append(payload)
         return {
             "documents": payloads,
@@ -637,102 +665,6 @@ class DocumentService:
             "job_result_id": job_result_id,
             "sections": section_payloads,
         }
-
-    async def _outline_quality_for_document(
-        self,
-        db: AsyncSession,
-        document: Document,
-    ) -> dict[str, Any] | None:
-        """Compute an honest parse-quality score from the published section tree."""
-        job_result_id = document.current_job_result_id
-        if not job_result_id:
-            return None
-        sections = await self._repository.list_document_sections(
-            db,
-            document_id=document.document_id,
-            job_result_id=job_result_id,
-        )
-        if not sections:
-            return None
-        rows = [
-            {
-                "level": section.section_level,
-                "heading": section.section_title
-                or _section_title_from_path(section.section_path),
-            }
-            for section in sections
-        ]
-        # Detection quality: distinguishes "levels were wrong" (resolver fixes it,
-        # no re-parse) from "the heading set is suspect" (needs VLM re-detection).
-        detection = detection_quality_from_rows(
-            rows, settings.OUTLINE_SANITY_THRESHOLD
-        )
-        score, result = outline_sanity_from_rows(rows)
-        result["source"] = "backfill"
-        result["score"] = score
-        # Match the shape the worker writes (parse_quality.json -> {outline_sanity: {...}})
-        # so the webUI badge reads the same field regardless of origin.
-        return {
-            "outline_sanity": result,
-            "detection_quality": detection,
-            "source": "backfill",
-        }
-
-    async def re_evaluate_parse_quality(self, db: AsyncSession) -> dict[str, Any]:
-        """Re-evaluate ``document_metadata.parse_quality`` for all active
-        documents from their existing published section trees.
-
-        Skips documents that already carry a computed outline-sanity score, so
-        an engine-computed score is never overwritten. A ``parse_quality`` dict
-        that only holds a ``reparse`` marker (no score) is still re-evaluated.
-        Returns a summary dict.
-        """
-        total = updated = skipped = 0
-        limit = 100
-        offset = 0
-        while True:
-            documents = await self._repository.list_documents(
-                db, limit=limit, offset=offset
-            )
-            if not documents:
-                break
-            for document in documents:
-                total += 1
-                meta = dict(document.document_metadata or {})
-                existing = meta.get("parse_quality")
-                # Only skip docs that already carry a computed detection-quality
-                # hint; docs with a legacy outline_sanity-only or reparse-marker
-                # payload are re-evaluated so the new flag is populated.
-                existing_has_detection = (
-                    isinstance(existing, dict)
-                    and isinstance(existing.get("detection_quality"), dict)
-                    and isinstance(
-                        existing["detection_quality"].get("detection"), str
-                    )
-                )
-                if existing_has_detection:
-                    skipped += 1
-                    continue
-                quality = await self._outline_quality_for_document(db, document)
-                if quality is None:
-                    skipped += 1
-                    continue
-                # Merge so a pre-existing reparse marker is not lost.
-                next_quality = dict(existing) if isinstance(existing, dict) else {}
-                next_quality["outline_sanity"] = quality["outline_sanity"]
-                next_quality["detection_quality"] = quality.get("detection_quality")
-                next_quality["source"] = quality["source"]
-                meta["parse_quality"] = next_quality
-                document.document_metadata = meta
-                updated += 1
-            await db.commit()
-            offset += limit
-            if len(documents) < limit:
-                break
-        logger.info(
-            f"re_evaluate_parse_quality: scanned={total} updated={updated} skipped={skipped}"
-        )
-        return {"scanned": total, "updated": updated, "skipped": skipped}
 
     async def get_document_page_citation_source(
         self,

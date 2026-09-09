@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import json
-import os
-
 from app.services.document_ingestion.processing_context import ParseJobContext
 from app.services.document_ingestion.source_preparation import PreparedSourceFile
 from app.services.document_parser import parse_service
@@ -14,10 +11,7 @@ from app.services.document_parser.support.stage_profiler import (
     get_current_stage_tracker,
 )
 from loguru import logger
-from sqlalchemy import select
 
-from shared.core.database_sync import get_sync_db_context
-from shared.models.database.job import Job
 from shared.models.schemas.job_metadata import JobMetadataHelper
 from shared.services.ai.token_tracking import (
     init_token_tracker,
@@ -123,7 +117,6 @@ def execute_document_parse(
             "timing_ms": dict(stage_timing_dict),
             "token_usage": dict(token_usage_dict),
         }
-        _merge_parse_quality(job_id=job_id, job_context=job_context, output_dir=parse_output.output_dir)
     finally:
         if owns_token_tracker:
             cleanup_token_tracker()
@@ -131,60 +124,6 @@ def execute_document_parse(
             cleanup_stage_tracker()
 
     return parse_output
-
-
-def _merge_parse_quality(*, job_id: str, job_context: ParseJobContext, output_dir: str) -> None:
-    """Merge the parse_quality.json sidecar (written during heading prediction)
-    into the job metadata so it flows to ``documents.document_metadata``.
-
-    The sidecar may be absent (flag off, or a non-markdown parser) — then this is
-    a no-op and nothing is recorded.
-
-    ``job_context.job_metadata`` is an in-memory copy, whereas publication reads
-    the DB ``jobs.job_metadata`` row, so the merged ``document_metadata`` is also
-    persisted back to that row — otherwise the quality badge would only appear
-    after a separate parse-quality re-evaluation (backfill).
-    """
-    if not output_dir:
-        return
-    sidecar = os.path.join(output_dir, "parse_quality.json")
-    try:
-        if not os.path.exists(sidecar):
-            return
-        with open(sidecar, encoding="utf-8") as f:
-            payload = json.load(f)
-        if not isinstance(payload, dict):
-            return
-        doc_meta = job_context.job_metadata.setdefault("document_metadata", {})
-        if not isinstance(doc_meta, dict):
-            doc_meta = {"parse_quality": {}}
-            job_context.job_metadata["document_metadata"] = doc_meta
-        doc_meta.setdefault("parse_quality", {}).update(payload)
-        logger.info(f"📊 parse_quality recorded for job_id={job_id}: {payload}")
-        _persist_document_metadata(job_id, doc_meta)
-    except Exception as exc:  # never fail the parse because of a recording issue
-        logger.warning(f"Failed to record parse_quality.json: {exc}")
-
-
-def _persist_document_metadata(job_id: str, document_metadata: dict) -> None:
-    """Write the merged ``document_metadata`` back to the DB job row.
-
-    Publication reads ``job.job_metadata`` from the database, so this is what
-    actually propagates the parse-quality badge onto the published document.
-    Best-effort — failures must not fail the parse.
-    """
-    try:
-        with get_sync_db_context() as db:
-            job = db.execute(
-                select(Job).where(Job.job_id == job_id).with_for_update()
-            ).scalar_one_or_none()
-            if job is None:
-                return
-            meta = dict(job.job_metadata or {})
-            meta["document_metadata"] = document_metadata
-            job.job_metadata = meta
-    except Exception as exc:
-        logger.warning(f"Failed to persist document_metadata for job_id={job_id}: {exc}")
 
 
 def _execute_page_memory_parse(

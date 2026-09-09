@@ -84,6 +84,16 @@ The hierarchical navigation node derived from parsed headings and section paths.
 
 The retrieval-visible text, image, or table row attached to a Document Section.
 
+### Outline Quality
+
+The assessment of whether a Document's Heading Hierarchy is correctly levelled, derived from its Document Sections. A property of a published Document revision, not of a parse attempt.
+_Avoid_: parse quality, outline sanity, detection quality
+
+### Outline Verdict
+
+The outcome of Outline Quality: the Heading Hierarchy is sound (`ok`), repairable by the deterministic numbering-first resolver (`resolver_recoverable`), or needs re-detection (`needs_vlm`).
+_Avoid_: parse hint, quality flag
+
 ### Document Ingestion
 
 The workflow that creates a Job, accepts a file or URL source, confirms upload

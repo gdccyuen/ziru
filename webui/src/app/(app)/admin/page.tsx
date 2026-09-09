@@ -28,25 +28,6 @@ export default function AdminPage() {
   const [secrets, setSecrets] = useState<WebhookSecret[] | null>(null);
   const [logs, setLogs] = useState<WebhookLog[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [reEvaluating, setReEvaluating] = useState(false);
-  const [reEvaluateMessage, setReEvaluateMessage] = useState<string | null>(null);
-
-  async function handleReEvaluate() {
-    setReEvaluating(true);
-    setReEvaluateMessage(null);
-    try {
-      const res = await api.reEvaluateParseQuality();
-      setReEvaluateMessage(
-        `Re-evaluated ${res.updated} document(s) (scanned ${res.scanned}, skipped ${res.skipped}).`,
-      );
-    } catch (e) {
-      setReEvaluateMessage(
-        e instanceof Error ? e.message : "Failed to re-evaluate parse quality.",
-      );
-    } finally {
-      setReEvaluating(false);
-    }
-  }
 
   useEffect(() => {
     if (user && user.grade !== "administrator") {
@@ -233,28 +214,6 @@ export default function AdminPage() {
             )}
           </>
         )}
-      </Section>
-
-      {/* Parse quality maintenance */}
-      <Section title="Parse quality">
-        <p className="text-secondary small mb-2">
-          Compute an honest outline-sanity badge for <em>already-ingested</em>{" "}
-          documents from their published section trees (no re-parsing). Re-parsing a
-          document later refreshes its badge automatically.
-        </p>
-        <div className="d-flex align-items-center gap-2">
-          <button
-            type="button"
-            className="btn btn-sm btn-primary"
-            disabled={reEvaluating}
-            onClick={handleReEvaluate}
-          >
-            {reEvaluating ? "Re-evaluating…" : "Re-evaluate quality"}
-          </button>
-        </div>
-        {reEvaluateMessage ? (
-          <p className="mb-0 mt-2 small text-secondary">{reEvaluateMessage}</p>
-        ) : null}
       </Section>
     </section>
   );
