@@ -252,13 +252,13 @@ def detection_quality_from_rows(
     resolver_score, _res = outline_sanity_from_rows(resolver_rows)
     gaps, gap_samples = _top_level_number_gaps(resolved)
 
-    # A single skipped top-level number is usually legitimate (the document may
-    # simply not contain that section). Two or more gaps in an otherwise-dense
-    # top-level run is a much stronger hint that the extractor dropped headings —
-    # but only treat it as "needs re-detection" when the tree is already low
-    # quality, so a clean-scoring doc with a legitimately sparse numbering is
-    # not dragged into a VLM run.
-    needs_vlm = (resolver_score < threshold) or (score < threshold and gaps >= 2)
+    # A top-level number gap is *often* legitimate (e.g. a document simply has no
+    # such section) — OG.pdf genuinely has no chapters 4/8/12/16 even though 8
+    # and 12 are cross-referenced in prose. So gaps are reported as information
+    # and never flip the verdict on their own. ``needs_vlm`` fires only when even
+    # the numbering-first resolver cannot produce a clean tree (the heading *set*
+    # itself is unusable).
+    needs_vlm = resolver_score < threshold
 
     if needs_vlm:
         detection = "needs_vlm"

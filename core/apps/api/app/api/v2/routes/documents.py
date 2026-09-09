@@ -22,7 +22,7 @@ from app.services.attributes.attribute_service import (
 from app.services.document_ingestion import DocumentIngestionService
 from app.services.documents.lifecycle_service import DocumentService
 from app.services.rate_limit.data_structures import CurrentUser
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -300,15 +300,30 @@ async def _create_document_from_multipart(
 )
 async def reparse_document(
     document_id: str,
+    backend: str = Query(
+        "vlm-engine",
+        description=(
+            "MinerU backend to re-run with. 'pipeline' re-runs the deterministic "
+            "parsing (fast; numbering-first resolver repairs mis-assigned heading "
+            "levels). 'vlm-engine' re-runs VLM re-detection for documents whose "
+            "heading *set* is suspect. Defaults to 'vlm-engine'."
+        ),
+    ),
     current_user: CurrentUser = Depends(require_librarian_or_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Re-run parsing on a document's retained original file using MinerU VLM.
+    """Re-run parsing on a document's retained original file.
 
     Creates a new ingestion job for the same ``document_id`` (so it republishes a
-    new revision) with ``parsing_params.mineru_backend="vlm-engine"``. Used as the
-    B2 "Re-parse" action for documents flagged as low outline quality.
+    new revision) with ``parsing_params.mineru_backend=<backend>``. Use ``backend=
+    "pipeline"`` for the cheap "resolver" re-parse (no VLM, applies the numbering-
+    first resolver), or ``backend="vlm-engine"`` for full VLM re-detection.
     """
+    if backend not in ("pipeline", "vlm-engine", "hybrid-engine"):
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unsupported MinerU backend: {backend!r}.",
+        )
     await _document_service.get_document_or_raise(db, document_id=document_id)
     attributes = await _document_service.get_document_attributes(
         db, document_id=document_id
@@ -345,9 +360,9 @@ async def reparse_document(
         source_type="file",
         file_name=filename,
         document_id=document_id,
-        # Request the VLM backend at creation time (before the worker can start),
-        # so the re-parse is reliably a VLM re-run rather than a pipeline re-run.
-        parsing_params=ParsingParams(mineru_backend="vlm-engine"),
+        # Request the backend at creation time (before the worker can start), so
+        # the re-parse is reliably a <backend> run rather than a default run.
+        parsing_params=ParsingParams(mineru_backend=backend),
     )
     job_response = await _document_ingestion_service.create_v1_job(
         db,
@@ -375,7 +390,7 @@ async def reparse_document(
         user_id=current_user.user_id,
     )
 
-    # Request VLM for just this job and keep provenance/attributes for the revision.
+    # Request <backend> for just this job and keep provenance/attributes for the revision.
     file_hash = hashlib.sha256(raw_bytes).hexdigest()
     await _set_reparse_job_metadata(
         db,
@@ -384,6 +399,7 @@ async def reparse_document(
         attributes=attributes,
         file_hash=file_hash,
         original_file_key=storage_key,
+        backend=backend,
     )
     return job_response
 
@@ -411,15 +427,16 @@ async def _set_reparse_job_metadata(
     attributes: dict[str, list[str]],
     file_hash: str,
     original_file_key: str,
+    backend: str,
 ) -> None:
     """Record re-parse intent + provenance on the job so the worker republishes
-    the same document revision under the VLM backend."""
+    the same document revision under the requested backend."""
     job = await db.get(Job, job_id)
     if job is None:
         return
     metadata = dict(job.job_metadata or {})
     parsing_params = dict(metadata.get("parsing_params") or {})
-    parsing_params["mineru_backend"] = "vlm-engine"
+    parsing_params["mineru_backend"] = backend
     metadata["parsing_params"] = parsing_params
     metadata["document_id"] = document_id
     metadata["attributes"] = attributes
@@ -428,7 +445,7 @@ async def _set_reparse_job_metadata(
     doc_meta = dict(metadata.get("document_metadata") or {})
     doc_meta.setdefault("parse_quality", {})["reparse"] = {
         "triggered": True,
-        "backend": "vlm-engine",
+        "backend": backend,
     }
     metadata["document_metadata"] = doc_meta
     job.job_metadata = metadata

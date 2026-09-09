@@ -427,9 +427,9 @@ export const api = {
     apiRequest<DocumentChunkDetail>(
       `/v2/documents/${encodeURIComponent(documentId)}/chunks/${encodeURIComponent(chunkId)}`,
     ),
-  reparseDocument: (documentId: string) =>
+  reparseDocument: (documentId: string, backend: "pipeline" | "vlm-engine" = "vlm-engine") =>
     apiRequest<{ job_id: string }>(
-      `/v2/documents/${encodeURIComponent(documentId)}/reparse`,
+      `/v2/documents/${encodeURIComponent(documentId)}/reparse?backend=${encodeURIComponent(backend)}`,
       { method: "POST" },
     ),
   reEvaluateParseQuality: () =>

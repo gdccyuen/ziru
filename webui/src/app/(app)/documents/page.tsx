@@ -151,12 +151,19 @@ export default function DocumentsPage() {
       .map(([key, values]) => ({ key, values }));
   }
 
-  async function handleReparse(document: DocumentItem) {
+  async function handleReparse(
+    document: DocumentItem,
+    backend: "pipeline" | "vlm-engine",
+  ) {
     setReparsingId(document.document_id);
     setReparseError(null);
     try {
-      await api.reparseDocument(document.document_id);
-      setReparseError("Re-parse queued under MinerU VLM. Track progress on the Jobs page.");
+      await api.reparseDocument(document.document_id, backend);
+      setReparseError(
+        backend === "pipeline"
+          ? "Re-parse queued under MinerU pipeline + numbering-first resolver. Track progress on the Jobs page."
+          : "Re-parse queued under MinerU VLM (vlm-engine). Track progress on the Jobs page.",
+      );
     } catch (err) {
       setReparseError(
         err instanceof ApiError ? err.message : "Failed to queue re-parse.",
@@ -264,7 +271,7 @@ export default function DocumentsPage() {
               highlighted={document.document_id === highlightDocument}
               onOpenTree={(doc) => setTreeDoc(doc)}
               reparsing={reparsingId === document.document_id}
-              onReparse={() => handleReparse(document)}
+              onReparse={(backend) => handleReparse(document, backend)}
             />
           ))}
         </div>
@@ -352,7 +359,7 @@ function DocumentRow({
   highlighted: boolean;
   onOpenTree: (doc: DocumentItem) => void;
   reparsing: boolean;
-  onReparse: () => void;
+  onReparse: (backend: "pipeline" | "vlm-engine") => void;
 }) {
   const attributes = document.attributes ?? {};
   const hasOriginal = Boolean(attributes["originalFile"]?.length);
@@ -417,8 +424,17 @@ function DocumentRow({
             type="button"
             className="btn btn-sm btn-outline-secondary py-0 px-2"
             disabled={reparsing}
-            title="Re-parse this document with MinerU VLM (vlm-engine)"
-            onClick={onReparse}
+            title="Re-parse using the deterministic pipeline + numbering-first resolver (no VLM). Use for documents where the 'resolver fixes' or 'outline' badge shows mis-assigned heading levels."
+            onClick={() => onReparse("pipeline")}
+          >
+            {reparsing ? "Queuing…" : "Re-parse (resolver)"}
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary py-0 px-2"
+            disabled={reparsing}
+            title="Re-parse with MinerU VLM (vlm-engine) for full re-detection. Only for documents whose heading set is suspect (the 'needs VLM' badge)."
+            onClick={() => onReparse("vlm-engine")}
           >
             {reparsing ? "Queuing…" : "Re-parse (VLM)"}
           </button>
